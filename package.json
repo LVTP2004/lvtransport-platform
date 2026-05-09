@@ -9,5 +9,9 @@
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
     "build": "pnpm -r --filter './apps/*' build",
     "typecheck": "pnpm -r --filter './apps/*' typecheck"
+  },
+  "devDependencies": {
+    "@types/react": "^18.3.12",
+    "@types/react-dom": "^18.3.1"
   }
 }
