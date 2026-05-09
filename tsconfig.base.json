@@ -24,6 +24,15 @@
       ],
       "@config/*": [
         "packages/config/src/*"
+      ],
+      "@realtime/*": [
+        "packages/realtime/src/*"
+      ],
+      "@maps/*": [
+        "packages/maps/src/*"
+      ],
+      "@auth/*": [
+        "packages/auth/src/*"
       ]
     }
   }
