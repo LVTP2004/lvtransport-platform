@@ -4,6 +4,7 @@ import { corsMiddleware } from './config/cors.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
+import { authenticate } from './auth/middleware/authenticate.js';
 
 export function createApp() {
   const app = express();
@@ -11,6 +12,7 @@ export function createApp() {
   app.use(corsMiddleware);
   app.use(express.json());
   app.use(requestLogger);
+  app.use(authenticate);
 
   app.use(API_PREFIX, apiRoutes);
 
