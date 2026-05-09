@@ -1,1 +1,13 @@
-
+{
+  "name": "lvtransport-platform",
+  "private": true,
+  "version": "0.1.0",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "dev:web": "pnpm --filter @lvtransport/web dev",
+    "dev:admin": "pnpm --filter @lvtransport/admin dev",
+    "dev:driver": "pnpm --filter @lvtransport/driver dev",
+    "build": "pnpm -r --filter './apps/*' build",
+    "typecheck": "pnpm -r --filter './apps/*' typecheck"
+  }
+}

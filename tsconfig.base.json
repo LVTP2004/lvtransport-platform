@@ -1,4 +1,3 @@
-
 {
   "compilerOptions": {
     "target": "ES2022",
@@ -11,12 +10,9 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@ride/*": ["apps/ride/*"],
-      "@admin/*": ["apps/admin/*"],
-      "@driver/*": ["apps/driver/*"],
-      "@business/*": ["apps/business/*"],
-      "@eats/*": ["apps/eats/*"],
-      "@api/*": ["apps/api/*"]
+      "@web/*": ["apps/web/src/*"],
+      "@admin/*": ["apps/admin/src/*"],
+      "@driver/*": ["apps/driver/src/*"]
     }
   }
 }
