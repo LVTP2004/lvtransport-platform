@@ -27,6 +27,9 @@
       ],
       "@realtime/*": [
         "packages/realtime/src/*"
+      ],
+      "@maps/*": [
+        "packages/maps/src/*"
       ]
     }
   }
