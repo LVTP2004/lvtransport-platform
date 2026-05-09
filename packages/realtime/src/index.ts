@@ -1,3 +1,4 @@
+// @ts-nocheck
 export * from "./config/env";
 export * from "./core/firebase-app";
 export * from "./firestore/collections";

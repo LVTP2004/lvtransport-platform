@@ -1,0 +1,6 @@
+export const PRICING_UI_CONSTANTS = {
+    QUOTE_EXPIRY_MINUTES: 10,
+    CURRENCY_SYMBOL: '$',
+    DISPLAY_DECIMALS: 2,
+    SURGE_BADGE_LABEL: 'Surge may apply'
+};

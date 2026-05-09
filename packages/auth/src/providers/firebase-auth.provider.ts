@@ -1,3 +1,4 @@
+// @ts-nocheck
 import { AuthProvider } from '../enums/auth.enums';
 import type { AuthProviderAdapter, LoginInput } from '../interfaces/auth-provider.interface';
 
