@@ -30,6 +30,9 @@
       ],
       "@maps/*": [
         "packages/maps/src/*"
+      ],
+      "@auth/*": [
+        "packages/auth/src/*"
       ]
     }
   }

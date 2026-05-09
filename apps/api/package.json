@@ -15,7 +15,8 @@
     "express": "^4.21.1",
     "morgan": "^1.10.0",
     "ws": "^8.18.0",
-    "@lvtransport/realtime": "workspace:*"
+    "@lvtransport/realtime": "workspace:*",
+    "@lvtransport/auth": "workspace:*"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",
