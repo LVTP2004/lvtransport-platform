@@ -1,0 +1,22 @@
+
+{
+  "compilerOptions": {
+    "target": "ES2022",
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "strict": true,
+    "resolveJsonModule": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "allowSyntheticDefaultImports": true,
+    "baseUrl": ".",
+    "paths": {
+      "@ride/*": ["apps/ride/*"],
+      "@admin/*": ["apps/admin/*"],
+      "@driver/*": ["apps/driver/*"],
+      "@business/*": ["apps/business/*"],
+      "@eats/*": ["apps/eats/*"],
+      "@api/*": ["apps/api/*"]
+    }
+  }
+}
