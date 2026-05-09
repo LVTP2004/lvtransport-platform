@@ -1,0 +1,2 @@
+import { AuthService, FirebaseAuthProvider } from '@lvtransport/auth';
+export const authService = new AuthService(new FirebaseAuthProvider());
