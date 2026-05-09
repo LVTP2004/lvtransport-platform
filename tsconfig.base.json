@@ -10,9 +10,21 @@
     "allowSyntheticDefaultImports": true,
     "baseUrl": ".",
     "paths": {
-      "@web/*": ["apps/web/src/*"],
-      "@admin/*": ["apps/admin/src/*"],
-      "@driver/*": ["apps/driver/src/*"]
+      "@web/*": [
+        "apps/web/src/*"
+      ],
+      "@admin/*": [
+        "apps/admin/src/*"
+      ],
+      "@driver/*": [
+        "apps/driver/src/*"
+      ],
+      "@ui/*": [
+        "packages/ui/src/*"
+      ],
+      "@config/*": [
+        "packages/config/src/*"
+      ]
     }
   }
 }
