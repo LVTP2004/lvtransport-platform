@@ -13,7 +13,8 @@
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "@lvtransport/ui": "workspace:*",
-    "@lvtransport/realtime": "workspace:*"
+    "@lvtransport/realtime": "workspace:*",
+    "@lvtransport/auth": "workspace:*"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
