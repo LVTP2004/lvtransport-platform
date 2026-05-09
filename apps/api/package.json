@@ -14,7 +14,8 @@
     "dotenv": "^16.4.5",
     "express": "^4.21.1",
     "morgan": "^1.10.0",
-    "ws": "^8.18.0"
+    "ws": "^8.18.0",
+    "@lvtransport/realtime": "workspace:*"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

@@ -24,6 +24,9 @@
       ],
       "@config/*": [
         "packages/config/src/*"
+      ],
+      "@realtime/*": [
+        "packages/realtime/src/*"
       ]
     }
   }
