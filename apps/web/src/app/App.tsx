@@ -1,130 +1,178 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 
-const navLinks = ['Services', 'VIP & Business', 'Fleet', 'Safety', 'Contact'];
+type Step = 1 | 2 | 3;
 
-const services = [
-  { title: 'Airport Transfers', desc: 'On-time, flight-aware pickups with premium chauffeur support.' },
-  { title: 'City Executive Rides', desc: 'Discreet, comfortable transport for daily business mobility.' },
-  { title: 'Event Logistics', desc: 'Coordinated multi-vehicle planning for conferences and private events.' }
+type Vehicle = {
+  name: string;
+  eta: string;
+  priceMultiplier: number;
+  seats: number;
+};
+
+const vehicles: Vehicle[] = [
+  { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3 },
+  { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6 },
+  { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10 }
 ];
 
+const formatDateTime = (value: string) => {
+  if (!value) return 'Select schedule';
+  return new Date(value).toLocaleString('en-US', {
+    weekday: 'short',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit'
+  });
+};
+
 export function App() {
-  const [mobileOpen, setMobileOpen] = useState(false);
+  const [step, setStep] = useState<Step>(1);
+  const [pickup, setPickup] = useState('');
+  const [destination, setDestination] = useState('');
+  const [dateTime, setDateTime] = useState('');
+  const [passengers, setPassengers] = useState(1);
+  const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
+  const [airportTransfer, setAirportTransfer] = useState(false);
+  const [businessVip, setBusinessVip] = useState(true);
+
+  const baseFare = useMemo(() => {
+    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
+    const airportFee = airportTransfer ? 18 : 0;
+    const vipFee = businessVip ? 24 : 0;
+    const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
+    return Math.round(total);
+  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
 
   return (
-    <div className="min-h-screen bg-lv-black text-white">
-      <header className="sticky top-0 z-40 border-b border-lv-gold/20 bg-lv-black/90 backdrop-blur">
-        <nav className="mx-auto flex w-full max-w-7xl items-center justify-between px-6 py-4 md:px-8">
-          <div className="font-display text-xl font-semibold tracking-wide text-lv-champagne">LV Transport</div>
-          <div className="hidden items-center gap-8 md:flex">
-            {navLinks.map((link) => (
-              <a key={link} href="#" className="text-sm text-lv-mist transition-colors hover:text-lv-champagne">
-                {link}
-              </a>
-            ))}
-          </div>
-          <div className="hidden md:block">
-            <Button size="sm">Book Consultation</Button>
-          </div>
-          <button
-            type="button"
-            className="rounded-lg border border-lv-gold/40 p-2 text-lv-champagne transition hover:bg-lv-gold/10 md:hidden"
-            onClick={() => setMobileOpen((v) => !v)}
-            aria-label="Toggle menu"
-          >
-            ☰
-          </button>
-        </nav>
-        <div
-          className={`overflow-hidden border-t border-lv-gold/20 bg-lv-charcoal/95 px-6 transition-all duration-300 md:hidden ${mobileOpen ? 'max-h-80 py-4' : 'max-h-0 py-0'}`}
-        >
-          <div className="flex flex-col gap-4">
-            {navLinks.map((link) => (
-              <a key={link} href="#" className="text-sm text-lv-mist transition-colors hover:text-lv-champagne">
-                {link}
-              </a>
-            ))}
-            <Button size="sm" className="mt-2 w-full">
-              Book Consultation
-            </Button>
-          </div>
-        </div>
-      </header>
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1>
+          <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
+            Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
+          </p>
+        </header>
 
-      <main>
-        <section className="mx-auto grid max-w-7xl gap-10 px-6 pb-20 pt-20 md:grid-cols-2 md:px-8">
-          <div className="space-y-6">
-            <p className="inline-flex rounded-full border border-lv-gold/30 bg-lv-gold/10 px-3 py-1 text-xs uppercase tracking-[0.2em] text-lv-champagne">
-              Premium Ground Mobility
-            </p>
-            <h1 className="text-4xl font-semibold leading-tight md:text-6xl">Enterprise transport, elevated for every mile.</h1>
-            <p className="max-w-xl text-lv-mist md:text-lg">
-              Delivering black-car precision, VIP-ready comfort, and operational reliability for modern teams and travelers.
-            </p>
-            <div className="flex flex-wrap gap-4">
-              <Button className="shadow-gold-md">Request a Proposal</Button>
-              <Button variant="secondary">Explore Fleet</Button>
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="glass-panel rounded-3xl p-4 sm:p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-lv-mist">Step {step} of 3</p>
+              <div className="flex w-32 gap-2">
+                {[1, 2, 3].map((i) => (
+                  <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />
+                ))}
+              </div>
+            </div>
+
+            <div key={step} className="booking-step-fade space-y-4">
+              {step === 1 && (
+                <>
+                  <label className="field-wrap">
+                    <span>Pickup</span>
+                    <input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." />
+                  </label>
+                  <label className="field-wrap">
+                    <span>Destination</span>
+                    <input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Airport, venue, client site..." />
+                  </label>
+                  <label className="field-wrap">
+                    <span>Date & time</span>
+                    <input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} />
+                  </label>
+                </>
+              )}
+
+              {step === 2 && (
+                <>
+                  <div className="field-wrap">
+                    <span>Passengers</span>
+                    <div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3">
+                      <button className="control-btn" onClick={() => setPassengers((v) => Math.max(1, v - 1))}>−</button>
+                      <strong className="text-lg">{passengers}</strong>
+                      <button className="control-btn" onClick={() => setPassengers((v) => Math.min(12, v + 1))}>+</button>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="mb-2 text-sm text-lv-mist">Vehicle</p>
+                    <div className="grid gap-3">
+                      {vehicles.map((item) => (
+                        <button key={item.name} onClick={() => setVehicle(item)} className={`vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`}>
+                          <div>
+                            <p className="font-medium">{item.name}</p>
+                            <p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p>
+                          </div>
+                          <p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {step === 3 && (
+                <>
+                  <button className={`toggle-card ${airportTransfer ? 'toggle-card--active' : ''}`} onClick={() => setAirportTransfer((v) => !v)}>
+                    <div>
+                      <p className="font-medium">Airport transfer</p>
+                      <p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p>
+                    </div>
+                    <span>{airportTransfer ? 'On' : 'Off'}</span>
+                  </button>
+                  <button className={`toggle-card ${businessVip ? 'toggle-card--active' : ''}`} onClick={() => setBusinessVip((v) => !v)}>
+                    <div>
+                      <p className="font-medium">Business / VIP</p>
+                      <p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p>
+                    </div>
+                    <span>{businessVip ? 'On' : 'Off'}</span>
+                  </button>
+                </>
+              )}
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={prevStep}>
+                Back
+              </Button>
+              {step < 3 ? (
+                <Button className="flex-1" onClick={nextStep}>Continue</Button>
+              ) : (
+                <Button className="flex-1 shadow-gold-md">Confirm booking UI</Button>
+              )}
             </div>
           </div>
-          <div className="rounded-2xl border border-lv-gold/20 bg-lv-gold-gradient p-8 shadow-gold-lg transition-transform duration-500 hover:-translate-y-1">
-            <p className="text-sm uppercase tracking-[0.2em] text-lv-champagne">Service Snapshot</p>
-            <div className="mt-6 grid gap-4 sm:grid-cols-2">
-              {['24/7 Dispatch', 'SLA-backed Reliability', 'Corporate Billing', 'Real-time Coordination'].map((item) => (
-                <div key={item} className="rounded-xl border border-lv-gold/20 bg-lv-charcoal/70 p-4 text-sm text-lv-mist">
-                  {item}
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
 
-        <section className="border-y border-lv-gold/10 bg-lv-graphite/60">
-          <div className="mx-auto max-w-7xl px-6 py-20 md:px-8">
-            <h2 className="text-3xl font-semibold">Services</h2>
-            <div className="mt-8 grid gap-6 md:grid-cols-3">
-              {services.map((service) => (
-                <article key={service.title} className="rounded-2xl border border-lv-gold/20 bg-lv-charcoal/70 p-6 transition hover:border-lv-gold/50 hover:shadow-gold-sm">
-                  <h3 className="text-xl font-medium text-lv-champagne">{service.title}</h3>
-                  <p className="mt-3 text-sm text-lv-mist">{service.desc}</p>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
+          <aside className="space-y-6">
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p>
+              <p className="mt-3 text-4xl font-semibold">${baseFare}</p>
+              <p className="mt-1 text-sm text-lv-mist">Estimated fare • final pricing from future API integrations.</p>
+              <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+                Includes base transfer, selected vehicle class, and service options.
+              </div>
+            </article>
 
-        <section className="mx-auto max-w-7xl px-6 py-20 md:px-8">
-          <div className="rounded-3xl border border-lv-gold/20 bg-lv-charcoal p-8 md:p-12">
-            <h2 className="text-3xl font-semibold">VIP & Business Mobility</h2>
-            <p className="mt-4 max-w-3xl text-lv-mist">
-              Purpose-built for executives, partners, and high-value guests with discreet chauffeurs, priority routing, and concierge-level ride standards.
-            </p>
-          </div>
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p>
+              <ul className="mt-4 space-y-3 text-sm">
+                <li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li>
+                <li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li>
+                <li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li>
+                <li><span className="text-lv-mist">Passengers:</span> {passengers}</li>
+                <li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li>
+                <li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li>
+              </ul>
+            </article>
+          </aside>
         </section>
-
-        <section className="bg-lv-gold-gradient">
-          <div className="mx-auto flex max-w-7xl flex-col items-start justify-between gap-6 px-6 py-16 md:flex-row md:items-center md:px-8">
-            <div>
-              <h2 className="text-3xl font-semibold">Ready to elevate your transport operations?</h2>
-              <p className="mt-2 text-lv-mist">Launch with a premium fleet strategy tailored to your organization.</p>
-            </div>
-            <Button size="lg" className="animate-pulse">
-              Start Booking Setup
-            </Button>
-          </div>
-        </section>
-      </main>
-
-      <footer className="border-t border-lv-gold/20 bg-lv-black">
-        <div className="mx-auto flex max-w-7xl flex-col gap-4 px-6 py-10 text-sm text-lv-mist md:flex-row md:items-center md:justify-between md:px-8">
-          <p>© 2026 LV Transport. All rights reserved.</p>
-          <div className="flex gap-6">
-            <a href="#" className="transition-colors hover:text-lv-champagne">Privacy</a>
-            <a href="#" className="transition-colors hover:text-lv-champagne">Terms</a>
-            <a href="#" className="transition-colors hover:text-lv-champagne">Support</a>
-          </div>
-        </div>
-      </footer>
+      </div>
     </div>
   );
 }
