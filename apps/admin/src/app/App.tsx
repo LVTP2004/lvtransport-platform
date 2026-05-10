@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 
 type MetricCardProps = {
   title: string;
@@ -46,14 +46,18 @@ const navItems = [
   { label: 'Settings', icon: '⚙' },
 ];
 
-const bookings = [
-  ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40'],
-  ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55'],
-  ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10'],
-  ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30'],
-];
+type AdminBooking = { id: string; referenceCode: string; serviceType: string; status: string; createdAt: string };
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
 export function App() {
+  const [bookings, setBookings] = useState<AdminBooking[]>([]);
+
+  useEffect(() => {
+    fetch(`${API_BASE_URL}/bookings`).then((res) => res.json()).then((data: { bookings?: AdminBooking[] }) => {
+      if (Array.isArray(data.bookings)) setBookings(data.bookings);
+    }).catch(() => undefined);
+  }, []);
+
   return (
     <main className="min-h-screen bg-zinc-900 text-zinc-100">
       <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
@@ -114,10 +118,12 @@ export function App() {
                       </thead>
                       <tbody>
                         {bookings.map((row) => (
-                          <tr key={row[0]} className="border-t border-zinc-800 text-zinc-200 transition hover:bg-zinc-900/70">
-                            {row.map((cell) => (
-                              <td key={cell} className="px-2 py-3">{cell}</td>
-                            ))}
+                          <tr key={row.id} className="border-t border-zinc-800 text-zinc-200 transition hover:bg-zinc-900/70">
+                            <td className="px-2 py-3">{row.referenceCode}</td>
+                            <td className="px-2 py-3">{row.serviceType}</td>
+                            <td className="px-2 py-3">{row.status}</td>
+                            <td className="px-2 py-3">Unassigned</td>
+                            <td className="px-2 py-3">{new Date(row.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
                           </tr>
                         ))}
                       </tbody>
