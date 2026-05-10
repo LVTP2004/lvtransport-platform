@@ -21,6 +21,21 @@ Exit criteria:
 - Security baseline mapped to Phase 1 objectives.
 - Deployment and environment structure ready for implementation start.
 
+### Immediate Next Step (Execution Kickoff)
+
+To move from planning to delivery, start with a thin end-to-end slice that validates core platform plumbing:
+
+1. Define a minimal booking lifecycle (`requested -> assigned -> in_progress -> completed`).
+2. Expose a first API contract for booking creation and status updates.
+3. Wire driver availability + assignment as a mocked service behind a stable interface.
+4. Add baseline operational observability (request logging + health endpoint + error envelope).
+
+Suggested deliverables for this kickoff:
+
+- API contract draft (OpenAPI or equivalent) for booking + assignment.
+- Module boundary note for `LV API`, `LV Driver`, and `LV Admin`.
+- One demo flow runnable in local dev showing booking state transitions.
+
 ## Phase 2 — Platform Account & Transaction Core
 
 **Priority capabilities:** login, roles, bookings, tracking, emails
