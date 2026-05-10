@@ -6,6 +6,7 @@ export interface AuthSessionContext {
   sessionId: string;
   issuedAt: string;
   expiresAt: string;
+  scopes: string[];
 }
 
 export interface AuditLogEntry {
@@ -17,6 +18,7 @@ export interface AuditLogEntry {
   targetId: string;
   correlationId: string;
   createdAt: string;
+  metadata?: Record<string, string>;
 }
 
 export interface RateLimitPolicy {
@@ -24,4 +26,11 @@ export interface RateLimitPolicy {
   windowSeconds: number;
   maxRequests: number;
   blockDurationSeconds?: number;
+}
+
+export interface SecureAdminActionPolicy {
+  actionName: string;
+  requiresStepUpAuth: boolean;
+  requiresReasonCode: boolean;
+  dualApprovalThresholdMinor?: number;
 }
