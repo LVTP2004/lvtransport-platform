@@ -1,59 +1,3 @@
-import { useEffect, useMemo, useState } from 'react';
-import { BookingLifecycle } from '@lvtransport/realtime';
-
-type Booking = {
-  id: string;
-  code: string;
-  customerName: string;
-  status: BookingLifecycle;
-  assignedDriverName?: string;
-  version: number;
-};
-
-export function App() {
-  const [bookings, setBookings] = useState<Booking[]>([]);
-
-  const refresh = async () => {
-    const response = await fetch('http://localhost:8080/api/v1/bookings');
-    const result = await response.json();
-    setBookings(result.bookings);
-  };
-
-  useEffect(() => {
-    refresh();
-    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
-    ws.onmessage = () => refresh();
-    return () => ws.close();
-  }, []);
-
-  const assign = async (bookingId: string) => {
-    await fetch(`http://localhost:8080/api/v1/bookings/${bookingId}/assign-driver`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ driverId: 'drv-101', driverName: 'Marco V.', idempotencyKey: `assign-${bookingId}` })
-    });
-    refresh();
-  };
-
-  const confirm = async (bookingId: string, version: number) => {
-    await fetch(`http://localhost:8080/api/v1/bookings/${bookingId}/status`, {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nextStatus: 'confirmed', actor: 'admin', expectedVersion: version, idempotencyKey: `confirm-${bookingId}-${version}` })
-    });
-    refresh();
-  };
-
-  const active = useMemo(() => bookings.filter((b) => !['completed', 'cancelled', 'failed'].includes(b.status)).length, [bookings]);
-
-  return <main className="min-h-screen bg-zinc-900 p-6 text-white">
-    <h1 className="text-2xl font-bold text-amber-300">Admin Realtime Dispatch</h1>
-    <p className="mt-2 text-zinc-300">Active bookings: {active}</p>
-    <div className="mt-5 grid gap-3">
-      {bookings.map((b) => <article key={b.id} className="rounded-xl border border-zinc-700 bg-zinc-950 p-4">
-        <p className="font-semibold">{b.code} • {b.customerName}</p>
-        <p className="text-sm text-zinc-300">Status: {b.status} • Driver: {b.assignedDriverName ?? 'Unassigned'}</p>
-        <div className="mt-3 flex gap-2">
-          {b.status === 'quoted' && <button className="rounded bg-amber-500 px-3 py-1 text-black" onClick={() => confirm(b.id, b.version)}>Confirm</button>}
-          {['confirmed', 'assigned'].includes(b.status) && <button className="rounded border border-zinc-500 px-3 py-1" onClick={() => assign(b.id)}>Assign Driver</button>}
 import { useEffect, useState, type ReactNode } from 'react';
 
 type MetricCardProps = {
@@ -92,7 +36,6 @@ function Panel({ title, icon, children }: { title: string; icon: ReactNode; chil
   );
 }
 
-
 type AdminBooking = {
   id: string;
   referenceCode: string;
@@ -119,21 +62,10 @@ const notificationFeed = [
   'Delivery retry queued for BK-2038 (mock_dev provider)'
 ];
 
-const bookings = [
-  ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40', 'checkout_pending'],
-  ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55', 'paid'],
-  ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10', 'payment_failed'],
-  ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30', 'refunded'],
-];
-type AdminBooking = { id: string; referenceCode: string; serviceType: string; status: string; createdAt: string };
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
-
 export function App() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
 
-  useEffect(() => {    fetch(`${API_BASE_URL}/bookings`).then((res) => res.json()).then((data: { bookings?: AdminBooking[] }) => {
-      if (Array.isArray(data.bookings)) setBookings(data.bookings);
-    }).catch(() => undefined);
+  useEffect(() => {
     const load = async () => {
       try {
         const res = await fetch(`${API_BASE}/bookings`);
@@ -143,6 +75,7 @@ export function App() {
         setBookings([]);
       }
     };
+
     // TODO: Replace polling with realtime Firestore listeners when persistence is connected.
     load();
   }, []);
@@ -200,7 +133,6 @@ export function App() {
                     <table className="w-full min-w-[620px] text-left text-sm">
                       <thead className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         <tr>
-                          {['ID', 'Service', 'Status', 'Driver', 'ETA', 'Payment'].map((h) => (
                           {['Reference', 'Service', 'Status', 'Schedule'].map((h) => (
                             <th key={h} className="px-2 py-2">{h}</th>
                           ))}
@@ -212,8 +144,6 @@ export function App() {
                             <td className="px-2 py-3">{row.referenceCode}</td>
                             <td className="px-2 py-3">{row.serviceType}</td>
                             <td className="px-2 py-3">{row.status}</td>
-                            <td className="px-2 py-3">Unassigned</td>
-                            <td className="px-2 py-3">{new Date(row.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
                             <td className="px-2 py-3">{new Date(row.scheduledAt).toLocaleString()}</td>
                           </tr>
                         ))}
@@ -280,7 +210,7 @@ export function App() {
             </section>
           </div>
         </div>
-      </article>)}
-    </div>
-  </main>;
+      </div>
+    </main>
+  );
 }
