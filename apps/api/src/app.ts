@@ -6,6 +6,7 @@ import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js
 import apiRoutes from './routes/index.js';
 
 export function createApp() {
+export const createApp = () => {
   const app = express();
   app.use(corsMiddleware);
   app.use(express.json());
@@ -14,3 +15,6 @@ export function createApp() {
   app.use(errorHandlerMiddleware);
   return app;
 }
+
+  return app;
+};
