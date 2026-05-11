@@ -200,6 +200,8 @@ importers:
 
   packages/maps: {}
 
+  packages/moni-assistent: {}
+
   packages/realtime: {}
 
   packages/ui:
