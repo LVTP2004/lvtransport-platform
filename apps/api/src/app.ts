@@ -5,7 +5,6 @@ import { requestLoggerMiddleware } from './middleware/request-logger.middleware.
 import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js';
 import apiRoutes from './routes/index.js';
 
-export function createApp() {
 export const createApp = () => {
   const app = express();
   app.use(corsMiddleware);
@@ -13,8 +12,5 @@ export const createApp = () => {
   app.use(requestLoggerMiddleware);
   app.use(API_PREFIX, apiRoutes);
   app.use(errorHandlerMiddleware);
-  return app;
-}
-
   return app;
 };
