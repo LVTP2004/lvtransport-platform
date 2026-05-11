@@ -3,12 +3,13 @@ import { useEffect, useState } from 'react';
 type Booking = { id: string; code: string; status: string; assignedDriverName?: string; version: number };
 
 const statusFlow = ['assigned', 'driver_arriving', 'passenger_onboard', 'completed'] as const;
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
 export function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
 
   const refresh = async () => {
-    const response = await fetch('http://localhost:8080/api/v1/bookings');
+    const response = await fetch(`${API_BASE}/bookings`);
     const result = await response.json();
     setBookings(result.bookings.filter((b: Booking) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned'));
   };
@@ -26,7 +27,7 @@ export function App() {
     const nextStatus = statusFlow[idx + 1];
     const optimistic = bookings.map((b) => b.id === booking.id ? { ...b, status: nextStatus, version: b.version + 1 } : b);
     setBookings(optimistic);
-    const response = await fetch(`http://localhost:8080/api/v1/bookings/${booking.id}/status`, {
+    const response = await fetch(`${API_BASE}/bookings/${booking.id}/status`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: `driver-${booking.id}-${booking.version}` })
     });
