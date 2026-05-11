@@ -1,5 +1,5 @@
 export const PRICING_CONSTANTS = {
-  VERSION: 'pricing-architecture-v1',
+  VERSION: 'pricing-architecture-v2-centralized-engine',
   BASE_FARE: 12,
   PER_KM_RATE: 1.8,
   PER_MIN_RATE: 0.6,
