@@ -8,7 +8,7 @@ export interface BookingEventPayload {
   bookingId: string;
   customerId?: string;
   driverId?: string;
-  status?: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'pending' | 'accepted' | 'assigned' | 'onderweg' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
   occurredAt?: string;
   metadata?: Record<string, unknown>;
 }
