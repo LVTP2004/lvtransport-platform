@@ -3,6 +3,7 @@ import { WebSocketServer } from 'ws';
 import type { Express } from 'express';
 import { env } from '../config/env.js';
 import { logger } from '../utils/logger.js';
+import { realtimeOrchestratorService } from '../services/realtime-orchestrator.service.js';
 
 export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   const server = createServer(app);
@@ -10,7 +11,7 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
 
   wss.on('connection', (socket) => {
     logger.info('WebSocket client connected');
-    socket.on('message', (message) => logger.info('WebSocket message received', { message: message.toString() }));
+    realtimeOrchestratorService.registerClient(socket);
     socket.on('close', () => logger.info('WebSocket client disconnected'));
   });
 
