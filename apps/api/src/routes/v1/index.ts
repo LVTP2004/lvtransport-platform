@@ -6,6 +6,7 @@ import bookingsRoutes from './bookings.routes.js';
 const router = Router();
 
 router.use(healthRoutes);
+router.use(bookingRoutes);
 router.use('/bookings', bookingRoutes);
 router.use(bookingsRoutes);
 
