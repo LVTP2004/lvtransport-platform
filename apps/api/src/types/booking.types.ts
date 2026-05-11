@@ -1,4 +1,12 @@
-export type BookingStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+export type BookingStatus =
+  | 'pending'
+  | 'accepted'
+  | 'assigned'
+  | 'onderweg'
+  | 'arrived'
+  | 'in_progress'
+  | 'completed'
+  | 'cancelled';
 export type ServiceType = 'standard' | 'airport' | 'vip';
 
 export interface CreateBookingPayload {

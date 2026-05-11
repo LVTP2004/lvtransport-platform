@@ -4,6 +4,7 @@ import type { WebSocket } from 'ws';
 
 export const BOOKING_LIFECYCLE = [
   'pending',
+  'accepted',
   'quoted',
   'confirmed',
   'available',
@@ -60,7 +61,8 @@ export type DriverRealtimeState = {
 };
 
 const allowedTransitions: Record<BookingLifecycleStatus, BookingLifecycleStatus[]> = {
-  pending: ['quoted', 'cancelled', 'failed'],
+  pending: ['accepted', 'quoted', 'cancelled', 'failed'],
+  accepted: ['quoted', 'confirmed', 'available', 'assigned', 'cancelled', 'failed'],
   quoted: ['confirmed', 'available', 'cancelled', 'failed'],
   confirmed: ['available', 'assigned', 'cancelled', 'failed'],
   available: ['assigned', 'cancelled', 'failed'],
