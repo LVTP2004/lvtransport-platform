@@ -7,3 +7,6 @@ export * from './rbac/role-permissions';
 export * from './security/token-policy';
 export * from './services/auth-service';
 export * from './providers/firebase-auth.provider';
+
+export * from './security/jwt.service';
+export * from './security/password-hash.service';
