@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
+import paymentRoutes from '../../modules/payments/payment.routes.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
 import trackingRoutes from './tracking.routes.js';
 import notificationRoutes from './notifications.routes.js';
@@ -10,6 +11,7 @@ import bookingsRoutes from './bookings.routes.js';
 const router = Router();
 
 router.use(healthRoutes);
+router.use('/payments', paymentRoutes);
 router.use(trackingRoutes);
 router.use(notificationRoutes);
 router.use(mapsRoutes);
