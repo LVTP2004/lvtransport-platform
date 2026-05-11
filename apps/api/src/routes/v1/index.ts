@@ -41,6 +41,18 @@ router.post('/bookings/:bookingId/assign-driver', (req, res, next) => {
   }
 });
 
+router.post('/bookings/:bookingId/assign-driver/preparation', (req, res, next) => {
+  try {
+    const assignmentPreparation = realtimeOrchestratorService.prepareDriverAssignment({
+      bookingId: req.params.bookingId,
+      pickupLocation: req.body.pickupLocation
+    });
+    res.json({ assignmentPreparation });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/bookings/:bookingId/status', (req, res, next) => {
   try {
     const booking = realtimeOrchestratorService.transitionStatus({ bookingId: req.params.bookingId, ...req.body });

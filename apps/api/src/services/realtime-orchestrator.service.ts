@@ -58,6 +58,42 @@ export type DriverRealtimeState = {
   state: DriverState;
   activeBookingId?: string;
   lastUpdatedAt: string;
+  location?: {
+    lat: number;
+    lng: number;
+  };
+  rating?: number;
+};
+
+type AssignmentPreparationInput = {
+  bookingId: string;
+  pickupLocation: { lat: number; lng: number };
+};
+
+type AssignmentCandidate = {
+  driverId: string;
+  distanceKm: number | null;
+  availabilityScore: number;
+  activeRidesScore: number;
+  driverStateScore: number;
+  ratingScore: number;
+  totalScore: number;
+  activeRides: number;
+  state: DriverState;
+  rating: number | null;
+  locationKnown: boolean;
+};
+
+const toRadians = (value: number) => (value * Math.PI) / 180;
+
+const calculateDistanceKm = (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
+  const earthRadiusKm = 6371;
+  const deltaLat = toRadians(to.lat - from.lat);
+  const deltaLng = toRadians(to.lng - from.lng);
+  const lat1 = toRadians(from.lat);
+  const lat2 = toRadians(to.lat);
+  const a = Math.sin(deltaLat / 2) ** 2 + Math.cos(lat1) * Math.cos(lat2) * Math.sin(deltaLng / 2) ** 2;
+  return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 
 const allowedTransitions: Record<BookingLifecycleStatus, BookingLifecycleStatus[]> = {
@@ -254,7 +290,14 @@ export const realtimeOrchestratorService = {
     return booking;
   },
 
-  updateDriverState(params: { driverId: string; state: DriverState; bookingId?: string; idempotencyKey?: string }): DriverRealtimeState {
+  updateDriverState(params: {
+    driverId: string;
+    state: DriverState;
+    bookingId?: string;
+    idempotencyKey?: string;
+    location?: { lat: number; lng: number };
+    rating?: number;
+  }): DriverRealtimeState {
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
       return driverStates.get(params.driverId) ?? { driverId: params.driverId, state: params.state, lastUpdatedAt: new Date().toISOString() };
     }
@@ -267,7 +310,9 @@ export const realtimeOrchestratorService = {
       driverId: params.driverId,
       state: params.state,
       activeBookingId: params.bookingId,
-      lastUpdatedAt: now
+      lastUpdatedAt: now,
+      location: params.location ?? existingState?.location,
+      rating: typeof params.rating === 'number' ? params.rating : existingState?.rating
     };
     driverStates.set(params.driverId, nextState);
     if (params.bookingId) {
@@ -288,6 +333,59 @@ export const realtimeOrchestratorService = {
     emit('driver.status.updated', nextState);
     emit('admin.live.updated', { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
     return nextState;
+  },
+
+  prepareDriverAssignment(input: AssignmentPreparationInput): { bookingId: string; candidates: AssignmentCandidate[] } {
+    const booking = bookings.get(input.bookingId);
+    if (!booking) throw new Error('BOOKING_NOT_FOUND');
+
+    const activeRideCounts = new Map<string, number>();
+    for (const liveBooking of bookings.values()) {
+      const driverId = liveBooking.assignedDriverId;
+      if (!driverId) continue;
+      if (['assigned', 'onderweg', 'arrived', 'in_progress'].includes(liveBooking.status)) {
+        activeRideCounts.set(driverId, (activeRideCounts.get(driverId) ?? 0) + 1);
+      }
+    }
+
+    const stateScoreMap: Record<DriverState, number> = {
+      available: 1,
+      assigned: 0.45,
+      onderweg: 0.2,
+      arrived: 0.1,
+      in_progress: 0,
+      completed: 0.8
+    };
+
+    const candidates = Array.from(driverStates.values()).map<AssignmentCandidate>((driver) => {
+      const activeRides = activeRideCounts.get(driver.driverId) ?? 0;
+      const distanceKm = driver.location ? calculateDistanceKm(input.pickupLocation, driver.location) : null;
+      const distanceScore = distanceKm === null ? 0.2 : Math.max(0, 1 - distanceKm / 20);
+      const availabilityScore = driver.state === 'available' ? 1 : 0.25;
+      const activeRidesScore = activeRides === 0 ? 1 : Math.max(0, 1 - activeRides * 0.5);
+      const driverStateScore = stateScoreMap[driver.state];
+      // Future-facing rating support: currently defaults to a neutral score when no rating exists.
+      const ratingScore = typeof driver.rating === 'number' ? Math.min(1, Math.max(0, driver.rating / 5)) : 0.5;
+      const totalScore = Number((distanceScore * 0.35 + availabilityScore * 0.25 + activeRidesScore * 0.2 + driverStateScore * 0.15 + ratingScore * 0.05).toFixed(4));
+
+      return {
+        driverId: driver.driverId,
+        distanceKm: distanceKm === null ? null : Number(distanceKm.toFixed(2)),
+        availabilityScore,
+        activeRidesScore,
+        driverStateScore,
+        ratingScore,
+        totalScore,
+        activeRides,
+        state: driver.state,
+        rating: driver.rating ?? null,
+        locationKnown: Boolean(driver.location)
+      };
+    });
+
+    candidates.sort((a, b) => b.totalScore - a.totalScore);
+
+    return { bookingId: booking.id, candidates };
   },
 
   listDriverStates(): DriverRealtimeState[] {
