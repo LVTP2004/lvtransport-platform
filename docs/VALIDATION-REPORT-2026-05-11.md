@@ -1,54 +1,57 @@
 # LV Transport Platform Validation Report
-Date: 2026-05-11
-Scope: post-merge validation before new feature work
+Date: 2026-05-11 (UTC)
+Scope: validation of current merged state for core platform flows
 
-## Executive Summary
-Current platform state is **not release-ready**. Critical merge corruption exists in admin and API layers, booking persistence is still in-memory, and route protection/auth behaviors are inconsistent across apps.
+## Overall Status
+**High risk / not release-ready.** Two flows are hard-broken (admin, API communication path through admin), three are unstable (driver, realtime, route protection consistency), and several modules still include demo-only behavior.
 
-## Validation Results by Requested Area
+## Priority Findings (Highest → Lowest)
 
-| Area | Result | Notes |
+### P0 — Broken flows
+1. **Admin flow is broken at compile time** (`apps/admin/src/app/App.tsx` has merge-corrupted/duplicated JSX and fails `tsc`).
+2. **API communication is inconsistent across apps**: web defaults to `:4000`, admin/driver to `:8080`, causing cross-app contract/environment drift.
+3. **Workspace build fails in driver path** due to shared package typing/runtime mismatches (`node:crypto`, `Buffer`, and missing `TrackingState` export).
+
+### P1 — Regressions / unstable behavior
+4. **Realtime state can diverge in driver UX**: optimistic status updates mutate local UI before authoritative server response; rollback only happens after explicit error handling.
+5. **Realtime server implementations are duplicated/scaffolded** (`socketServer.ts` and `socket.server.ts`), increasing risk of split behavior depending on boot path.
+6. **Route protection is inconsistent**: web guard is boolean gate, while admin/driver enforce explicit role checks; security posture regressed from unified RBAC expectation.
+
+### P2 — Duplicated logic
+7. **Admin app contains duplicated implementations in a single file** (`App.tsx` includes multiple API base constants, booking states, and fetch paths).
+8. **Auth-state persistence logic duplicated between admin and driver** with near-identical `localStorage` strategies.
+9. **Pricing module keeps parallel TS/JS artifacts in source tree**, increasing drift risk and review noise.
+
+### P3 — Demo-only / placeholder behavior
+10. **Hard-coded demo notifications and IDs remain in admin UI** (`mock_dev` references and static sample alerts/bookings).
+11. **TODO markers indicate non-final realtime architecture** (polling fallback explicitly retained instead of proper Firestore listeners).
+
+---
+
+## Requested Flow Validation Matrix
+
+| Flow | Status | Evidence summary |
 |---|---|---|
-| Booking creation | ⚠️ Partial | Web booking UI submits to API, but API has conflicting route/controller definitions from merge collisions, increasing runtime risk. |
-| Admin flow | ❌ Broken | `apps/admin/src/app/App.tsx` contains duplicate/conflicting code blocks and fails TypeScript parsing. |
-| Driver flow | ⚠️ Partial | Driver app compiles structurally, but depends on a different API base/contract (`:8080`) than web/admin (`:4000`). |
-| Authentication | ⚠️ Partial | Auth state in admin/driver still uses `localStorage` session persistence despite security guidance. |
-| Realtime updates | ⚠️ Partial | Admin/driver use WebSocket refresh pattern, but backend wiring is inconsistent and includes TODO placeholders. |
-| Mobile responsiveness | ⚠️ Partial | Web app uses responsive utility classes (`sm`, `lg`) and should adapt layout, but no end-to-end runtime verification due broader integration breakages. |
-| API communication | ❌ Broken | Duplicate merged implementations in booking routes/controllers indicate non-canonical API behavior and likely build/runtime instability. |
-| Route protection | ⚠️ Inconsistent | Web protected route is boolean-only gate; driver route enforces role-based access. Security posture differs by app. |
-| Booking persistence | ❌ Broken | Booking repository is in-memory array only; no Firestore/DB persistence. Data loss on restart is guaranteed. |
+| Booking flow | ⚠️ Partial | Web submit path exists, but downstream admin/driver/operator handling is unstable due app compile failure and API base mismatch. |
+| Admin flow | ❌ Broken | TypeScript parse failures in `App.tsx`; flow cannot be validated end-to-end. |
+| Driver flow | ⚠️ Unstable | Core UI present, but optimistic updates + build/runtime dependency issues reduce reliability. |
+| Authentication | ⚠️ Partial | Guards exist, but persistence strategy relies on `localStorage`; guard behavior differs by app. |
+| Realtime updates | ⚠️ Unstable | WebSocket wiring exists but with duplicated server entry points and scaffold remnants. |
+| API communication | ❌ Broken/Inconsistent | App-to-API base URLs diverge (`4000` vs `8080`), leading to fragmented integration behavior. |
+| Mobile responsiveness | ⚠️ Likely OK (unverified runtime) | Web UI includes responsive classes (`sm`, `lg`), but full runtime validation blocked by broader integration issues. |
+| Route protection | ⚠️ Inconsistent | Web uses generic boolean guard; admin/driver use role gate requiring explicit role lists. |
 
-## Key Defects Identified
-
-### 1) Broken flows
-- **Admin app fails typecheck** with JSX syntax/merge corruption errors in `apps/admin/src/app/App.tsx`.
-- **API booking layer contains duplicate merged logic** in route/controller files, implying unstable endpoint behavior.
-
-### 2) Inconsistent state updates
-- Driver flow performs optimistic local status update then server call, with fallback refresh only on error; can momentarily diverge from server state under conflicts.
-- Admin flow currently refreshes full list via fetch/WebSocket event and has TODO for proper realtime listeners.
-
-### 3) Duplicated booking entries risk
-- In-memory `unshift` insertion has no dedupe/idempotency guard at repository layer.
-- Duplicate merge blocks in API booking handlers increase chance of double-path execution if not normalized.
-
-### 4) Fake/demo logic still remaining
-- Mock/demo notification artifacts still present (`mock_dev`, demo customer/admin IDs).
-- Multiple TODOs indicate placeholder realtime/driver persistence wiring.
-
-### 5) UI regressions after merges
-- Admin UI file contains mixed/duplicated implementations in one file (two app structures merged), causing hard compile break.
-
-## Recommended Priority Order (before new features)
-1. **Repair merge corruption** in admin app and API booking route/controller files.
-2. **Establish one canonical booking API contract** and delete duplicate handlers.
-3. **Replace in-memory booking repository** with persistent store (Firestore/DB) and add idempotency checks.
-4. **Unify auth/route guard model** across web, admin, driver (role + auth checks, no localStorage tokens).
-5. **Remove remaining mock/demo notification and test data paths**.
-6. **Add integration smoke tests** for booking create/list, admin dispatch action, driver status progression, and websocket/realtime sync.
+---
 
 ## Commands Executed
 - `pnpm typecheck`
-- `rg -n "demo|mock|fake|stub|sample booking|setTimeout\(|Math\.random\(|localStorage|hardcoded|TODO" apps packages --glob '!**/*.js'`
-- targeted source inspection via `sed -n` on admin/web/driver/api booking and auth route-guard modules.
+- `pnpm build`
+- `rg -n "localStorage|ProtectedRoute|role|websocket|socket|TODO|mock|demo|in-memory|booking|8080|4000" apps packages --glob '!**/*.js'`
+
+## Immediate Next Actions
+1. Repair `apps/admin/src/app/App.tsx` merge corruption and remove duplicate app blocks.
+2. Standardize one API base strategy across web/admin/driver via shared config package.
+3. Resolve shared package build compatibility (`@types/node`/runtime boundary and `TrackingState` export).
+4. Consolidate websocket boot path to one canonical server module.
+5. Unify route-guard contract (role-aware + authenticated) across all apps.
+6. Remove demo data/strings and close realtime TODO placeholders before next validation cycle.
