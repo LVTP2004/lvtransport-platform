@@ -36,6 +36,17 @@ function Panel({ title, icon, children }: { title: string; icon: ReactNode; chil
   );
 }
 
+
+type AdminBooking = {
+  id: string;
+  referenceCode: string;
+  serviceType: string;
+  status: string;
+  scheduledAt: string;
+};
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+
 const navItems = [
   { label: 'Dashboard', icon: '◫' },
   { label: 'Bookings', icon: '◈' },
@@ -52,10 +63,20 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000
 export function App() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
 
-  useEffect(() => {
-    fetch(`${API_BASE_URL}/bookings`).then((res) => res.json()).then((data: { bookings?: AdminBooking[] }) => {
+  useEffect(() => {    fetch(`${API_BASE_URL}/bookings`).then((res) => res.json()).then((data: { bookings?: AdminBooking[] }) => {
       if (Array.isArray(data.bookings)) setBookings(data.bookings);
     }).catch(() => undefined);
+    const load = async () => {
+      try {
+        const res = await fetch(`${API_BASE}/bookings`);
+        const payload = await res.json();
+        setBookings(payload.bookings ?? []);
+      } catch {
+        setBookings([]);
+      }
+    };
+    // TODO: Replace polling with realtime Firestore listeners when persistence is connected.
+    load();
   }, []);
 
   return (
@@ -111,7 +132,7 @@ export function App() {
                     <table className="w-full min-w-[620px] text-left text-sm">
                       <thead className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         <tr>
-                          {['ID', 'Service', 'Status', 'Driver', 'ETA'].map((h) => (
+                          {['Reference', 'Service', 'Status', 'Schedule'].map((h) => (
                             <th key={h} className="px-2 py-2">{h}</th>
                           ))}
                         </tr>
@@ -124,6 +145,7 @@ export function App() {
                             <td className="px-2 py-3">{row.status}</td>
                             <td className="px-2 py-3">Unassigned</td>
                             <td className="px-2 py-3">{new Date(row.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
+                            <td className="px-2 py-3">{new Date(row.scheduledAt).toLocaleString()}</td>
                           </tr>
                         ))}
                       </tbody>
