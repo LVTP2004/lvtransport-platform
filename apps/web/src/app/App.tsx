@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 
-type Step = 1 | 2 | 3;
+type Step = 1 | 2 | 3 | 4;
 
 type Vehicle = {
   name: string;
@@ -36,6 +36,8 @@ export function App() {
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
+  const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'payconiq'>('stripe');
+  const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'paid'>('idle');
 
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
@@ -46,7 +48,7 @@ export function App() {
     return Math.round(total);
   }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
 
-  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const nextStep = () => setStep((v) => (v < 4 ? ((v + 1) as Step) : v));
   const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
 
   return (
@@ -63,7 +65,7 @@ export function App() {
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="glass-panel rounded-3xl p-4 sm:p-6">
             <div className="mb-6 flex items-center justify-between">
-              <p className="text-sm text-lv-mist">Step {step} of 3</p>
+              <p className="text-sm text-lv-mist">Step {Math.min(step,3)} of 3</p>
               <div className="flex w-32 gap-2">
                 {[1, 2, 3].map((i) => (
                   <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />
@@ -133,7 +135,26 @@ export function App() {
                     </div>
                     <span>{businessVip ? 'On' : 'Off'}</span>
                   </button>
+                  <div className="rounded-2xl border border-lv-gold/20 bg-black/20 p-3">
+                    <p className="text-xs uppercase tracking-[0.2em] text-lv-mist">Test payment provider</p>
+                    <div className="mt-2 grid grid-cols-2 gap-2">
+                      <button className={`toggle-card ${paymentProvider === 'stripe' ? 'toggle-card--active' : ''}`} onClick={() => setPaymentProvider('stripe')}>Stripe Test</button>
+                      <button className={`toggle-card ${paymentProvider === 'payconiq' ? 'toggle-card--active' : ''}`} onClick={() => setPaymentProvider('payconiq')}>Payconiq Test</button>
+                    </div>
+                  </div>
                 </>
+              )}
+
+              {step === 4 && (
+                <div className="rounded-2xl border border-lv-gold/20 bg-black/30 p-5">
+                  <p className="text-sm text-lv-mist">Payment confirmation</p>
+                  <p className="mt-2">Provider: <strong>{paymentProvider}</strong> (test mode)</p>
+                  <p>Status: <strong>{paymentStatus === 'paid' ? 'Paid' : paymentStatus === 'pending' ? 'Checkout pending' : 'Not started'}</strong></p>
+                  <div className="mt-4 flex gap-2">
+                    <Button onClick={() => { setPaymentStatus('pending'); }}>Prepare checkout</Button>
+                    <Button onClick={() => { setPaymentStatus('paid'); }} variant="secondary">Simulate success</Button>
+                  </div>
+                </div>
               )}
             </div>
 
@@ -141,10 +162,10 @@ export function App() {
               <Button variant="secondary" className="flex-1" onClick={prevStep}>
                 Back
               </Button>
-              {step < 3 ? (
+              {step < 4 ? (
                 <Button className="flex-1" onClick={nextStep}>Continue</Button>
               ) : (
-                <Button className="flex-1 shadow-gold-md">Confirm booking UI</Button>
+                <Button className="flex-1 shadow-gold-md">Finalize booking</Button>
               )}
             </div>
           </div>
