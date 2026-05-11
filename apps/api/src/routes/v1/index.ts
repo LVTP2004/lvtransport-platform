@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
+import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
 import trackingRoutes from './tracking.routes.js';
 import notificationRoutes from './notifications.routes.js';
 import mapsRoutes from './maps.routes.js';
@@ -15,5 +16,36 @@ router.use(mapsRoutes);
 router.use(bookingRoutes);
 router.use('/bookings', bookingRoutes);
 router.use(bookingsRoutes);
+
+router.get('/bookings', (_req, res) => {
+  res.json({ bookings: realtimeOrchestratorService.listBookings() });
+});
+
+router.post('/bookings', (req, res, next) => {
+  try {
+    const booking = realtimeOrchestratorService.createBooking(req.body);
+    res.status(201).json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/bookings/:bookingId/assign-driver', (req, res, next) => {
+  try {
+    const booking = realtimeOrchestratorService.assignDriver({ bookingId: req.params.bookingId, ...req.body });
+    res.json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/bookings/:bookingId/status', (req, res, next) => {
+  try {
+    const booking = realtimeOrchestratorService.transitionStatus({ bookingId: req.params.bookingId, ...req.body });
+    res.json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
 
 export default router;

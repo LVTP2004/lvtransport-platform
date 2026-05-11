@@ -1,8 +1,18 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BookingLifecycle } from '@lvtransport/realtime';
 import { Button } from '@lvtransport/ui';
 
 type Step = 1 | 2 | 3;
 type ServiceType = 'standard' | 'airport' | 'vip';
+
+
+
+type LiveBooking = {
+  id: string;
+  code: string;
+  status: BookingLifecycle;
+  version: number;
+};
 
 type Vehicle = { name: string; eta: string; priceMultiplier: number; seats: number };
 
@@ -104,6 +114,30 @@ export function App() {
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
+  const [customerName, setCustomerName] = useState('Guest Rider');
+  const [liveBooking, setLiveBooking] = useState<LiveBooking | null>(null);
+
+  useEffect(() => {
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data) as { event: string; payload: LiveBooking | LiveBooking[] };
+      if (message.event === 'booking.created' || message.event === 'booking.updated') {
+        const payload = message.payload as LiveBooking;
+        if (liveBooking?.id === payload.id) setLiveBooking(payload);
+      }
+    };
+    return () => ws.close();
+  }, [liveBooking?.id]);
+
+  const createBooking = async () => {
+    const response = await fetch('http://localhost:8080/api/v1/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerName, pickup, destination })
+    });
+    const result = await response.json();
+    setLiveBooking(result.booking);
+  };
   const trackingCode = getTrackingCodeFromPath();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -261,6 +295,10 @@ export function App() {
               {step === 1 && (
                 <>
                   <label className="field-wrap">
+                    <span>Name</span>
+                    <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer name" />
+                  </label>
+                  <label className="field-wrap">
                     <span>Pickup</span>
                     <input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." />
                   </label>
@@ -330,7 +368,7 @@ export function App() {
               {step < 3 ? (
                 <Button className="flex-1" onClick={nextStep}>Continue</Button>
               ) : (
-                <Button className="flex-1 shadow-gold-md">Confirm booking UI</Button>
+                <Button className="flex-1 shadow-gold-md" onClick={createBooking}>Create booking</Button>
               )}
             </div>
           </div>
@@ -355,6 +393,12 @@ export function App() {
                 <li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li>
                 <li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li>
               </ul>
+            </article>
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Realtime booking</p>
+              <p className="mt-2 text-sm text-lv-mist">Code: {liveBooking?.code ?? '—'}</p>
+              <p className="text-sm text-lv-mist">Status: {liveBooking?.status ?? 'not created'}</p>
+              <p className="text-sm text-lv-mist">Version: {liveBooking?.version ?? 0}</p>
             </article>
           </aside>
         </section>
