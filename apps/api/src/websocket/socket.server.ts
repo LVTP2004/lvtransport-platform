@@ -16,8 +16,16 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   });
 
   const start = (): void => {
-    server.listen(env.PORT, () => logger.info(`API + WebSocket server listening on port ${env.PORT}`));
+    server.listen(env.port, () => logger.info(`API + WebSocket server listening on port ${env.port}`));
   };
 
-  return { server, wss, start };
+  const stop = async (): Promise<void> => {
+    await new Promise<void>((resolve) => {
+      wss.close(() => {
+        server.close(() => resolve());
+      });
+    });
+  };
+
+  return { server, wss, start, stop };
 };

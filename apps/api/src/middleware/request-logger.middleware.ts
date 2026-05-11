@@ -7,10 +7,13 @@ export const requestLoggerMiddleware = (req: Request, res: Response, next: NextF
   res.on('finish', () => {
     const durationMs = Date.now() - startedAt;
     logger.info('HTTP request', {
+      requestId: res.locals.requestId,
       method: req.method,
       path: req.originalUrl,
       statusCode: res.statusCode,
       durationMs,
+      userAgent: req.get('user-agent'),
+      ip: req.ip,
     });
   });
 
