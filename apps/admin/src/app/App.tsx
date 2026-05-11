@@ -46,6 +46,12 @@ const navItems = [
   { label: 'Settings', icon: '⚙' },
 ];
 
+const notificationFeed = [
+  'New booking BK-2048 requires dispatcher review',
+  'Driver assigned for BK-2041, customer notified',
+  'Delivery retry queued for BK-2038 (mock_dev provider)'
+];
+
 const bookings = [
   ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40'],
   ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55'],
@@ -170,6 +176,13 @@ export function App() {
             </section>
 
             <section className="grid gap-5 lg:grid-cols-2">
+              <Panel title="Notification Queue" icon={<span>🔔</span>}>
+                <ul className="space-y-2 text-sm text-zinc-300">
+                  {notificationFeed.map((item) => (
+                    <li key={item} className="rounded-lg border border-zinc-800 bg-zinc-900 p-2">{item}</li>
+                  ))}
+                </ul>
+              </Panel>
               <Panel title="Customer Activity" icon={<span>◎</span>}><p className="text-sm text-zinc-300">Bookings/hour peak: 94 • Repeat customer ratio: 47% • App satisfaction: 4.8/5.</p></Panel>
               <Panel title="Audit / Activity Log" icon={<span>◷</span>}><p className="text-sm text-zinc-300">10:32 Dispatch reassigned R-8821 • 10:29 Fare override approved • 10:25 Driver status updated.</p></Panel>
             </section>

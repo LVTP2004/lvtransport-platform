@@ -16,6 +16,12 @@ const vehicles: Vehicle[] = [
   { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10 }
 ];
 
+
+const getTrackingCodeFromPath = (): string | null => {
+  const match = window.location.pathname.match(/^\/tracking\/([a-zA-Z0-9_-]+)$/);
+  return match?.[1] ?? null;
+};
+
 const formatDateTime = (value: string) => {
   if (!value) return 'Select schedule';
   return new Date(value).toLocaleString('en-US', {
@@ -36,6 +42,7 @@ export function App() {
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
+  const trackingCode = getTrackingCodeFromPath();
 
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
@@ -48,6 +55,23 @@ export function App() {
 
   const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
   const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  if (trackingCode) {
+    return (
+      <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <section className="glass-panel rounded-3xl p-6 sm:p-8">
+            <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">Live trip tracking</p>
+            <h1 className="mt-3 text-3xl font-semibold">Tracking code: {trackingCode}</h1>
+            <p className="mt-2 text-sm text-lv-mist">Public tracking lookup flow is prepared. Backend validation and realtime map feed can now attach here.</p>
+            <div className="mt-5 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+              Status: waiting_for_dispatch • Route: pending • Driver: unassigned
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
