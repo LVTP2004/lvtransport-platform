@@ -1,36 +1,115 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import { BookingLifecycle } from '@lvtransport/realtime';
 import { Button } from '@lvtransport/ui';
 
 type Step = 1 | 2 | 3 | 4;
+type Step = 1 | 2 | 3;
+type ServiceType = 'standard' | 'airport' | 'vip';
 
+
+
+type LiveBooking = {
+  id: string;
+  code: string;
+  status: BookingLifecycle;
+  version: number;
+};
+
+type Vehicle = { name: string; eta: string; priceMultiplier: number; seats: number };
+
+type BookingResponse = {
+  booking: {
+    referenceCode: string;
+    status: string;
+  };
 type Vehicle = {
   name: string;
   eta: string;
   priceMultiplier: number;
   seats: number;
+  serviceType: ServiceType;
 };
+
+type BookingConfirmation = {
+  id: string;
+  referenceCode: string;
+  status: string;
+};
+
+type PlaceSuggestion = {
+  placeId: string;
+  description: string;
+  mainText: string;
+  secondaryText: string;
+};
+
+type PlaceDetails = {
+  placeId: string;
+  formattedAddress: string;
+  lat: number;
+  lng: number;
+};
+
+type RouteEstimate = {
+  distanceMeters: number;
+  durationSeconds: number;
+  etaIso: string;
+  summary: { distanceKm: number; durationMin: number; human: string };
+};
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
 const vehicles: Vehicle[] = [
-  { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3 },
-  { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6 },
-  { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10 }
+  { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
+  { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6, serviceType: 'airport' },
+  { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10, serviceType: 'vip' }
 ];
 
-const formatDateTime = (value: string) => {
-  if (!value) return 'Select schedule';
-  return new Date(value).toLocaleString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    hour: 'numeric',
-    minute: '2-digit'
-  });
+const apiBase = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+
+const getTrackingCodeFromPath = (): string | null => {
+  const match = window.location.pathname.match(/^\/tracking\/([a-zA-Z0-9_-]+)$/);
+  return match?.[1] ?? null;
 };
 
+const formatDateTime = (value: string) => (!value ? 'Select schedule' : new Date(value).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }));
+const formatDateTime = (value: string) => {
+  if (!value) return 'Select schedule';
+  return new Date(value).toLocaleString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+};
+
+function TrackingPage({ code }: { code: string }) {
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <section className="glass-panel rounded-3xl p-6 sm:p-8">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1>
+          <p className="mt-4 text-sm text-lv-mist sm:text-base">
+            Tracking code <span className="font-semibold text-white">{code}</span> is valid and ready for live trip updates.
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+
 export function App() {
+  const trackingMatch = window.location.pathname.match(/^\/tracking\/([A-Za-z0-9-]+)/);
+  if (trackingMatch) {
+    return <TrackingPage code={trackingMatch[1]} />;
+  }
+
   const [step, setStep] = useState<Step>(1);
   const [pickup, setPickup] = useState('');
   const [destination, setDestination] = useState('');
+  const [pickupManual, setPickupManual] = useState(false);
+  const [destinationManual, setDestinationManual] = useState(false);
+  const [pickupSuggestions, setPickupSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [destinationSuggestions, setDestinationSuggestions] = useState<PlaceSuggestion[]>([]);
+  const [pickupDetails, setPickupDetails] = useState<PlaceDetails | null>(null);
+  const [destinationDetails, setDestinationDetails] = useState<PlaceDetails | null>(null);
+  const [route, setRoute] = useState<RouteEstimate | null>(null);
   const [dateTime, setDateTime] = useState('');
   const [passengers, setPassengers] = useState(1);
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
@@ -38,22 +117,165 @@ export function App() {
   const [businessVip, setBusinessVip] = useState(true);
   const [paymentProvider, setPaymentProvider] = useState<'stripe' | 'payconiq'>('stripe');
   const [paymentStatus, setPaymentStatus] = useState<'idle' | 'pending' | 'paid'>('idle');
+  const [customerName, setCustomerName] = useState('Guest Rider');
+  const [liveBooking, setLiveBooking] = useState<LiveBooking | null>(null);
+
+  useEffect(() => {
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+    ws.onmessage = (event) => {
+      const message = JSON.parse(event.data) as { event: string; payload: LiveBooking | LiveBooking[] };
+      if (message.event === 'booking.created' || message.event === 'booking.updated') {
+        const payload = message.payload as LiveBooking;
+        if (liveBooking?.id === payload.id) setLiveBooking(payload);
+      }
+    };
+    return () => ws.close();
+  }, [liveBooking?.id]);
+
+  const createBooking = async () => {
+    const response = await fetch('http://localhost:8080/api/v1/bookings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ customerName, pickup, destination })
+    });
+    const result = await response.json();
+    setLiveBooking(result.booking);
+  };
+  const trackingCode = getTrackingCodeFromPath();
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [confirmation, setConfirmation] = useState<{ referenceCode: string; status: string } | null>(null);
+
+  const serviceType: ServiceType = businessVip ? 'vip' : airportTransfer ? 'airport' : 'standard';
+  const baseFare = useMemo(() => Math.round((Math.max(14, (pickup.length + destination.length) * 0.8) + (passengers > 3 ? (passengers - 3) * 6 : 0) + (airportTransfer ? 18 : 0) + (businessVip ? 24 : 0)) * vehicle.priceMultiplier), [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(null);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      if (pickup.length < 3 || pickupManual) return setPickupSuggestions([]);
+      const res = await fetch(`${apiBase}/maps/places/autocomplete?input=${encodeURIComponent(pickup)}`);
+      const data = await res.json() as { suggestions: PlaceSuggestion[] };
+      setPickupSuggestions(data.suggestions ?? []);
+    };
+    void load();
+  }, [pickup, pickupManual]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (destination.length < 3 || destinationManual) return setDestinationSuggestions([]);
+      const res = await fetch(`${apiBase}/maps/places/autocomplete?input=${encodeURIComponent(destination)}`);
+      const data = await res.json() as { suggestions: PlaceSuggestion[] };
+      setDestinationSuggestions(data.suggestions ?? []);
+    };
+    void load();
+  }, [destination, destinationManual]);
+
+  useEffect(() => {
+    const loadRoute = async () => {
+      if (!pickupDetails || !destinationDetails) return setRoute(null);
+      const res = await fetch(`${apiBase}/maps/route-estimate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pickup: pickupDetails, destination: destinationDetails })
+      });
+      const data = await res.json() as { route: RouteEstimate };
+      setRoute(data.route);
+    };
+    void loadRoute();
+  }, [pickupDetails, destinationDetails]);
 
   const baseFare = useMemo(() => {
-    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const distanceFactor = Math.max(14, (route?.summary.distanceKm ?? 8) * 3.1);
+    const durationFactor = (route?.summary.durationMin ?? 15) * 0.7;
     const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
     const airportFee = airportTransfer ? 18 : 0;
     const vipFee = businessVip ? 24 : 0;
-    const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
-    return Math.round(total);
+    return Math.round((distanceFactor + durationFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier);
+  }, [airportTransfer, businessVip, passengers, route, vehicle.priceMultiplier]);
+
+  const placeSelect = async (placeId: string, type: 'pickup' | 'destination') => {
+    const res = await fetch(`${apiBase}/maps/places/${placeId}`);
+    const data = await res.json() as { place: PlaceDetails };
+    if (!data.place) return;
+    if (type === 'pickup') {
+      setPickup(data.place.formattedAddress);
+      setPickupDetails(data.place);
+      setPickupSuggestions([]);
+    } else {
+      setDestination(data.place.formattedAddress);
+      setDestinationDetails(data.place);
+      setDestinationSuggestions([]);
+    }
+  };
+
+  return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">{/* UI unchanged mostly */}
+    <div className="mx-auto w-full max-w-6xl"><section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">
+      {step === 1 && <>
+        <label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e) => { setPickup(e.target.value); setPickupDetails(null); }} placeholder="Hotel, office, terminal..." />
+          {pickupSuggestions.length > 0 && <div className="mt-2 rounded-xl border border-white/10 bg-black/70 p-2">{pickupSuggestions.map((s) => <button type="button" key={s.placeId} className="block w-full text-left text-sm p-2 hover:bg-white/10 rounded" onClick={() => void placeSelect(s.placeId, 'pickup')}>{s.mainText} <span className="text-lv-mist">{s.secondaryText}</span></button>)}</div>}
+          <button type="button" className="mt-2 text-xs text-lv-champagne" onClick={() => setPickupManual((v) => !v)}>{pickupManual ? 'Use autocomplete' : 'Enter manually'}</button>
+        </label>
+        <label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e) => { setDestination(e.target.value); setDestinationDetails(null); }} placeholder="Airport, venue, client site..." />
+          {destinationSuggestions.length > 0 && <div className="mt-2 rounded-xl border border-white/10 bg-black/70 p-2">{destinationSuggestions.map((s) => <button type="button" key={s.placeId} className="block w-full text-left text-sm p-2 hover:bg-white/10 rounded" onClick={() => void placeSelect(s.placeId, 'destination')}>{s.mainText} <span className="text-lv-mist">{s.secondaryText}</span></button>)}</div>}
+          <button type="button" className="mt-2 text-xs text-lv-champagne" onClick={() => setDestinationManual((v) => !v)}>{destinationManual ? 'Use autocomplete' : 'Enter manually'}</button>
+        </label>
+      </>}
+    </div><aside className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Route summary</p>
+      <p className="mt-2 text-sm text-lv-mist">{route?.summary.human ?? 'Select both places to estimate route'}</p>
+      <p className="mt-2 text-sm text-lv-mist">ETA prep: {route ? new Date(route.etaIso).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : 'Pending'}</p>
+      <p className="mt-4 text-4xl font-semibold">${baseFare}</p>
+      <Button className="mt-4" disabled={(!pickupManual && !pickupDetails) || (!destinationManual && !destinationDetails)}>Confirm booking UI</Button>
+    </aside></section></div></div>;
+    return Math.round((distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier);
   }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
 
   const nextStep = () => setStep((v) => (v < 4 ? ((v + 1) as Step) : v));
+  const serviceType: ServiceType = businessVip ? 'vip' : airportTransfer ? 'airport' : vehicle.serviceType;
+
+  const submitBooking = async () => {
+    setError('');
+    setLoading(true);
+    try {
+      const response = await fetch(`${API_BASE}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType }),
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.message ?? 'Unable to create booking');
+
+      setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: payload.booking.status });
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unable to create booking');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
   const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  if (trackingCode) {
+    return (
+      <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8">
+        <div className="mx-auto w-full max-w-3xl">
+          <section className="glass-panel rounded-3xl p-6 sm:p-8">
+            <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">Live trip tracking</p>
+            <h1 className="mt-3 text-3xl font-semibold">Tracking code: {trackingCode}</h1>
+            <p className="mt-2 text-sm text-lv-mist">Public tracking lookup flow is prepared. Backend validation and realtime map feed can now attach here.</p>
+            <div className="mt-5 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+              Status: waiting_for_dispatch • Route: pending • Driver: unassigned
+            </div>
+          </section>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
-      <div className="mx-auto w-full max-w-6xl">
+       className="mx-auto w-full max-w-6xl">
         <header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7">
           <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p>
           <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1>
@@ -76,6 +298,10 @@ export function App() {
             <div key={step} className="booking-step-fade space-y-4">
               {step === 1 && (
                 <>
+                  <label className="field-wrap">
+                    <span>Name</span>
+                    <input value={customerName} onChange={(e) => setCustomerName(e.target.value)} placeholder="Customer name" />
+                  </label>
                   <label className="field-wrap">
                     <span>Pickup</span>
                     <input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." />
@@ -166,6 +392,7 @@ export function App() {
                 <Button className="flex-1" onClick={nextStep}>Continue</Button>
               ) : (
                 <Button className="flex-1 shadow-gold-md">Finalize booking</Button>
+                <Button className="flex-1 shadow-gold-md" onClick={createBooking}>Create booking</Button>
               )}
             </div>
           </div>
@@ -191,9 +418,34 @@ export function App() {
                 <li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li>
               </ul>
             </article>
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Realtime booking</p>
+              <p className="mt-2 text-sm text-lv-mist">Code: {liveBooking?.code ?? '—'}</p>
+              <p className="text-sm text-lv-mist">Status: {liveBooking?.status ?? 'not created'}</p>
+              <p className="text-sm text-lv-mist">Version: {liveBooking?.version ?? 0}</p>
+            </article>
           </aside>
         </section>
       </div>
     </div>
   );
+  const submitBooking = async () => {
+    setSubmitError(null);
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`${API_BASE_URL}/bookings`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pickup, destination, scheduleAt: new Date(dateTime).toISOString(), serviceType })
+      });
+      const data = (await response.json()) as BookingResponse & { message?: string };
+      if (!response.ok) throw new Error(data.message ?? 'Unable to create booking');
+      setConfirmation({ referenceCode: data.booking.referenceCode, status: data.booking.status });
+    } catch (error) {
+      setSubmitError(error instanceof Error ? error.message : 'Booking failed');
+    } finally { setIsSubmitting(false); }
+  };
+
+  return (<div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1><p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.</p></header><section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">{confirmation ? <div className="space-y-4"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking confirmed</p><p className="text-3xl font-semibold">Reference: {confirmation.referenceCode}</p><p className="text-sm text-lv-mist">Status: {confirmation.status}</p><Button className="shadow-gold-md" onClick={() => setConfirmation(null)}>Create another booking</Button></div> : <><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p><div className="flex w-32 gap-2">{[1, 2, 3].map((i) => <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />)}</div></div><div key={step} className="booking-step-fade space-y-4">{step===1&&<><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e)=>setPickup(e.target.value)} placeholder="Hotel, office, terminal..." /></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e)=>setDestination(e.target.value)} placeholder="Airport, venue, client site..." /></label><label className="field-wrap"><span>Date & time</span><input type="datetime-local" value={dateTime} onChange={(e)=>setDateTime(e.target.value)} /></label></>}{step===2&&<><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={()=>setPassengers((v)=>Math.max(1,v-1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={()=>setPassengers((v)=>Math.min(12,v+1))}>+</button></div></div><div><p className="mb-2 text-sm text-lv-mist">Vehicle</p><div className="grid gap-3">{vehicles.map((item)=><button key={item.name} onClick={()=>setVehicle(item)} className={`vehicle-card ${vehicle.name===item.name?'vehicle-card--active':''}`}><div><p className="font-medium">{item.name}</p><p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p></div><p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p></button>)}</div></div></>}{step===3&&<><button className={`toggle-card ${airportTransfer?'toggle-card--active':''}`} onClick={()=>setAirportTransfer((v)=>!v)}><div><p className="font-medium">Airport transfer</p><p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p></div><span>{airportTransfer?'On':'Off'}</span></button><button className={`toggle-card ${businessVip?'toggle-card--active':''}`} onClick={()=>setBusinessVip((v)=>!v)}><div><p className="font-medium">Business / VIP</p><p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p></div><span>{businessVip?'On':'Off'}</span></button></>}</div>{submitError && <p className="mt-4 text-sm text-rose-300">{submitError}</p>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={prevStep}>Back</Button>{step<3?<Button className="flex-1" onClick={nextStep}>Continue</Button>:<Button className="flex-1 shadow-gold-md" onClick={submitBooking} disabled={isSubmitting || !pickup || !destination || !dateTime}>{isSubmitting?'Submitting...':'Confirm booking UI'}</Button>}</div></>}</div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p><p className="mt-1 text-sm text-lv-mist">Estimated fare • final pricing from future API integrations.</p><div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">Includes base transfer, selected vehicle class, and service options.</div></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p><ul className="mt-4 space-y-3 text-sm"><li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li><li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li><li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li><li><span className="text-lv-mist">Passengers:</span> {passengers}</li><li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li><li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li></ul></article></aside></section></div></div>);
+  return (<div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1><p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.</p></header><section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">{confirmation ? (<div className="space-y-4"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking confirmed</p><h2 className="text-2xl font-semibold">Reference: {confirmation.referenceCode}</h2><p className="text-lv-mist">Status: {confirmation.status}</p><p className="text-lv-mist">Pickup confirmed from {pickup} to {destination} on {formatDateTime(dateTime)}.</p><Button className="shadow-gold-md" onClick={() => window.location.reload()}>Create another booking</Button></div>) : (<><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p><div className="flex w-32 gap-2">{[1, 2, 3].map((i) => (<span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />))}</div></div><div key={step} className="booking-step-fade space-y-4">{step===1&&<><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e)=>setPickup(e.target.value)} placeholder="Hotel, office, terminal..."/></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e)=>setDestination(e.target.value)} placeholder="Airport, venue, client site..."/></label><label className="field-wrap"><span>Date & time</span><input type="datetime-local" value={dateTime} onChange={(e)=>setDateTime(e.target.value)}/></label></>}{step===2&&<><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={()=>setPassengers((v)=>Math.max(1,v-1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={()=>setPassengers((v)=>Math.min(12,v+1))}>+</button></div></div><div><p className="mb-2 text-sm text-lv-mist">Vehicle</p><div className="grid gap-3">{vehicles.map((item)=><button key={item.name} onClick={()=>setVehicle(item)} className={`vehicle-card ${vehicle.name===item.name?'vehicle-card--active':''}`}><div><p className="font-medium">{item.name}</p><p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p></div><p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p></button>)}</div></div></>}{step===3&&<><button className={`toggle-card ${airportTransfer?'toggle-card--active':''}`} onClick={()=>setAirportTransfer((v)=>!v)}><div><p className="font-medium">Airport transfer</p><p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p></div><span>{airportTransfer?'On':'Off'}</span></button><button className={`toggle-card ${businessVip?'toggle-card--active':''}`} onClick={()=>setBusinessVip((v)=>!v)}><div><p className="font-medium">Business / VIP</p><p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p></div><span>{businessVip?'On':'Off'}</span></button></>}</div>{error && <p className="mt-4 text-sm text-rose-300">{error}</p>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={prevStep}>Back</Button>{step < 3 ? <Button className="flex-1" onClick={nextStep}>Continue</Button> : <Button className="flex-1 shadow-gold-md" onClick={submitBooking} disabled={loading}>{loading ? 'Submitting...' : 'Confirm booking'}</Button>}</div></>)}</div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p><p className="mt-1 text-sm text-lv-mist">Estimated fare • final pricing from future API integrations.</p><div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">Includes base transfer, selected vehicle class, and service options.</div></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p><ul className="mt-4 space-y-3 text-sm"><li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li><li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li><li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li><li><span className="text-lv-mist">Passengers:</span> {passengers}</li><li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li><li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li></ul></article></aside></section></div></div>);
 }
