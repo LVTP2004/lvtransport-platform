@@ -19,6 +19,21 @@ export interface BookingNotificationContext {
   driverName?: string;
 }
 
+export type NotificationAudience = 'customer' | 'driver' | 'admin';
+export type NotificationStatus = 'queued' | 'sent' | 'failed' | 'retrying';
+
+export interface NotificationRecipient {
+  recipientId: string;
+  email?: string;
+  phone?: string;
+}
+
+export interface NotificationMessage {
+  notificationId: string;
+  bookingId: string;
+  audience: NotificationAudience;
+  recipient: NotificationRecipient;
+  channels: NotificationChannel[];
 export interface NotificationMessage {
   id: string;
   recipientId: string;
@@ -132,4 +147,22 @@ export interface NotificationDeliveryLog {
   finalState: NotificationLifecycleState;
   attempts: DeliveryAttempt[];
   lastUpdatedAt: string;
+}
+
+export interface NotificationDeliveryLog {
+  id: string;
+  notificationId: string;
+  bookingId: string;
+  channel: NotificationChannel;
+  provider: 'mock-dev';
+  status: NotificationStatus;
+  attempts: number;
+  error?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface NotificationTemplateSet {
+  email: { subject: string; preview: string; html: string; text: string };
+  whatsapp: { text: string; variables: Record<string, string> };
 }
