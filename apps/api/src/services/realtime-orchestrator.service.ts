@@ -80,9 +80,25 @@ const bookings = new Map<string, BookingRecord>();
 const idempotencyKeys = new Set<string>();
 const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
+const eventReplayBuffer: string[] = [];
+const MAX_REPLAY_EVENTS = 250;
+let eventSequence = 0;
+let heartbeatInterval: NodeJS.Timeout | undefined;
+
+type RealtimeSocket = WebSocket & { isAlive?: boolean };
 
 const emit = (event: string, payload: unknown) => {
-  const envelope = JSON.stringify({ event, payload, at: new Date().toISOString() });
+  const envelopeObject = {
+    event,
+    payload,
+    at: new Date().toISOString(),
+    sequence: ++eventSequence
+  };
+  const envelope = JSON.stringify(envelopeObject);
+  eventReplayBuffer.push(envelope);
+  if (eventReplayBuffer.length > MAX_REPLAY_EVENTS) {
+    eventReplayBuffer.splice(0, eventReplayBuffer.length - MAX_REPLAY_EVENTS);
+  }
   for (const client of websocketClients) {
     if (client.readyState === client.OPEN) {
       client.send(envelope);
@@ -91,16 +107,55 @@ const emit = (event: string, payload: unknown) => {
   bookingEvents.emit(event, payload);
 };
 
+const parseLastSequenceFromUrl = (url?: string): number | null => {
+  if (!url) return null;
+  const queryIndex = url.indexOf('?');
+  if (queryIndex < 0) return null;
+  const query = url.slice(queryIndex + 1);
+  const parsed = new URLSearchParams(query).get('lastSequence');
+  if (!parsed) return null;
+  const asNumber = Number(parsed);
+  return Number.isFinite(asNumber) && asNumber > 0 ? asNumber : null;
+};
+
 const createBookingCode = () => `LV-${Math.floor(100000 + Math.random() * 900000)}`;
 
 export const realtimeOrchestratorService = {
-  initialize(): void {},
+  initialize(): void {
+    if (heartbeatInterval) return;
+    heartbeatInterval = setInterval(() => {
+      for (const socket of websocketClients) {
+        const client = socket as RealtimeSocket;
+        if (client.isAlive === false) {
+          socket.terminate();
+          websocketClients.delete(socket);
+          continue;
+        }
+        client.isAlive = false;
+        socket.ping();
+      }
+    }, 30000);
+  },
 
   registerClient(socket: WebSocket): void {
+    const client = socket as RealtimeSocket;
+    client.isAlive = true;
     websocketClients.add(socket);
+    socket.on('pong', () => {
+      client.isAlive = true;
+    });
     socket.on('close', () => websocketClients.delete(socket));
-    socket.send(JSON.stringify({ event: 'booking.snapshot', payload: Array.from(bookings.values()) }));
-    socket.send(JSON.stringify({ event: 'driver.snapshot', payload: Array.from(driverStates.values()) }));
+    const lastSequence = parseLastSequenceFromUrl((socket as unknown as { url?: string }).url);
+    if (lastSequence) {
+      for (const replayEvent of eventReplayBuffer) {
+        const parsed = JSON.parse(replayEvent) as { sequence?: number };
+        if ((parsed.sequence ?? 0) > lastSequence) {
+          socket.send(replayEvent);
+        }
+      }
+    }
+    socket.send(JSON.stringify({ event: 'booking.snapshot', payload: Array.from(bookings.values()), sequence: eventSequence }));
+    socket.send(JSON.stringify({ event: 'driver.snapshot', payload: Array.from(driverStates.values()), sequence: eventSequence }));
   },
 
   on(event: string, handler: (payload: unknown) => void): void {
@@ -168,6 +223,7 @@ export const realtimeOrchestratorService = {
     if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
     if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) throw new Error('VERSION_CONFLICT');
+    if (booking.status === params.nextStatus) return booking;
     const nextAllowed = allowedTransitions[booking.status];
     if (!nextAllowed.includes(params.nextStatus)) throw new Error('INVALID_TRANSITION');
 
@@ -203,6 +259,10 @@ export const realtimeOrchestratorService = {
       return driverStates.get(params.driverId) ?? { driverId: params.driverId, state: params.state, lastUpdatedAt: new Date().toISOString() };
     }
     const now = new Date().toISOString();
+    const existingState = driverStates.get(params.driverId);
+    if (existingState && existingState.state === params.state && existingState.activeBookingId === params.bookingId) {
+      return existingState;
+    }
     const nextState: DriverRealtimeState = {
       driverId: params.driverId,
       state: params.state,
@@ -210,6 +270,20 @@ export const realtimeOrchestratorService = {
       lastUpdatedAt: now
     };
     driverStates.set(params.driverId, nextState);
+    if (params.bookingId) {
+      const booking = bookings.get(params.bookingId);
+      if (booking && booking.assignedDriverId === params.driverId) {
+        const mappedStatus = (params.state === 'available' ? 'available' : params.state) as BookingLifecycleStatus;
+        if (booking.status !== mappedStatus && allowedTransitions[booking.status].includes(mappedStatus)) {
+          booking.status = mappedStatus;
+          booking.version += 1;
+          booking.updatedAt = now;
+          booking.timeline.push({ status: mappedStatus, actor: 'driver', at: now, note: 'Synced from driver state' });
+          emit('booking.updated', booking);
+          emit('booking.lifecycle.changed', booking);
+        }
+      }
+    }
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
     emit('driver.status.updated', nextState);
     emit('admin.live.updated', { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
