@@ -57,11 +57,15 @@ const navItems = [
   { label: 'Settings', icon: '⚙' },
 ];
 
+type AdminBooking = { id: string; referenceCode: string; serviceType: string; status: string; createdAt: string };
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
 export function App() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
 
-  useEffect(() => {
+  useEffect(() => {    fetch(`${API_BASE_URL}/bookings`).then((res) => res.json()).then((data: { bookings?: AdminBooking[] }) => {
+      if (Array.isArray(data.bookings)) setBookings(data.bookings);
+    }).catch(() => undefined);
     const load = async () => {
       try {
         const res = await fetch(`${API_BASE}/bookings`);
@@ -139,6 +143,8 @@ export function App() {
                             <td className="px-2 py-3">{row.referenceCode}</td>
                             <td className="px-2 py-3">{row.serviceType}</td>
                             <td className="px-2 py-3">{row.status}</td>
+                            <td className="px-2 py-3">Unassigned</td>
+                            <td className="px-2 py-3">{new Date(row.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</td>
                             <td className="px-2 py-3">{new Date(row.scheduledAt).toLocaleString()}</td>
                           </tr>
                         ))}
