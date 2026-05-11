@@ -27,7 +27,28 @@ const formatDateTime = (value: string) => {
   });
 };
 
+function TrackingPage({ code }: { code: string }) {
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <section className="glass-panel rounded-3xl p-6 sm:p-8">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1>
+          <p className="mt-4 text-sm text-lv-mist sm:text-base">
+            Tracking code <span className="font-semibold text-white">{code}</span> is valid and ready for live trip updates.
+          </p>
+        </section>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
+  const trackingMatch = window.location.pathname.match(/^\/tracking\/([A-Za-z0-9-]+)/);
+  if (trackingMatch) {
+    return <TrackingPage code={trackingMatch[1]} />;
+  }
+
   const [step, setStep] = useState<Step>(1);
   const [pickup, setPickup] = useState('');
   const [destination, setDestination] = useState('');
