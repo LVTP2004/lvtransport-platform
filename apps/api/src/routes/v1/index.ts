@@ -50,4 +50,17 @@ router.post('/bookings/:bookingId/status', (req, res, next) => {
   }
 });
 
+router.get('/drivers/live-states', (_req, res) => {
+  res.json({ drivers: realtimeOrchestratorService.listDriverStates() });
+});
+
+router.post('/drivers/:driverId/status', (req, res, next) => {
+  try {
+    const driver = realtimeOrchestratorService.updateDriverState({ driverId: req.params.driverId, ...req.body });
+    res.json({ driver });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;
