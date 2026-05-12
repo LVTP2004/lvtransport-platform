@@ -8,6 +8,7 @@ import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
 import bookingsRoutes from './bookings.routes.js';
 import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
+import { listOperationalIncidents } from '../../utils/operational-monitoring.js';
 
 const router = Router();
 router.use(healthRoutes);
@@ -69,6 +70,12 @@ router.post('/dispatch/cleanup-stale-assignments', (_req, res) => {
 
 router.get('/dispatch/diagnostics', (_req, res) => {
   res.json(realtimeOrchestratorService.getDispatchDiagnostics());
+});
+router.get('/operations/diagnostics', (_req, res) => {
+  res.json(realtimeOrchestratorService.getOperationalDiagnostics());
+});
+router.get('/operations/incidents', (_req, res) => {
+  res.json({ incidents: listOperationalIncidents() });
 });
 
 router.post('/drivers/:driverId/restore-assignments', (req, res) => {
