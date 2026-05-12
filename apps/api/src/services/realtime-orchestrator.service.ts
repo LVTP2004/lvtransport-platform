@@ -37,6 +37,7 @@ const idempotencyKeys = new Set<string>();
 const idempotencyKeyTimestamps = new Map<string, number>();
 const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
+const driverLocationTimestamps = new Map<string, number>();
 const eventReplayBuffer: string[] = [];
 const telemetrySessions = new Map<string, DriverTelemetrySession>();
 const bookingTelemetryIndex = new Map<string, string>();
@@ -46,6 +47,8 @@ let staleCleanupInterval: NodeJS.Timeout | undefined;
 const IDEMPOTENCY_TTL_MS = 10 * 60 * 1000;
 const TELEMETRY_STALE_MS = 45 * 1000;
 const MAX_TELEMETRY_POINTS = 60;
+const DRIVER_LOCATION_MIN_INTERVAL_MS = 5000;
+const TERMINAL_BOOKING_STATUSES = new Set<BookingLifecycleStatus>(['completed', 'cancelled', 'failed']);
 
 const emit = (event: string, payload: unknown) => {
   const envelope = JSON.stringify({ event, payload, at: new Date().toISOString(), sequence: ++eventSequence });
@@ -215,6 +218,22 @@ export const realtimeOrchestratorService = {
       indexedBookings: bookingTelemetryIndex.size,
       sessions: Array.from(telemetrySessions.values())
     };
+  shareDriverLocation(params: { driverId: string; bookingId: string; location: { lat: number; lng: number; heading?: number; accuracyMeters?: number }; source?: 'gps' | 'fallback' }): { accepted: boolean; reason?: string; driver?: DriverRealtimeState } {
+    const booking = bookings.get(params.bookingId);
+    if (!booking) return { accepted: false, reason: 'BOOKING_NOT_FOUND' };
+    if (booking.assignedDriverId !== params.driverId) return { accepted: false, reason: 'DRIVER_NOT_ASSIGNED' };
+    if (TERMINAL_BOOKING_STATUSES.has(booking.status)) return { accepted: false, reason: 'BOOKING_TERMINAL' };
+    const now = Date.now();
+    const lastAt = driverLocationTimestamps.get(params.driverId) ?? 0;
+    if (now - lastAt < DRIVER_LOCATION_MIN_INTERVAL_MS) return { accepted: false, reason: 'THROTTLED' };
+    driverLocationTimestamps.set(params.driverId, now);
+    const driver = this.updateDriverState({ driverId: params.driverId, bookingId: params.bookingId, state: driverStates.get(params.driverId)?.state ?? 'assigned', location: { lat: params.location.lat, lng: params.location.lng } });
+    booking.tracking.lastKnownLocation = { lat: params.location.lat, lng: params.location.lng, heading: params.location.heading };
+    booking.tracking.gpsProvider = params.source === 'fallback' ? 'future' : 'none';
+    booking.tracking.updatedAt = new Date(now).toISOString();
+    emit(realtimeOperationalEvents.bookingUpdated, booking);
+    emit(realtimeOperationalEvents.adminLiveUpdated, { driverId: params.driverId, bookingId: params.bookingId, location: params.location, updatedAt: booking.tracking.updatedAt, visibility: { admin: true, customerTrackingReady: true } });
+    return { accepted: true, driver };
   },
   prepareDriverAssignment(input: { bookingId: string; pickupLocation: { lat: number; lng: number } }): { bookingId: string; candidates: Array<{ driverId: string; distanceKm: number | null; totalScore: number; state: DriverState; locationKnown: boolean }> } {
     const booking = bookings.get(input.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
