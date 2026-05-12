@@ -7,7 +7,7 @@ export type NotificationChannel =
   | 'webhook';
 
 export type NotificationAudience = 'customer' | 'driver' | 'admin' | 'support' | 'business';
-export type NotificationProvider = 'mock_dev';
+export type NotificationProvider = 'mock_dev' | 'internal_push_router';
 
 export type NotificationType =
   | 'booking_confirmation'
@@ -19,32 +19,7 @@ export type NotificationType =
   | 'customer_tracking_link'
   | 'booking_cancellation';
 
-export type NotificationLifecycleStatus =
-  | 'queued'
-  | 'processing'
-  | 'delivered'
-  | 'retrying'
-  | 'failed'
-  | 'archived';
-
-export type NotificationTemplateKind =
-  | 'booking_confirmation'
-  | 'booking_status_update'
-  | 'driver_assigned'
-  | 'admin_new_booking_alert';
-
-export interface BookingNotificationContext {
-  bookingId: string;
-  customerId: string;
-  status: 'pending' | 'confirmed' | 'driver_assigned' | 'en_route' | 'completed' | 'cancelled';
-  pickup: string;
-  dropoff: string;
-  scheduledAt: string;
-  trackingCode: string;
-  trackingUrl: string;
-  driverId?: string;
-  driverName?: string;
-}
+export type NotificationLifecycleStatus = 'queued' | 'processing' | 'delivered' | 'retrying' | 'failed' | 'archived';
 
 export interface NotificationMessage {
   notificationId: string;
@@ -69,21 +44,27 @@ export interface NotificationMessage {
   };
 }
 
-export interface NotificationDeliveryLog {
-  id: string;
-  notificationId: string;
-  bookingId?: string;
-  recipientId: string;
-  audience: NotificationAudience;
-  channel: NotificationChannel;
-  provider: NotificationProvider;
-  status: NotificationLifecycleStatus;
-  attempt: number;
-  occurredAt: string;
-  failureReason?: string;
+export interface NotificationDeliveryLog { id: string; notificationId: string; bookingId?: string; recipientId: string; audience: NotificationAudience; channel: NotificationChannel; provider: NotificationProvider; status: NotificationLifecycleStatus; attempt: number; occurredAt: string; failureReason?: string; }
+
+export interface NotificationQueueEntry { queueId: string; notificationId: string; state: NotificationLifecycleStatus; enqueuedAt: string; audience: NotificationAudience; }
+
+export interface NotificationDiagnostics {
+  totalNotifications: number;
+  activeNotifications: number;
+  failedNotifications: number;
+  retryingNotifications: number;
+  queuedEvents: number;
+  lastUpdatedAt: string;
 }
 
-export interface NotificationTemplateSet {
-  email: { subject: string; preview: string; html: string; text: string };
-  whatsapp: { text: string; variables: Record<string, string> };
+export interface NotificationEventEnvelope {
+  notificationId: string;
+  bookingId?: string;
+  audience: NotificationAudience;
+  type: NotificationType;
+  channels: NotificationChannel[];
+  state: NotificationLifecycleStatus;
+  message: string;
+  occurredAt: string;
+  reconnectSafe: boolean;
 }
