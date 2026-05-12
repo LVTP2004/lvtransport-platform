@@ -44,7 +44,7 @@ router.post('/bookings/:bookingId/assign-driver/preparation', (req, res, next) =
   try {
     const assignmentPreparation = realtimeOrchestratorService.prepareDriverAssignment({
       bookingId: req.params.bookingId,
-      pickupLocation: req.body.pickupLocation
+      pickupLocation: req.body.pickupLocation,
     });
     res.json({ assignmentPreparation });
   } catch (error) {
@@ -78,6 +78,11 @@ router.post('/drivers/:driverId/telemetry', (req, res, next) => {
   try {
     const telemetry = realtimeOrchestratorService.updateDriverTelemetry({ driverId: req.params.driverId, ...req.body });
     res.json({ telemetry });
+  } catch (error) {
+    next(error);
+  }
+});
+
 router.post('/drivers/:driverId/location', (req, res, next) => {
   try {
     const result = realtimeOrchestratorService.shareDriverLocation({
