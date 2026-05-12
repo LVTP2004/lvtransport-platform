@@ -56,7 +56,20 @@ export type DriverRealtimeState = {
   driverId: string;
   state: DriverState;
   activeBookingId?: string;
+  location?: { lat: number; lng: number; heading?: number; accuracy?: number; speed?: number; capturedAt: string };
   lastUpdatedAt: string;
+};
+
+type DriverLocationUpdate = {
+  driverId: string;
+  lat: number;
+  lng: number;
+  heading?: number;
+  accuracy?: number;
+  speed?: number;
+  capturedAt?: string;
+  bookingId?: string;
+  idempotencyKey?: string;
 };
 
 const allowedTransitions: Record<BookingLifecycleStatus, BookingLifecycleStatus[]> = {
@@ -216,5 +229,44 @@ export const realtimeOrchestratorService = {
 
   listDriverStates(): DriverRealtimeState[] {
     return Array.from(driverStates.values());
+  },
+
+  updateDriverLocation(params: DriverLocationUpdate) {
+    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return null;
+    const now = new Date().toISOString();
+    const capturedAt = params.capturedAt ?? now;
+    const current = driverStates.get(params.driverId);
+    const nextState: DriverRealtimeState = {
+      driverId: params.driverId,
+      state: current?.state ?? 'available',
+      activeBookingId: params.bookingId ?? current?.activeBookingId,
+      location: {
+        lat: params.lat,
+        lng: params.lng,
+        heading: params.heading,
+        accuracy: params.accuracy,
+        speed: params.speed,
+        capturedAt
+      },
+      lastUpdatedAt: now
+    };
+    driverStates.set(params.driverId, nextState);
+
+    const bookingId = params.bookingId ?? current?.activeBookingId;
+    if (bookingId) {
+      const booking = bookings.get(bookingId);
+      if (booking && booking.assignedDriverId === params.driverId) {
+        booking.tracking.lastKnownLocation = { lat: params.lat, lng: params.lng, heading: params.heading };
+        booking.tracking.updatedAt = now;
+        booking.tracking.gpsProvider = 'future';
+      }
+    }
+
+    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    emit('driver.location.updated', { driverId: params.driverId, bookingId, location: nextState.location, at: now });
+    emit('tracking.location.updated', { driverId: params.driverId, bookingId, location: nextState.location, at: now });
+    emit('admin.live.updated', { driverId: params.driverId, bookingId, location: nextState.location, at: now });
+    if (bookingId) emit('booking.updated', bookings.get(bookingId));
+    return nextState;
   }
 };
