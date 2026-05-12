@@ -9,7 +9,6 @@ import bookingRoutes from './booking.routes.js';
 import bookingsRoutes from './bookings.routes.js';
 
 const router = Router();
-
 router.use(healthRoutes);
 router.use('/payments', paymentRoutes);
 router.use(trackingRoutes);

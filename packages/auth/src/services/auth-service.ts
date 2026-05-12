@@ -1,5 +1,5 @@
-import type { AuthProviderAdapter, LoginInput } from '../interfaces/auth-provider.interface';
-import type { AuthState } from '../models/session.models';
+import type { AuthProviderAdapter, LoginInput } from '../interfaces/auth-provider.interface.js';
+import type { AuthState } from '../models/session.models.js';
 
 export class AuthService {
   constructor(private readonly provider: AuthProviderAdapter) {}

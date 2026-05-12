@@ -1,3 +1,8 @@
+import { bookingLifecycleRealtimeService } from './booking-lifecycle-realtime.service.js';
+
+export const realtimeOrchestratorService = {
+  initialize(): void {
+    bookingLifecycleRealtimeService.initialize();
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';

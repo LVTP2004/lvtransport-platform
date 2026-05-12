@@ -1,3 +1,4 @@
+import { BookingLifecycle, DriverState, TrackingState } from "./enums.js";
 import type { BookingLifecycle } from './enums';
 
 export type BookingActor = 'customer' | 'admin' | 'driver' | 'system';

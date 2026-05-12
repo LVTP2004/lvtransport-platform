@@ -1,4 +1,4 @@
-import type { RealtimeEventName } from "../events/names";
+import type { RealtimeEventName } from "../events/names.js";
 
 export interface RealtimeEventEnvelope<TPayload = Record<string, unknown>> {
   id: string;
