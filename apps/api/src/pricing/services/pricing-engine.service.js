@@ -1,5 +1,5 @@
-import { RouteFareEstimator } from '../estimators/route-fare.estimator';
-import { QuoteStatus } from '../enums/fare-rule.enum';
+import { RouteFareEstimator } from '../estimators/route-fare.estimator.js';
+import { QuoteStatus } from '../enums/fare-rule.enum.js';
 export class PricingEngineService {
     estimator;
     constructor(estimator = new RouteFareEstimator()) {

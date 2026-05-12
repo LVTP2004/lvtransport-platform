@@ -1,6 +1,6 @@
-import { estimateRouteCost } from './route-estimator';
-import { applyMinimumFare, calculateWaitingComponent, isNightWindow } from './fare-utils';
-import { pricingConstants, pricingArchitectureFlags } from './constants';
+import { estimateRouteCost } from './route-estimator.js';
+import { applyMinimumFare, calculateWaitingComponent, isNightWindow } from './fare-utils.js';
+import { pricingConstants, pricingArchitectureFlags } from './constants.js';
 import {
   BookingQuote,
   BookingQuoteRequest,
@@ -8,7 +8,7 @@ import {
   FareRuleType,
   PricingEngineState,
   ServiceTier,
-} from './models';
+} from './models.js';
 
 const tierMultiplier = (tier: ServiceTier): number => {
   if (tier === 'BUSINESS') return pricingConstants.businessTierMultiplier;

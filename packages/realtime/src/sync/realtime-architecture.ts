@@ -1,4 +1,4 @@
-import { realtimeEvents } from "../events/names";
+import { realtimeEvents } from "../events/names.js";
 
 export const realtimeSynchronizationArchitecture = {
   gpsTracking: [realtimeEvents.DRIVER_LOCATION_UPDATED, realtimeEvents.ETA_UPDATED],

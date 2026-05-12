@@ -1,3 +1,5 @@
+import type { BookingQuote, RouteEstimateInput } from '../../../../../api/src/pricing';
+import { QuoteStatus } from '../../../../../api/src/pricing';
 import { QuoteStatus, type BookingQuote, type RouteEstimateInput } from '../../../../../api/src/pricing';
 
 export class PricingPreviewService {
@@ -5,6 +7,7 @@ export class PricingPreviewService {
     // Placeholder for future API call: /v1/pricing/quote
     return {
       quoteId: 'preview-placeholder',
+      status: QuoteStatus.DRAFT,
       status: QuoteStatus.PREVIEW,
       input,
       breakdown: {

@@ -1,4 +1,4 @@
-import { FareComponent } from '../models/pricing.types';
+import { FareComponent } from '../models/pricing.types.js';
 
 export const PricingCalculationUtil = {
   sumComponents(components: FareComponent[]): number {
