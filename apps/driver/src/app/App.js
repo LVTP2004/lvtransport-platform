@@ -1,30 +1,56 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
-import { useMemo, useState } from 'react';
-const tripStates = ['Pickup', 'On route', 'Arrived', 'Completed'];
-const performanceStats = [
-    { label: 'Acceptance rate', value: '96%', detail: 'Top 10% today' },
-    { label: 'Cancellation', value: '1.2%', detail: 'Excellent consistency' },
-    { label: 'Avg. rating', value: '4.96', detail: 'From 248 riders' },
-    { label: 'On-time pickup', value: '94%', detail: 'Strong punctuality' }
-];
-const rideHistory = [
-    { id: 'LV-9012', rider: 'Ava M.', route: 'Bellagio → The Venetian', fare: '$24.80', status: 'Completed' },
-    { id: 'LV-9011', rider: 'Noah P.', route: 'Wynn → Airport T1', fare: '$31.20', status: 'Completed' },
-    { id: 'LV-9010', rider: 'Sophia R.', route: 'Aria → Fremont Street', fare: '$19.30', status: 'Completed' }
-];
-const notifications = [
-    { title: 'Priority zone surge', note: 'Las Vegas Strip now +1.7x multiplier', time: '2m ago' },
-    { title: 'Performance badge unlocked', note: 'Maintained 4.9+ rating this week', time: '18m ago' },
-    { title: 'Vehicle inspection reminder', note: 'Schedule check before May 15', time: '1h ago' }
-];
+import { useEffect, useMemo, useState } from 'react';
+import { createDriverGpsService } from '../modules/tracking/services/driver-gps.service';
+const statusFlow = ['assigned', 'driver_arriving', 'passenger_onboard', 'completed'];
+const DRIVER_ID = 'drv-101';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 export function App() {
-    const [online, setOnline] = useState(true);
-    const [tripStep, setTripStep] = useState('Pickup');
-    const stateIndex = useMemo(() => tripStates.indexOf(tripStep), [tripStep]);
-    return (_jsx("main", { className: "min-h-screen bg-zinc-950 text-zinc-100", children: _jsxs("div", { className: "mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 pb-10 sm:gap-5 sm:p-6 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_320px] lg:gap-6", children: [_jsxs("aside", { className: "space-y-4 rounded-3xl border border-amber-500/20 bg-zinc-900/90 p-4 shadow-xl shadow-black/30 backdrop-blur transition-all duration-300", children: [_jsxs("div", { className: "rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 via-zinc-900 to-zinc-800 p-4", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-amber-300", children: "Driver status" }), _jsx("h1", { className: "mt-2 text-2xl font-semibold", children: "LV Transport" }), _jsx("p", { className: "mt-1 text-sm text-zinc-300", children: "Premium Mobility Console" }), _jsxs("button", { type: "button", onClick: () => setOnline((prev) => !prev), className: `mt-4 flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${online
-                                        ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-                                        : 'border-zinc-700 bg-zinc-800 text-zinc-300'}`, children: [_jsx("span", { children: online ? 'You are Online' : 'You are Offline' }), _jsx("span", { className: `h-5 w-10 rounded-full p-0.5 transition-all ${online ? 'bg-emerald-500/80' : 'bg-zinc-700'}`, children: _jsx("span", { className: `block h-4 w-4 rounded-full bg-white transition-transform ${online ? 'translate-x-5' : ''}` }) })] })] }), _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-900 p-4", children: [_jsx("h2", { className: "text-sm font-semibold text-amber-200", children: "Earnings Summary" }), _jsxs("div", { className: "mt-3 grid grid-cols-2 gap-3 text-sm", children: [_jsx(MetricCard, { label: "Today", value: "$286.40" }), _jsx(MetricCard, { label: "Week", value: "$1,940" }), _jsx(MetricCard, { label: "Trips", value: "18" }), _jsx(MetricCard, { label: "Bonus", value: "$74" })] })] }), _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-900 p-4", children: [_jsx("h2", { className: "text-sm font-semibold text-amber-200", children: "Performance" }), _jsx("div", { className: "mt-3 space-y-2", children: performanceStats.map((item) => (_jsxs("div", { className: "rounded-xl border border-zinc-800 bg-zinc-950/80 p-3", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("span", { className: "text-xs text-zinc-400", children: item.label }), _jsx("span", { className: "text-sm font-semibold", children: item.value })] }), _jsx("p", { className: "mt-1 text-xs text-zinc-500", children: item.detail })] }, item.label))) })] })] }), _jsxs("section", { className: "order-first space-y-4 lg:order-none", children: [_jsxs("div", { className: "rounded-3xl border border-amber-500/30 bg-zinc-900 p-4 shadow-2xl shadow-black/30 sm:p-5", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("h2", { className: "text-base font-semibold text-amber-200", children: "Map-ready Navigation Layout" }), _jsx("span", { className: "rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400", children: "Android Optimized" })] }), _jsxs("div", { className: "mt-4 h-56 rounded-2xl border border-dashed border-zinc-700 bg-zinc-950/70 p-4 sm:h-72", children: [_jsx("p", { className: "text-sm text-zinc-400", children: "Reserved for future GPS + map canvas." }), _jsx("p", { className: "mt-2 text-xs text-zinc-500", children: "Component structure is prepared for realtime trip coordinate integration." })] }), _jsxs("div", { className: "mt-4 grid gap-3 sm:grid-cols-2", children: [_jsx("button", { className: "rounded-2xl bg-amber-500 px-5 py-4 text-base font-semibold text-zinc-900 transition hover:bg-amber-400 active:scale-[0.99]", children: "Accept Ride" }), _jsx("button", { className: "rounded-2xl border border-zinc-600 bg-zinc-800 px-5 py-4 text-base font-semibold transition hover:border-zinc-500 hover:bg-zinc-700 active:scale-[0.99]", children: "Reject Ride" })] })] }), _jsxs("div", { className: "rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Active Trip State" }), _jsx("div", { className: "mt-4 grid grid-cols-4 gap-2 text-center text-xs", children: tripStates.map((state, index) => (_jsx("button", { className: `rounded-xl border px-2 py-3 transition ${index <= stateIndex ? 'border-amber-400 bg-amber-500/20 text-amber-100' : 'border-zinc-700 bg-zinc-800 text-zinc-400'}`, onClick: () => setTripStep(state), children: state }, state))) }), _jsxs("div", { className: "mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4", children: [_jsx("p", { className: "text-xs text-zinc-400", children: "Current phase" }), _jsx("p", { className: "mt-1 text-lg font-semibold text-amber-200", children: tripStep }), _jsx("p", { className: "mt-2 text-sm text-zinc-400", children: "Trip cards, rider ETA, and navigation actions will attach to this state engine." })] })] }), _jsxs("div", { className: "rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Ride History" }), _jsx("div", { className: "mt-3 space-y-2", children: rideHistory.map((ride) => (_jsxs("article", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3 transition hover:border-zinc-700", children: [_jsxs("div", { className: "flex items-center justify-between", children: [_jsx("p", { className: "font-medium", children: ride.route }), _jsx("span", { className: "text-sm font-semibold text-amber-200", children: ride.fare })] }), _jsxs("p", { className: "mt-1 text-xs text-zinc-400", children: [ride.id, " \u2022 ", ride.rider] }), _jsx("span", { className: "mt-2 inline-flex rounded-full border border-emerald-600/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-300", children: ride.status })] }, ride.id))) })] })] }), _jsxs("aside", { className: "space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900/95 p-4 shadow-xl shadow-black/20", children: [_jsxs("section", { className: "rounded-2xl border border-amber-500/30 bg-zinc-950/80 p-4", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Incoming Ride Request" }), _jsx("p", { className: "mt-1 text-xs text-zinc-400", children: "Sound-ready component structure" }), _jsxs("div", { className: "mt-3 rounded-xl border border-zinc-700 bg-zinc-900 p-3", children: [_jsx("p", { className: "text-sm font-medium", children: "Rider: Olivia K." }), _jsx("p", { className: "mt-1 text-xs text-zinc-400", children: "Pickup: Caesars Palace \u2022 2 min away" }), _jsx("p", { className: "mt-1 text-xs text-zinc-400", children: "Dropoff: Resorts World" }), _jsxs("div", { className: "mt-3 flex gap-2", children: [_jsx("button", { className: "flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-zinc-900", children: "Accept" }), _jsx("button", { className: "flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm", children: "Reject" })] })] })] }), _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Vehicle Information" }), _jsxs("ul", { className: "mt-3 space-y-2 text-sm text-zinc-300", children: [_jsx("li", { children: "Model: Tesla Model Y" }), _jsx("li", { children: "Plate: LVT-2481" }), _jsx("li", { children: "Color: Black Metallic" }), _jsx("li", { children: "Fuel/Battery: 82%" })] })] }), _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Profile & Settings" }), _jsxs("div", { className: "mt-3 space-y-2 text-sm", children: [_jsx("button", { className: "w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left", children: "Driver preferences" }), _jsx("button", { className: "w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left", children: "Shift & availability" }), _jsx("button", { className: "w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left", children: "Safety toolkit" })] })] }), _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4", children: [_jsx("h3", { className: "text-sm font-semibold text-amber-200", children: "Notifications Center" }), _jsx("div", { className: "mt-3 space-y-2", children: notifications.map((item) => (_jsxs("article", { className: "rounded-xl border border-zinc-800 bg-zinc-900 p-3", children: [_jsx("p", { className: "text-sm font-medium", children: item.title }), _jsx("p", { className: "mt-1 text-xs text-zinc-400", children: item.note }), _jsx("p", { className: "mt-1 text-[11px] uppercase tracking-wide text-zinc-500", children: item.time })] }, item.title))) })] })] })] }) }));
-}
-function MetricCard({ label, value }) {
-    return (_jsxs("div", { className: "rounded-xl border border-zinc-800 bg-zinc-950/90 p-3 transition hover:-translate-y-0.5 hover:border-amber-500/40", children: [_jsx("p", { className: "text-xs text-zinc-500", children: label }), _jsx("p", { className: "mt-1 text-lg font-semibold text-amber-100", children: value })] }));
+    const [bookings, setBookings] = useState([]);
+    const [liveLocation, setLiveLocation] = useState(false);
+    const [gpsMessage, setGpsMessage] = useState('Live location is disabled.');
+    const gpsService = useMemo(() => createDriverGpsService({ minUpdateMs: 8000, minDistanceMeters: 25 }), []);
+    const refresh = async () => {
+        const response = await fetch(`${API_BASE}/bookings`);
+        const result = await response.json();
+        setBookings(result.bookings.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned'));
+    };
+    const activeBookingId = bookings.find((b) => !['completed', 'cancelled', 'failed'].includes(b.status))?.id;
+    const sendLocation = async (snapshot) => {
+        await fetch(`http://localhost:8080/api/v1/drivers/${DRIVER_ID}/location`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ ...snapshot, bookingId: activeBookingId, idempotencyKey: `gps-${DRIVER_ID}-${snapshot.capturedAt}` })
+        });
+        setGpsMessage(`Live: ${snapshot.lat.toFixed(5)}, ${snapshot.lng.toFixed(5)} @ ${new Date(snapshot.capturedAt).toLocaleTimeString()}`);
+    };
+    useEffect(() => {
+        refresh();
+        const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+        ws.onmessage = () => refresh();
+        return () => ws.close();
+    }, []);
+    useEffect(() => {
+        if (!liveLocation) {
+            gpsService.stop();
+            setGpsMessage('Live location is disabled.');
+            return;
+        }
+        gpsService.start(sendLocation, setGpsMessage);
+        return () => gpsService.stop();
+    }, [liveLocation, activeBookingId, gpsService]);
+    const updateStatus = async (booking) => {
+        const idx = statusFlow.findIndex((s) => s === booking.status);
+        if (idx < 0 || idx >= statusFlow.length - 1)
+            return;
+        const nextStatus = statusFlow[idx + 1];
+        const optimistic = bookings.map((b) => b.id === booking.id ? { ...b, status: nextStatus, version: b.version + 1 } : b);
+        setBookings(optimistic);
+        const response = await fetch(`${API_BASE}/bookings/${booking.id}/status`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: `driver-${booking.id}-${booking.version}` })
+        });
+        if (!response.ok)
+            refresh();
+    };
+    return _jsxs("main", { className: "min-h-screen bg-zinc-950 p-6 text-white", children: [_jsx("h1", { className: "text-2xl font-bold text-amber-300", children: "Driver Dispatch Realtime" }), _jsxs("div", { className: "mt-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4", children: [_jsx("button", { className: "rounded bg-amber-500 px-3 py-1 text-black", onClick: () => setLiveLocation((v) => !v), children: liveLocation ? 'Disable live location' : 'Enable live location' }), _jsx("p", { className: "mt-2 text-sm text-zinc-300", children: gpsMessage })] }), _jsx("div", { className: "mt-4 grid gap-3", children: bookings.map((booking) => _jsxs("article", { className: "rounded-xl border border-zinc-700 bg-zinc-900 p-4", children: [_jsx("p", { className: "font-semibold", children: booking.code }), _jsxs("p", { className: "text-sm text-zinc-300", children: ["Status: ", booking.status] }), booking.status === 'assigned' && _jsxs("div", { className: "mt-2 flex gap-2", children: [_jsx("button", { className: "rounded bg-amber-500 px-3 py-1 text-black", onClick: () => updateStatus(booking), children: "Accept Ride" }), _jsx("button", { className: "rounded border border-zinc-600 px-3 py-1", children: "Reject" })] }), booking.status !== 'assigned' && booking.status !== 'completed' && _jsx("button", { className: "mt-2 rounded border border-zinc-600 px-3 py-1", onClick: () => updateStatus(booking), children: "Next status" })] }, booking.id)) })] });
 }

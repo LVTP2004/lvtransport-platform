@@ -8,6 +8,7 @@ import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
 import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
 import { listOperationalIncidents } from '../../utils/operational-monitoring.js';
+import { integrationReadinessService } from '../../services/integration-readiness.service.js';
 
 const router = Router();
 router.use(healthRoutes);
@@ -101,6 +102,9 @@ router.get('/admin/analytics/diagnostics', (_req, res) => {
     trackedBusinessAccounts: snapshot.businessAccounts.trackedAccounts,
     dispatchAcceptanceRate: snapshot.dispatchEfficiency.acceptanceRate
   });
+});
+router.get('/admin/integrations/readiness', (_req, res) => {
+  res.json({ readiness: integrationReadinessService.getSnapshot() });
 });
 
 router.post('/drivers/:driverId/location', (req, res, next) => {
