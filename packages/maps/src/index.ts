@@ -9,6 +9,7 @@ export * from './services/tracking-service';
 export * from './state/tracking-state';
 export * from './sessions/live-trip-session';
 export * from './eta/eta-calculator';
+export * from './eta/eta-diagnostics';
 export * from './route/route-sync';
 export * from './lifecycle/trip-coordinate-lifecycle';
 export * from './components/architecture';
