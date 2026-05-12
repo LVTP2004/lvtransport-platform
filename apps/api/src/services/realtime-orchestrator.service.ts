@@ -101,6 +101,9 @@ type DriverLocationUpdate = {
 const ASSIGNMENT_TTL_MS = 45_000;
 const DRIVER_STALE_MS = 5 * 60_000;
 const MAX_REPLAY_EVENTS = 250;
+const MAX_EVENT_PAYLOAD_BYTES = 96_000;
+const TELEMETRY_MIN_INTERVAL_MS = 2_000;
+const ADMIN_ANALYTICS_PUSH_THROTTLE_MS = 1_000;
 const AUTO_ACCEPT_AFTER_MS = 10_000;
 const AUTO_QUOTE_AFTER_MS = 20_000;
 const AUTO_CONFIRM_AFTER_MS = 30_000;
@@ -114,8 +117,11 @@ const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const eventReplayBuffer: string[] = [];
 const assignmentAttemptLedger = new Map<string, string>();
+const telemetryIngestLedger = new Map<string, { at: number; lat: number; lng: number }>();
+const assignmentPreparationCache = new Map<string, { expiresAt: number; payload: { bookingId: string; candidates: AssignmentCandidate[] } }>();
 let eventSequence = 0;
 let heartbeatInterval: NodeJS.Timeout | undefined;
+let lastAnalyticsPushAt = 0;
 
 type RealtimeSocket = WebSocket & { isAlive?: boolean };
 
@@ -147,11 +153,21 @@ const calculateDistanceKm = (from: { lat: number; lng: number }, to: { lat: numb
 const estimateEtaMinutes = (distanceKm: number | null) => distanceKm === null ? null : Math.max(1, Math.round((distanceKm / 32) * 60));
 
 const emit = (event: string, payload: unknown) => {
-  const envelope = JSON.stringify({ event, payload, at: new Date().toISOString(), sequence: ++eventSequence });
+  const serializedPayload = JSON.stringify(payload);
+  const payloadSize = Buffer.byteLength(serializedPayload, 'utf8');
+  const envelope = JSON.stringify({ event, payload, payloadSize, at: new Date().toISOString(), sequence: ++eventSequence });
+  if (payloadSize > MAX_EVENT_PAYLOAD_BYTES) return;
   eventReplayBuffer.push(envelope);
   if (eventReplayBuffer.length > MAX_REPLAY_EVENTS) eventReplayBuffer.splice(0, eventReplayBuffer.length - MAX_REPLAY_EVENTS);
   for (const client of websocketClients) if (client.readyState === client.OPEN) client.send(envelope);
   bookingEvents.emit(event, payload);
+};
+
+const emitAdminAnalytics = (force = false) => {
+  const now = Date.now();
+  if (!force && now - lastAnalyticsPushAt < ADMIN_ANALYTICS_PUSH_THROTTLE_MS) return;
+  lastAnalyticsPushAt = now;
+  emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
 };
 
 const parseLastSequenceFromUrl = (url?: string): number | null => {
@@ -234,7 +250,7 @@ export const realtimeOrchestratorService = {
       status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
-    bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); this.runAutomationSweep(); emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot()); return booking;
+    bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); this.runAutomationSweep(); emitAdminAnalytics(); return booking;
   },
 
   listBookings: () => Array.from(bookings.values()),
@@ -261,7 +277,7 @@ export const realtimeOrchestratorService = {
     operationalAnalyticsService.trackBookingTransition(booking);
     operationalAnalyticsService.trackDriverState(driverStates.get(params.driverId)!);
     emit('booking.updated', booking); emit('driver.assigned', booking); emit('driver.status.updated', driverStates.get(params.driverId)); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
-    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
+    emitAdminAnalytics();
     return booking;
   },
 
@@ -283,7 +299,7 @@ export const realtimeOrchestratorService = {
     const trackedDriver = driverStates.get(params.driverId);
     if (trackedDriver) operationalAnalyticsService.trackDriverState(trackedDriver);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
-    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
+    emitAdminAnalytics();
     return booking;
   },
 
@@ -297,7 +313,7 @@ export const realtimeOrchestratorService = {
     if (['completed', 'cancelled', 'failed'].includes(params.nextStatus)) releaseDriver(booking.assignedDriverId);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, status: booking.status, at: now });
-    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
+    emitAdminAnalytics();
     return booking;
   },
 
@@ -316,6 +332,9 @@ export const realtimeOrchestratorService = {
 
   prepareDriverAssignment(input: AssignmentPreparationInput): { bookingId: string; candidates: AssignmentCandidate[] } {
     const booking = bookings.get(input.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
+    const cacheKey = `${input.bookingId}:${input.pickupLocation.lat.toFixed(4)}:${input.pickupLocation.lng.toFixed(4)}:${input.maxCandidates ?? 10}:${driverStates.size}:${bookings.size}`;
+    const cached = assignmentPreparationCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) return cached.payload;
     const activeRideCounts = new Map<string, number>();
     for (const b of bookings.values()) if (b.assignedDriverId && ['assigned', 'onderweg', 'arrived', 'in_progress'].includes(b.status)) activeRideCounts.set(b.assignedDriverId, (activeRideCounts.get(b.assignedDriverId) ?? 0) + 1);
     const stateScoreMap: Record<DriverState, number> = { offline: 0, available: 1, assigned: 0.1, onderweg: 0, arrived: 0, in_progress: 0, completed: 0.5 };
@@ -344,7 +363,9 @@ export const realtimeOrchestratorService = {
         availabilityPrediction, loadBalanceScore: Number(loadBalanceScore.toFixed(4)), conflictFree
       };
     }).sort((a, b) => b.totalScore - a.totalScore || (a.etaMinutes ?? Number.MAX_SAFE_INTEGER) - (b.etaMinutes ?? Number.MAX_SAFE_INTEGER) || (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER) || a.driverId.localeCompare(b.driverId));
-    return { bookingId: booking.id, candidates: candidates.slice(0, input.maxCandidates ?? 10) };
+    const payload = { bookingId: booking.id, candidates: candidates.slice(0, input.maxCandidates ?? 10) };
+    assignmentPreparationCache.set(cacheKey, { expiresAt: Date.now() + 5_000, payload });
+    return payload;
   },
 
   cleanupStaleAssignments(): { releasedAssignments: string[] } {
@@ -382,7 +403,14 @@ export const realtimeOrchestratorService = {
     };
     driverStates.set(params.driverId, next);
     operationalAnalyticsService.trackDriverState(next);
-    emit('driver.location.updated', { driverId: params.driverId, bookingId: next.activeBookingId, location: next.location, at: now });
+    const ledger = telemetryIngestLedger.get(params.driverId);
+    const capturedMs = new Date(next.location?.capturedAt ?? now).getTime();
+    const isRapid = ledger && capturedMs - ledger.at < TELEMETRY_MIN_INTERVAL_MS;
+    const isDuplicateCoordinate = ledger && Math.abs(ledger.lat - params.lat) < 0.00001 && Math.abs(ledger.lng - params.lng) < 0.00001;
+    telemetryIngestLedger.set(params.driverId, { at: capturedMs, lat: params.lat, lng: params.lng });
+    if (!isRapid || !isDuplicateCoordinate) {
+      emit('driver.location.updated', { driverId: params.driverId, bookingId: next.activeBookingId, location: next.location, at: now });
+    }
     return next;
   },
 
@@ -414,7 +442,7 @@ export const realtimeOrchestratorService = {
         }
       }
     }
-    if (transitioned.length || recovered.length) emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
+    if (transitioned.length || recovered.length) emitAdminAnalytics();
     return { transitioned, recovered };
   },
 
@@ -439,7 +467,25 @@ export const realtimeOrchestratorService = {
       staleAssignments: staleAssignments.map((b) => b.id),
       staleDrivers: staleDrivers.map((d) => d.driverId),
       activeAssignmentAttempts: duplicateAttemptsBlocked,
+      telemetryRateLimitedDrivers: Array.from(telemetryIngestLedger.keys()).length,
+      assignmentCacheEntries: assignmentPreparationCache.size,
+      websocketClients: websocketClients.size,
+      replayBufferSize: eventReplayBuffer.length,
       operationalSnapshotAt: new Date().toISOString()
+    };
+  },
+
+  getOperationalScalabilityDiagnostics() {
+    return {
+      generatedAt: new Date().toISOString(),
+      bookingsTracked: bookings.size,
+      driversTracked: driverStates.size,
+      activeRideCount: Array.from(bookings.values()).filter((booking) => ['assigned', 'onderweg', 'arrived', 'in_progress'].includes(booking.status)).length,
+      connectedRealtimeClients: websocketClients.size,
+      eventReplayDepth: eventReplayBuffer.length,
+      assignmentCacheEntries: assignmentPreparationCache.size,
+      telemetryTrackedDrivers: telemetryIngestLedger.size,
+      sequence: eventSequence
     };
   }
 };
