@@ -1,33 +1,86 @@
 import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useMemo, useRef, useState } from 'react';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const navItems = [{ label: 'Dashboard', icon: '◫' }, { label: 'Bookings', icon: '◈' }, { label: 'Dispatch', icon: '⌖' }, { label: 'Fleet', icon: '▣' }, { label: 'Drivers', icon: '◍' }, { label: 'Incidents', icon: '⚠' }, { label: 'Settings', icon: '⚙' }];
 function MetricCard({ title, value, trend, tone = 'gold' }) {
-    const toneClass = {
-        gold: 'from-amber-400/20 to-amber-300/5 border-amber-400/30 text-amber-200',
-        emerald: 'from-emerald-400/20 to-emerald-300/5 border-emerald-400/30 text-emerald-200',
-        blue: 'from-sky-400/20 to-sky-300/5 border-sky-400/30 text-sky-200',
-        rose: 'from-rose-400/20 to-rose-300/5 border-rose-400/30 text-rose-200',
-    }[tone];
-    return (_jsxs("article", { className: `rounded-2xl border bg-gradient-to-br ${toneClass} p-4 shadow-lg shadow-black/20 transition duration-300 hover:-translate-y-0.5`, children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-zinc-300", children: title }), _jsx("p", { className: "mt-3 text-2xl font-semibold text-white", children: value }), trend && _jsx("p", { className: "mt-2 text-xs text-zinc-300", children: trend })] }));
+    const toneClass = { gold: 'from-amber-400/20 to-amber-300/5 border-amber-400/30 text-amber-200', emerald: 'from-emerald-400/20 to-emerald-300/5 border-emerald-400/30 text-emerald-200', blue: 'from-sky-400/20 to-sky-300/5 border-sky-400/30 text-sky-200', rose: 'from-rose-400/20 to-rose-300/5 border-rose-400/30 text-rose-200' }[tone];
+    return _jsxs("article", { className: `rounded-2xl border bg-gradient-to-br ${toneClass} p-4 shadow-lg shadow-black/20`, children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-zinc-300", children: title }), _jsx("p", { className: "mt-3 text-2xl font-semibold text-white", children: value }), trend && _jsx("p", { className: "mt-2 text-xs text-zinc-300", children: trend })] });
 }
 function Panel({ title, icon, children }) {
-    return (_jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-2xl shadow-black/30 backdrop-blur-sm", children: [_jsxs("div", { className: "mb-4 flex items-center gap-2 text-amber-300", children: [icon, _jsx("h2", { className: "text-sm font-semibold uppercase tracking-[0.18em]", children: title })] }), children] }));
+    return _jsxs("section", { className: "rounded-2xl border border-zinc-800 bg-zinc-950/70 p-5 shadow-2xl shadow-black/30", children: [_jsxs("div", { className: "mb-4 flex items-center gap-2 text-amber-300", children: [icon, _jsx("h2", { className: "text-sm font-semibold uppercase tracking-[0.18em]", children: title })] }), children] });
 }
-const navItems = [
-    { label: 'Dashboard', icon: '◫' },
-    { label: 'Bookings', icon: '◈' },
-    { label: 'Dispatch', icon: '⌖' },
-    { label: 'Fleet', icon: '▣' },
-    { label: 'Drivers', icon: '◍' },
-    { label: 'Incidents', icon: '⚠' },
-    { label: 'Settings', icon: '⚙' },
-];
-const bookings = [
-    ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40'],
-    ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55'],
-    ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10'],
-    ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30'],
-];
+const normalizeBookingStatus = (status) => {
+    const s = status.toLowerCase();
+    if (['pending', 'accepted', 'quoted', 'confirmed', 'available'].includes(s))
+        return 'pending';
+    if (s === 'assigned')
+        return 'assigned';
+    if (['onderweg', 'arrived', 'in_progress', 'enroute', 'on_route', 'active'].includes(s))
+        return 'on_route';
+    if (['completed', 'done'].includes(s))
+        return 'completed';
+    if (s === 'cancelled')
+        return 'cancelled';
+    return 'other';
+};
+const normalizeDriverState = (state) => {
+    const s = state.toLowerCase();
+    if (s === 'onderweg')
+        return 'on_route';
+    if (['offline', 'available', 'assigned', 'arrived', 'in_progress', 'completed'].includes(s))
+        return s;
+    return 'unknown';
+};
 export function App() {
-    return (_jsx("main", { className: "min-h-screen bg-zinc-900 text-zinc-100", children: _jsxs("div", { className: "grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]", children: [_jsxs("aside", { className: "border-r border-zinc-800 bg-black/90 p-6", children: [_jsxs("div", { className: "mb-8", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.28em] text-zinc-500", children: "LV Transport" }), _jsx("h1", { className: "mt-1 text-2xl font-bold text-amber-300", children: "Control Tower" })] }), _jsx("nav", { className: "space-y-2", children: navItems.map(({ label, icon }, index) => (_jsxs("button", { className: `flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${index === 0
-                                    ? 'bg-amber-400/20 text-amber-200'
-                                    : 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white'}`, children: [_jsx("span", { className: "w-4 text-center", children: icon }), " ", label] }, label))) })] }), _jsxs("div", { className: "flex flex-col", children: [_jsxs("header", { className: "flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-950/80 px-5 py-4 backdrop-blur", children: [_jsxs("div", { children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-zinc-400", children: "Operations Center" }), _jsx("p", { className: "text-lg font-medium text-white", children: "Regional Dispatch & Service Health" })] }), _jsxs("div", { className: "flex items-center gap-3", children: [_jsx("button", { className: "rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm transition hover:border-amber-300 hover:text-amber-200", children: "Today" }), _jsx("button", { className: "rounded-xl border border-zinc-700 bg-zinc-900 p-2 transition hover:border-amber-300 hover:text-amber-200", children: _jsx("span", { children: "\uD83D\uDD14" }) })] })] }), _jsxs("div", { className: "space-y-5 p-5", children: [_jsxs("section", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4", children: [_jsx(MetricCard, { title: "Revenue Today", value: "$84,290", trend: "+6.4% vs yesterday", tone: "gold" }), _jsx(MetricCard, { title: "Active Rides", value: "148", trend: "12 nearing destination", tone: "emerald" }), _jsx(MetricCard, { title: "Driver Utilization", value: "91%", trend: "Across 3 operating zones", tone: "blue" }), _jsx(MetricCard, { title: "Critical Alerts", value: "3", trend: "2 requires dispatch intervention", tone: "rose" })] }), _jsxs("section", { className: "grid gap-5 xl:grid-cols-3", children: [_jsxs("div", { className: "space-y-5 xl:col-span-2", children: [_jsx(Panel, { title: "Booking Management", icon: _jsx("span", { children: "\u25C8" }), children: _jsx("div", { className: "overflow-x-auto", children: _jsxs("table", { className: "w-full min-w-[620px] text-left text-sm", children: [_jsx("thead", { className: "text-xs uppercase tracking-[0.16em] text-zinc-400", children: _jsx("tr", { children: ['ID', 'Service', 'Status', 'Driver', 'ETA'].map((h) => (_jsx("th", { className: "px-2 py-2", children: h }, h))) }) }), _jsx("tbody", { children: bookings.map((row) => (_jsx("tr", { className: "border-t border-zinc-800 text-zinc-200 transition hover:bg-zinc-900/70", children: row.map((cell) => (_jsx("td", { className: "px-2 py-3", children: cell }, cell))) }, row[0]))) })] }) }) }), _jsxs("div", { className: "grid gap-5 md:grid-cols-2", children: [_jsx(Panel, { title: "Active Rides", icon: _jsx("span", { children: "\u25C9" }), children: _jsxs("ul", { className: "space-y-3 text-sm text-zinc-300", children: [_jsx("li", { className: "rounded-xl bg-zinc-900/80 p-3", children: "Ride #R-8821 \u2022 Downtown to Terminal 1 \u2022 14 min" }), _jsx("li", { className: "rounded-xl bg-zinc-900/80 p-3", children: "Ride #R-8830 \u2022 Convention to Bellagio \u2022 9 min" }), _jsx("li", { className: "rounded-xl bg-zinc-900/80 p-3", children: "Ride #R-8833 \u2022 Wynn to Airport \u2022 21 min" })] }) }), _jsx(Panel, { title: "Driver Monitoring", icon: _jsx("span", { children: "\u25CD" }), children: _jsx("div", { className: "grid gap-3 text-sm", children: ['On Duty 126', 'Break 14', 'Offline 8'].map((d) => (_jsx("div", { className: "rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition hover:border-amber-300/40", children: d }, d))) }) })] })] }), _jsxs("div", { className: "space-y-5", children: [_jsx(Panel, { title: "Live Status Widgets", icon: _jsx("span", { children: "\u25CC" }), children: _jsxs("div", { className: "space-y-2 text-sm text-zinc-300", children: [_jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["System Health: ", _jsx("span", { className: "text-emerald-300", children: "Stable" })] }), _jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["Avg Wait Time: ", _jsx("span", { className: "text-amber-200", children: "5m 42s" })] }), _jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["Traffic Index: ", _jsx("span", { className: "text-rose-300", children: "High" })] })] }) }), _jsx(Panel, { title: "Alerts & Incidents", icon: _jsx("span", { children: "\u26A0" }), children: _jsxs("ul", { className: "space-y-2 text-sm text-zinc-300", children: [_jsx("li", { className: "rounded-lg border border-rose-500/30 bg-rose-500/10 p-2", children: "Engine anomaly \u2022 Unit DV-14" }), _jsx("li", { className: "rounded-lg border border-amber-500/30 bg-amber-500/10 p-2", children: "Late pickup cluster \u2022 Sector West" }), _jsx("li", { className: "rounded-lg border border-sky-500/30 bg-sky-500/10 p-2", children: "Road closure \u2022 Strip Blvd" })] }) })] })] }), _jsxs("section", { className: "grid gap-5 lg:grid-cols-3", children: [_jsx(Panel, { title: "Dispatch Overview", icon: _jsx("span", { children: "\u2316" }), children: _jsx("p", { className: "text-sm text-zinc-300", children: "56 open dispatch tasks, 18 pending route approvals." }) }), _jsx(Panel, { title: "Fleet Overview", icon: _jsx("span", { children: "\u25A3" }), children: _jsx("p", { className: "text-sm text-zinc-300", children: "184 vehicles total \u2022 169 available \u2022 10 maintenance \u2022 5 offline." }) }), _jsx(Panel, { title: "Admin Settings", icon: _jsx("span", { children: "\u2699" }), children: _jsx("p", { className: "text-sm text-zinc-300", children: "Role profiles, escalation rules, and SLA thresholds configuration panel placeholder." }) })] }), _jsxs("section", { className: "grid gap-5 lg:grid-cols-2", children: [_jsx(Panel, { title: "Customer Activity", icon: _jsx("span", { children: "\u25CE" }), children: _jsx("p", { className: "text-sm text-zinc-300", children: "Bookings/hour peak: 94 \u2022 Repeat customer ratio: 47% \u2022 App satisfaction: 4.8/5." }) }), _jsx(Panel, { title: "Audit / Activity Log", icon: _jsx("span", { children: "\u25F7" }), children: _jsx("p", { className: "text-sm text-zinc-300", children: "10:32 Dispatch reassigned R-8821 \u2022 10:29 Fare override approved \u2022 10:25 Driver status updated." }) })] })] })] })] }) }));
+    const [bookings, setBookings] = useState([]);
+    const [drivers, setDrivers] = useState([]);
+    const [incidents, setIncidents] = useState([]);
+    const [syncState, setSyncState] = useState('recovering');
+    const [lastSyncIso, setLastSyncIso] = useState('');
+    const [refreshCycle, setRefreshCycle] = useState(0);
+    const [statusFilter, setStatusFilter] = useState('all');
+    const reconnectRef = useRef(false);
+    useEffect(() => {
+        const load = async () => {
+            try {
+                const [bookingRes, driverRes, incidentRes] = await Promise.all([
+                    fetch(`${API_BASE}/admin/bookings`),
+                    fetch(`${API_BASE}/drivers/live-states`),
+                    fetch(`${API_BASE}/operations/incidents`),
+                ]);
+                const bookingPayload = await bookingRes.json();
+                const driverPayload = await driverRes.json();
+                const incidentPayload = await incidentRes.json();
+                setBookings(Array.isArray(bookingPayload.bookings) ? bookingPayload.bookings : []);
+                setDrivers(Array.isArray(driverPayload.drivers) ? driverPayload.drivers : []);
+                setIncidents(Array.isArray(incidentPayload.incidents) ? incidentPayload.incidents : []);
+                setLastSyncIso(new Date().toISOString());
+                setSyncState(reconnectRef.current ? 'live' : 'recovering');
+            }
+            catch {
+                setSyncState('degraded');
+            }
+            finally {
+                reconnectRef.current = true;
+            }
+        };
+        load();
+        const poller = window.setInterval(() => { setRefreshCycle((v) => v + 1); setSyncState((prev) => prev === 'degraded' ? 'recovering' : prev); load(); }, 12000);
+        return () => window.clearInterval(poller);
+    }, []);
+    const bookingsWithOps = useMemo(() => bookings.map((b) => {
+        const normalizedStatus = normalizeBookingStatus(b.status);
+        const immutable = normalizedStatus === 'completed' || normalizedStatus === 'cancelled';
+        const duplicateTransition = Boolean((b.timeline ?? []).some((entry, i, arr) => i > 0 && arr[i - 1]?.status === entry.status));
+        const stale = Boolean(b.updatedAt && Date.now() - new Date(b.updatedAt).getTime() > 10 * 60_000 && !immutable);
+        return { ...b, normalizedStatus, immutable, duplicateTransition, stale };
+    }), [bookings]);
+    const filteredBookings = useMemo(() => statusFilter === 'all' ? bookingsWithOps : bookingsWithOps.filter((b) => b.normalizedStatus === statusFilter), [bookingsWithOps, statusFilter]);
+    const activeBookings = useMemo(() => bookingsWithOps.filter((b) => ['assigned', 'on_route'].includes(b.normalizedStatus)), [bookingsWithOps]);
+    const completedBookings = useMemo(() => bookingsWithOps.filter((b) => b.normalizedStatus === 'completed'), [bookingsWithOps]);
+    const unresolvedIncidents = useMemo(() => incidents.filter((i) => i.severity !== 'info'), [incidents]);
+    const staleBookings = useMemo(() => bookingsWithOps.filter((b) => b.stale), [bookingsWithOps]);
+    const disconnectedDrivers = useMemo(() => drivers.filter((d) => d.lastUpdatedAt && Date.now() - new Date(d.lastUpdatedAt).getTime() > 5 * 60_000), [drivers]);
+    const normalizedDrivers = useMemo(() => drivers.map((d) => ({ ...d, normalizedState: normalizeDriverState(d.state) })), [drivers]);
+    return _jsx("main", { className: "min-h-screen bg-zinc-900 text-zinc-100", children: _jsxs("div", { className: "grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]", children: [_jsxs("aside", { className: "border-r border-zinc-800 bg-black/90 p-6", children: [_jsxs("div", { className: "mb-8", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.28em] text-zinc-500", children: "LV Transport" }), _jsx("h1", { className: "mt-1 text-2xl font-bold text-amber-300", children: "Control Tower" })] }), _jsx("nav", { className: "space-y-2", children: navItems.map(({ label, icon }, index) => _jsxs("button", { className: `flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm ${index === 0 ? 'bg-amber-400/20 text-amber-200' : 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white'}`, children: [_jsx("span", { className: "w-4 text-center", children: icon }), label] }, label)) })] }), _jsxs("div", { className: "flex flex-col", children: [_jsxs("header", { className: "flex items-center justify-between border-b border-zinc-800 bg-zinc-950/80 px-5 py-4", children: [_jsxs("div", { children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-zinc-400", children: "Operations Center" }), _jsx("p", { className: "text-lg font-medium text-white", children: "Regional Dispatch & Service Health" })] }), _jsxs("p", { className: "text-xs text-zinc-400", children: ["Sync: ", _jsx("span", { className: syncState === 'live' ? 'text-emerald-300' : syncState === 'recovering' ? 'text-amber-200' : 'text-rose-300', children: syncState.toUpperCase() }), " \u2022 cycle ", refreshCycle] })] }), _jsxs("div", { className: "space-y-5 p-5", children: [_jsxs("section", { className: "grid gap-4 sm:grid-cols-2 xl:grid-cols-4", children: [_jsx(MetricCard, { title: "Realtime Bookings", value: `${bookingsWithOps.length}`, trend: `${activeBookings.length} actively supervised`, tone: "gold" }), _jsx(MetricCard, { title: "Driver Operations", value: `${normalizedDrivers.length}`, trend: `${normalizedDrivers.filter((d) => d.normalizedState === 'on_route').length} on route`, tone: "emerald" }), _jsx(MetricCard, { title: "Moni Escalations", value: `${unresolvedIncidents.length}`, trend: "AI-human escalation visibility", tone: "blue" }), _jsx(MetricCard, { title: "Operational Warnings", value: `${staleBookings.length + disconnectedDrivers.length}`, trend: "stale/disconnected indicators", tone: "rose" })] }), _jsxs("section", { className: "grid gap-5 xl:grid-cols-3", children: [_jsxs("div", { className: "space-y-5 xl:col-span-2", children: [_jsxs(Panel, { title: "Booking Lifecycle Supervision", icon: _jsx("span", { children: "\u25C8" }), children: [_jsx("div", { className: "mb-3 flex flex-wrap gap-2", children: ['all', 'pending', 'assigned', 'on_route', 'completed', 'cancelled'].map((filter) => _jsx("button", { onClick: () => setStatusFilter(filter), className: `rounded-lg border px-2 py-1 text-xs uppercase ${statusFilter === filter ? 'border-amber-300 text-amber-200' : 'border-zinc-700 text-zinc-300'}`, children: filter }, filter)) }), _jsx("div", { className: "overflow-x-auto", children: _jsxs("table", { className: "w-full min-w-[900px] text-left text-sm", children: [_jsx("thead", { className: "text-xs uppercase tracking-[0.16em] text-zinc-400", children: _jsx("tr", { children: ['Reference', 'Service', 'Status', 'Lifecycle', 'Immutable', 'Timestamps', 'Ops Flags'].map((h) => _jsx("th", { className: "px-2 py-2", children: h }, h)) }) }), _jsx("tbody", { children: filteredBookings.map((row) => _jsxs("tr", { className: "border-t border-zinc-800 text-zinc-200", children: [_jsx("td", { className: "px-2 py-3", children: row.referenceCode ?? row.code ?? row.id }), _jsx("td", { className: "px-2 py-3", children: row.serviceType }), _jsx("td", { className: "px-2 py-3", children: row.status }), _jsx("td", { className: "px-2 py-3", children: row.normalizedStatus }), _jsx("td", { className: "px-2 py-3", children: row.immutable ? 'locked' : 'mutable' }), _jsxs("td", { className: "px-2 py-3 text-xs", children: [row.createdAt ? new Date(row.createdAt).toLocaleTimeString() : '-', " / ", row.updatedAt ? new Date(row.updatedAt).toLocaleTimeString() : '-'] }), _jsxs("td", { className: "px-2 py-3 text-xs", children: [row.duplicateTransition ? 'duplicate blocked' : 'clean', " ", row.stale ? '• stale' : ''] })] }, row.id)) })] }) })] }), _jsx(Panel, { title: "Driver Operations", icon: _jsx("span", { children: "\u25CD" }), children: _jsx("div", { className: "space-y-2 text-xs", children: normalizedDrivers.map((driver) => _jsxs("div", { className: "rounded-lg border border-zinc-800 bg-zinc-900 p-2", children: [_jsxs("p", { className: "font-medium text-zinc-100", children: [driver.driverId, " ", _jsx("span", { className: "text-zinc-400", children: driver.activeBookingId ? `• booking ${driver.activeBookingId}` : '• no active ride' })] }), _jsxs("p", { className: "text-zinc-300", children: ["state: ", driver.normalizedState, " \u2022 telemetry: ", driver.location ? `${driver.location.lat.toFixed(4)}, ${driver.location.lng.toFixed(4)}` : 'awaiting GPS', " \u2022 speed ", driver.location?.speed ?? 0] })] }, driver.driverId)) }) })] }), _jsxs("div", { className: "space-y-5", children: [_jsx(Panel, { title: "Moni Escalation Visibility", icon: _jsx("span", { children: "\uD83E\uDD16" }), children: _jsxs("div", { className: "space-y-2 text-sm text-zinc-300", children: [_jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["Escalation queue: ", _jsx("span", { className: "text-white", children: unresolvedIncidents.length })] }), _jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["Audit events visible: ", _jsx("span", { className: "text-white", children: incidents.length })] }), _jsxs("p", { className: "rounded-lg bg-zinc-900 p-2", children: ["Assistant-human handoff: ", _jsx("span", { className: "text-emerald-300", children: "prepared" })] })] }) }), _jsx(Panel, { title: "Operational Monitoring", icon: _jsx("span", { children: "\u26A0" }), children: _jsxs("ul", { className: "space-y-2 text-sm text-zinc-300", children: [_jsxs("li", { className: `rounded-lg p-2 ${syncState === 'degraded' ? 'border border-rose-500/30 bg-rose-500/10' : 'border border-emerald-500/30 bg-emerald-500/10'}`, children: ["Realtime sync: ", syncState === 'degraded' ? 'degraded - recovery active' : 'healthy'] }), _jsxs("li", { className: "rounded-lg border border-zinc-800 bg-zinc-900 p-2", children: ["Stale bookings: ", staleBookings.length] }), _jsxs("li", { className: "rounded-lg border border-zinc-800 bg-zinc-900 p-2", children: ["Disconnected sessions (drivers): ", disconnectedDrivers.length] }), _jsx("li", { className: "rounded-lg border border-zinc-800 bg-zinc-900 p-2", children: "Booking recovery visibility: enabled" })] }) })] })] })] })] })] }) });
 }
