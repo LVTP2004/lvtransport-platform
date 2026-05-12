@@ -4,12 +4,6 @@ import { createBookingController, listBookingsController } from '../../controlle
 const router = Router();
 
 router.post('/bookings', createBookingController);
-router.get('/bookings', listBookingsController);
-import { createBookingHandler, listBookingsHandler } from '../../controllers/booking.controller.js';
-
-const router = Router();
-
-router.post('/', createBookingHandler);
-router.get('/', listBookingsHandler);
+router.get('/admin/bookings', listBookingsController);
 
 export default router;
