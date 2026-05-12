@@ -63,8 +63,12 @@ class OperationalAnalyticsService {
   private assignmentAttempts = 0;
   private assignmentAccepts = 0;
   private assignmentRejects = 0;
+  private cachedSnapshot: AdminOperationalSnapshot | null = null;
+  private cacheBuiltAtMs = 0;
+  private readonly cacheTtlMs = 750;
 
   trackBookingCreated(booking: BookingRecord): void {
+    this.invalidateCache();
     this.bookings.set(booking.id, {
       bookingId: booking.id,
       accountId: booking.customerName.startsWith('BIZ-') ? booking.customerName : undefined,
@@ -77,6 +81,7 @@ class OperationalAnalyticsService {
   }
 
   trackBookingTransition(booking: BookingRecord, previousStatus?: BookingLifecycleStatus): void {
+    this.invalidateCache();
     const current = this.bookings.get(booking.id) ?? {
       bookingId: booking.id,
       fareTotal: this.deriveFare(booking),
@@ -98,9 +103,9 @@ class OperationalAnalyticsService {
     this.bookings.set(booking.id, current);
   }
 
-  trackAssignmentIssued(): void { this.assignmentAttempts += 1; }
+  trackAssignmentIssued(): void { this.assignmentAttempts += 1; this.invalidateCache(); }
 
-  trackDriverState(driver: DriverRealtimeState): void { this.drivers.set(driver.driverId, driver); }
+  trackDriverState(driver: DriverRealtimeState): void { this.drivers.set(driver.driverId, driver); this.invalidateCache(); }
 
   rebuildFromSnapshots(bookings: BookingRecord[], drivers: DriverRealtimeState[]): void {
     this.bookings.clear();
@@ -110,10 +115,15 @@ class OperationalAnalyticsService {
       this.trackBookingTransition(b);
     }
     for (const d of drivers) this.drivers.set(d.driverId, d);
+    this.invalidateCache();
   }
 
   getAdminSnapshot(): AdminOperationalSnapshot {
-    const byStatus = lifecycleStatuses.reduce((acc, status) => ({ ...acc, [status]: 0 }), {} as Record<BookingLifecycleStatus, number>);
+    if (this.cachedSnapshot && Date.now() - this.cacheBuiltAtMs < this.cacheTtlMs) return this.cachedSnapshot;
+    const byStatus = lifecycleStatuses.reduce((acc, status) => {
+      acc[status] = 0;
+      return acc;
+    }, {} as Record<BookingLifecycleStatus, number>);
     let grossBookedRevenue = 0;
     let grossCompletedRevenue = 0;
     let completedRideCount = 0;
@@ -148,7 +158,7 @@ class OperationalAnalyticsService {
     const driverBusy = Array.from(this.drivers.values()).filter((d) => ['assigned','onderweg','arrived','in_progress'].includes(d.state)).length;
     const avgResponse = this.assignmentResponses.length ? this.assignmentResponses.reduce((a, b) => a + b, 0) / this.assignmentResponses.length : 0;
 
-    return {
+    this.cachedSnapshot = {
       generatedAt: new Date().toISOString(),
       realtime: { activeBookings: byStatus.assigned + byStatus.onderweg + byStatus.arrived + byStatus.in_progress, completedBookings: byStatus.completed, driverOnline, driverBusy },
       bookingAnalytics: {
@@ -178,6 +188,13 @@ class OperationalAnalyticsService {
       },
       trend: Array.from(trendMap.values()).sort((a, b) => a.bucketStartIso.localeCompare(b.bucketStartIso))
     };
+    this.cacheBuiltAtMs = Date.now();
+    return this.cachedSnapshot;
+  }
+
+  private invalidateCache(): void {
+    this.cachedSnapshot = null;
+    this.cacheBuiltAtMs = 0;
   }
 
   private deriveFare(_booking: BookingRecord): number {
