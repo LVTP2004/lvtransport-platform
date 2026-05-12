@@ -7,13 +7,18 @@ export type BookingEventPayload = {
   bookingId: string;
   customerId: string;
   driverId?: string;
-  status?: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+  status?: 'pending' | 'assigned' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
   occurredAt?: string;
+  eventId?: string;
   metadata?: Record<string, unknown>;
 };
 
 export const emitBookingEvent = (payload: BookingEventPayload): void => {
-  eventBus.emit(BOOKING_EVENTS.CREATED, payload);
+  const eventName =
+    payload.status === 'assigned'
+      ? BOOKING_EVENTS.ASSIGNED
+      : payload.status === 'cancelled'
+        ? BOOKING_EVENTS.CANCELLED
+        : BOOKING_EVENTS.CREATED;
+  eventBus.emit(eventName, payload);
 };
-
-export type BookingEventName = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
