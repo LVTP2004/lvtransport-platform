@@ -1,6 +1,6 @@
 import { eventBus } from '../events/event-bus.js';
 import { WS_EVENTS } from '../constants/app.constants.js';
-import type { NotificationLifecycleState, NotificationType } from './notification.types.js';
+import type { NotificationLifecycleStatus, NotificationType } from './notification.types.js';
 
 export type NotificationPayload = {
   notificationId: string;
@@ -8,7 +8,7 @@ export type NotificationPayload = {
   audience: 'customer' | 'driver' | 'admin' | 'support' | 'business';
   type: NotificationType;
   channels: Array<'push' | 'email' | 'in_app' | 'sms' | 'whatsapp' | 'webhook'>;
-  state: NotificationLifecycleState;
+  state: NotificationLifecycleStatus;
   message: string;
   occurredAt: string;
 };
