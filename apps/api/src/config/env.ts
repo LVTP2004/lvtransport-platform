@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { logger } from '../utils/logger.js';
 
 dotenv.config();
 
@@ -22,6 +23,14 @@ const requiredWhenProduction = (name: string): string | undefined => {
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
 
+const parseBoolean = (name: string, fallback: boolean): boolean => {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  if (['true', '1', 'yes', 'on'].includes(raw.toLowerCase())) return true;
+  if (['false', '0', 'no', 'off'].includes(raw.toLowerCase())) return false;
+  throw new Error(`Invalid boolean environment variable: ${name}`);
+};
+
 export const env = {
   nodeEnv,
   isProduction: nodeEnv === 'production',
@@ -31,9 +40,23 @@ export const env = {
   googleMapsApiKey: requiredWhenProduction('GOOGLE_MAPS_API_KEY') ?? 'GOOGLE_MAPS_API_KEY_PLACEHOLDER',
   mapsDefaultSpeedKph: process.env.MAPS_DEFAULT_SPEED_KPH ?? '38',
   mapsRoadFactor: process.env.MAPS_ROAD_FACTOR ?? '1.25',
-  trustProxy: (process.env.TRUST_PROXY ?? 'false').toLowerCase() === 'true',
+  trustProxy: parseBoolean('TRUST_PROXY', false),
+  wsPath: process.env.WS_PATH ?? '/ws',
+  startupDiagnostics: parseBoolean('STARTUP_DIAGNOSTICS', true),
 };
 
 if (env.isProduction && env.corsOrigin === '*') {
   throw new Error('CORS_ORIGIN cannot be wildcard (*) in production');
 }
+
+export const logEnvironmentDiagnostics = (): void => {
+  if (!env.startupDiagnostics) return;
+  logger.info('Environment diagnostics', {
+    nodeEnv: env.nodeEnv,
+    port: env.port,
+    trustProxy: env.trustProxy,
+    wsPath: env.wsPath,
+    corsOriginConfigured: env.corsOrigin !== '*',
+    googleMapsKeyConfigured: !env.googleMapsApiKey.includes('PLACEHOLDER'),
+  });
+};

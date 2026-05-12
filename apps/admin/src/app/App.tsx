@@ -45,6 +45,7 @@ const lngToLeft = (lng: number) => Math.max(6, Math.min(94, ((lng - mapBounds.we
 export function App() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [driverLocations, setDriverLocations] = useState<DriverLocation[]>(seedDriverLocations);
+  const [realtimeState, setRealtimeState] = useState<'connecting' | 'connected' | 'reconnecting' | 'offline'>('connecting');
 
   useEffect(() => {
     const load = async () => {
@@ -57,25 +58,52 @@ export function App() {
       }
     };
     load();
-    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
-    ws.onmessage = (message) => {
-      try {
-        const payload = JSON.parse(message.data as string) as { event?: string; payload?: AdminBooking | AdminBooking[] };
-        if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) setBookings(payload.payload);
-        if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
-          setBookings((current) => {
-            const next = [...current];
-            const index = next.findIndex((item) => item.id === payload.payload?.id);
-            if (index >= 0) next[index] = payload.payload;
-            else next.unshift(payload.payload);
-            return next;
-          });
+    let ws: WebSocket | null = null;
+    let reconnectTimer: number | undefined;
+    let attempts = 0;
+    let active = true;
+
+    const connect = () => {
+      if (!active) return;
+      setRealtimeState(attempts > 0 ? 'reconnecting' : 'connecting');
+      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+      ws.onopen = () => {
+        attempts = 0;
+        setRealtimeState('connected');
+      };
+      ws.onmessage = (message) => {
+        try {
+          const payload = JSON.parse(message.data as string) as { event?: string; payload?: AdminBooking | AdminBooking[] };
+          if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) setBookings(payload.payload);
+          if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
+            setBookings((current) => {
+              const next = [...current];
+              const index = next.findIndex((item) => item.id === payload.payload?.id);
+              if (index >= 0) next[index] = payload.payload;
+              else next.unshift(payload.payload);
+              return next;
+            });
+          }
+        } catch {
+          // retain last valid state on malformed payload
         }
-      } catch {
-        // ignore parse errors and retain last valid state
-      }
+      };
+      ws.onclose = () => {
+        if (!active) return;
+        attempts += 1;
+        setRealtimeState('offline');
+        const backoffMs = Math.min(15000, 1000 * 2 ** Math.min(attempts, 4));
+        reconnectTimer = window.setTimeout(connect, backoffMs);
+      };
+      ws.onerror = () => ws?.close();
     };
-    return () => ws.close();
+
+    connect();
+    return () => {
+      active = false;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      ws?.close();
+    };
   }, []);
 
   const assignDriver = async (booking: AdminBooking) => {
@@ -104,5 +132,5 @@ export function App() {
 
 <section className="grid gap-5 xl:grid-cols-3"><div className="space-y-5 xl:col-span-2"><Panel title="Realtime Operations Map" icon={<span>🛰</span>}><div className="grid gap-4 lg:grid-cols-[2fr_1fr]"><div className="relative min-h-[260px] rounded-xl border border-zinc-700 bg-zinc-900/90"><div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(251,191,36,0.12),transparent_55%)]" />{driverLocations.map((d) => <div key={d.driverId} className="absolute -translate-x-1/2 -translate-y-1/2" style={{ top: `${latToTop(d.lat)}%`, left: `${lngToLeft(d.lng)}%` }}><div className={`h-3 w-3 rounded-full ${d.status === 'on-trip' ? 'bg-emerald-400' : d.status === 'available' ? 'bg-sky-400' : 'bg-amber-300'}`} /><p className="mt-1 whitespace-nowrap text-[10px] text-zinc-300">{d.vehicleCode}</p></div>)}</div><div className="space-y-2 text-xs">{driverLocations.map((driver) => <div key={driver.driverId} className="rounded-lg border border-zinc-800 bg-zinc-900 p-2"><p className="font-medium text-zinc-100">{driver.name} <span className="text-zinc-400">({driver.vehicleCode})</span></p><p className={statusTone(driver.status)}>{driver.status.toUpperCase()} • {driver.speedKph} km/h</p><p className="text-zinc-400">{driver.activeBookingRef ? `Booking ${driver.activeBookingRef}` : 'No active booking'}</p></div>)}</div></div><div className="mt-3 grid gap-2 text-xs text-zinc-300 sm:grid-cols-3"><p className="rounded-lg bg-zinc-900 p-2">Live drivers: <span className="text-white">{driverLocations.length}</span></p><p className="rounded-lg bg-zinc-900 p-2">Active bookings: <span className="text-white">{activeBookings.length}</span></p><p className="rounded-lg bg-zinc-900 p-2">GPS stream: <span className="text-emerald-300">ready abstraction</span></p></div></Panel>
 <Panel title="Booking Management" icon={<span>◈</span>}><div className="overflow-x-auto"><table className="w-full min-w-[720px] text-left text-sm"><thead className="text-xs uppercase tracking-[0.16em] text-zinc-400"><tr>{['Reference','Service','Status','Driver','Schedule','Action'].map((h) => <th key={h} className="px-2 py-2">{h}</th>)}</tr></thead><tbody>{bookings.map((row) => <tr key={row.id} className="border-t border-zinc-800 text-zinc-200"><td className="px-2 py-3">{row.referenceCode}</td><td className="px-2 py-3">{row.serviceType}</td><td className="px-2 py-3">{row.status}</td><td className="px-2 py-3">{row.assignedDriverName ?? 'Unassigned'}</td><td className="px-2 py-3">{new Date(row.scheduledAt).toLocaleString()}</td><td className="px-2 py-3">{row.status === 'pending' && !row.assignedDriverName ? <button onClick={() => assignDriver(row)} className="rounded border border-amber-500/60 px-2 py-1 text-amber-200">Assign Marco V.</button> : <span className="text-zinc-500">—</span>}</td></tr>)}</tbody></table></div></Panel></div>
-<div className="space-y-5"><Panel title="Live Status Widgets" icon={<span>◌</span>}><div className="space-y-2 text-sm text-zinc-300"><p className="rounded-lg bg-zinc-900 p-2">System Health: <span className="text-emerald-300">Stable</span></p><p className="rounded-lg bg-zinc-900 p-2">Avg Wait Time: <span className="text-amber-200">5m 42s</span></p><p className="rounded-lg bg-zinc-900 p-2">Traffic Index: <span className="text-rose-300">High</span></p></div></Panel><Panel title="Notification Queue" icon={<span>🔔</span>}><ul className="space-y-2 text-sm text-zinc-300">{notificationFeed.map((item) => <li key={item} className="rounded-lg border border-zinc-800 bg-zinc-900 p-2">{item}</li>)}</ul></Panel></div></section></div></div></div></main>;
+<div className="space-y-5"><Panel title="Live Status Widgets" icon={<span>◌</span>}><div className="space-y-2 text-sm text-zinc-300"><p className="rounded-lg bg-zinc-900 p-2">System Health: <span className="text-emerald-300">Stable</span></p><p className="rounded-lg bg-zinc-900 p-2">Realtime Link: <span className={realtimeState === 'connected' ? 'text-emerald-300' : realtimeState === 'reconnecting' ? 'text-amber-200' : 'text-rose-300'}>{realtimeState.toUpperCase()}</span></p><p className="rounded-lg bg-zinc-900 p-2">Traffic Index: <span className="text-rose-300">High</span></p></div></Panel><Panel title="Notification Queue" icon={<span>🔔</span>}><ul className="space-y-2 text-sm text-zinc-300">{notificationFeed.map((item) => <li key={item} className="rounded-lg border border-zinc-800 bg-zinc-900 p-2">{item}</li>)}</ul></Panel></div></section></div></div></div></main>;
 }

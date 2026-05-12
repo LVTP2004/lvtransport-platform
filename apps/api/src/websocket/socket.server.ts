@@ -10,10 +10,16 @@ import { realtimeOrchestratorService } from '../services/realtime-orchestrator.s
 
 export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   const server = createServer(app);
-  const wss = new WebSocketServer({ server, path: '/ws' });
+  const wss = new WebSocketServer({ server, path: env.wsPath });
 
   const broadcast = (payload: Record<string, unknown>): void => {
-    const encoded = JSON.stringify(payload);
+    let encoded: string;
+    try {
+      encoded = JSON.stringify(payload);
+    } catch {
+      logger.error('Failed to encode websocket payload for broadcast');
+      return;
+    }
     for (const client of wss.clients) {
       if (client.readyState === client.OPEN) {
         client.send(encoded);
@@ -25,17 +31,24 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
     broadcast({ type: WS_EVENTS.BOOKING_UPDATED, payload: snapshot });
   });
 
-  wss.on('connection', (socket) => {
-    logger.info('WebSocket client connected');
+  wss.on('connection', (socket, request) => {
+    logger.info('WebSocket client connected', { remoteAddress: request.socket.remoteAddress, path: request.url });
     socket.send(JSON.stringify({
       type: 'connection.ack',
       message: 'WebSocket realtime channel ready',
       lifecycleSnapshots: bookingLifecycleRealtimeService.getAllSnapshots(),
     }));
 
+    socket.on('error', (error) => {
+      logger.warn('WebSocket client error', { message: error.message });
+    });
+
     socket.on('message', (message) => {
       const raw = message.toString();
-      logger.info('WebSocket message received', { message: raw });
+      if (raw.length > 8_000) {
+        socket.send(JSON.stringify({ type: 'error', message: 'message.too_large' }));
+        return;
+      }
 
       try {
         const payload = JSON.parse(raw) as { type?: string; bookingId?: string };
@@ -57,6 +70,9 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
 
   const start = (): void => {
     server.listen(env.port, () => logger.info(`API + WebSocket server listening on port ${env.port}`));
+    server.on('error', (error) => {
+      logger.error('HTTP/WebSocket server failed', { message: error.message });
+    });
   };
 
   const stop = async (): Promise<void> => {
