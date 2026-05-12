@@ -1,196 +1,165 @@
+import crypto from 'node:crypto';
 import { emitNotificationEvent } from './notification.events.js';
 import type {
   NotificationChannel,
   NotificationDeliveryLog,
+  NotificationLifecycleStatus,
   NotificationMessage,
-  NotificationStatus,
   NotificationTemplateSet,
+  NotificationType,
 } from './notification.types.js';
 
-const deliveryLogs: NotificationDeliveryLog[] = [];
+const DEFAULT_MAX_ATTEMPTS = 3;
+const STALE_AFTER_MS = 10 * 60 * 1000;
 
 const buildTemplateSet = (message: NotificationMessage): NotificationTemplateSet => ({
   email: {
     subject: message.title,
     preview: message.body,
     text: `${message.title}\n\n${message.body}`,
-    html: `<h2>${message.title}</h2><p>${message.body}</p><p>Booking: ${message.bookingId}</p>`,
+    html: `<h2>${message.title}</h2><p>${message.body}</p><p>Booking: ${message.bookingId ?? 'n/a'}</p>`,
   },
   whatsapp: {
     text: `${message.title} - ${message.body}`,
     variables: {
-      bookingId: message.bookingId,
+      bookingId: message.bookingId ?? 'n/a',
       audience: message.audience,
     },
   },
 });
 
 export class NotificationService {
-  queue(message: NotificationMessage) {
-    const templates = buildTemplateSet(message);
-    const logs = message.channels.map((channel) => this.deliverWithMockProvider(message, channel));
-
-    emitNotificationEvent({
-      notificationId: message.notificationId,
-      audience: message.audience,
-      channels: message.channels,
-      message: message.body,
-      occurredAt: new Date().toISOString(),
-    });
-
-    return { queued: true, message, templates, logs };
-  }
-
-  private deliverWithMockProvider(message: NotificationMessage, channel: NotificationChannel): NotificationDeliveryLog {
-    const now = new Date().toISOString();
-    const failureRequested = Boolean(message.data?.['forceFailure']);
-    const status: NotificationStatus = failureRequested ? 'failed' : 'sent';
-    const log: NotificationDeliveryLog = {
-      id: `${message.notificationId}:${channel}`,
-      notificationId: message.notificationId,
-      bookingId: message.bookingId,
-      channel,
-      provider: 'mock-dev',
-      status,
-      attempts: 1,
-      error: failureRequested ? 'Mock provider failure for retry flow testing.' : undefined,
-      createdAt: now,
-      updatedAt: now,
-    };
-    deliveryLogs.push(log);
-    return log;
-  }
-
-  markRetry(notificationId: string, channel: NotificationChannel) {
-    const entry = deliveryLogs.find((log) => log.notificationId === notificationId && log.channel === channel);
-    if (!entry) return null;
-    entry.status = 'retrying';
-    entry.attempts += 1;
-    entry.updatedAt = new Date().toISOString();
-    return entry;
-  }
-
-  getLogs() {
-    return deliveryLogs;
-import { randomUUID } from 'node:crypto';
-import type { NotificationDeliveryLog, NotificationMessage, BookingNotificationContext, NotificationTemplateKind } from './notification.types.js';
-
-const DEFAULT_MAX_ATTEMPTS = 3;
-
-export const buildTrackingCode = (bookingId: string): string => `trk_${bookingId.replace(/[^a-zA-Z0-9]/g, '').slice(0, 12).toLowerCase()}`;
-export const buildTrackingUrl = (trackingCode: string): string => `/tracking/${trackingCode}`;
-
-export const buildEmailTemplate = (template: NotificationTemplateKind, context: BookingNotificationContext) => ({
-  subject: `[LV Transport] ${template.replace(/_/g, ' ')}`,
-  preheader: `${context.pickup} → ${context.dropoff}`,
-  html: `<h1>${template}</h1><p>Booking ${context.bookingId}</p><p>Tracking: ${context.trackingUrl}</p>`,
-  text: `${template} | Booking ${context.bookingId} | Tracking: ${context.trackingUrl}`,
-});
-
-export const buildWhatsAppTemplate = (template: NotificationTemplateKind, context: BookingNotificationContext) => ({
-  templateName: `lv_${template}`,
-  locale: 'en_US',
-  placeholders: {
-    bookingId: context.bookingId,
-    pickup: context.pickup,
-    dropoff: context.dropoff,
-    trackingUrl: context.trackingUrl,
-    driverName: context.driverName ?? 'TBD',
-  },
-});
-
-export class NotificationService {
-  private queueStore: NotificationMessage[] = [];
+  private notificationStore: NotificationMessage[] = [];
   private deliveryLogs: NotificationDeliveryLog[] = [];
 
-  queue(message: Omit<NotificationMessage, 'id' | 'createdAt' | 'provider' | 'delivery'>) {
-    const queued: NotificationMessage = {
-      ...message,
-      id: randomUUID(),
-      createdAt: new Date().toISOString(),
+  queue(input: Omit<NotificationMessage, 'notificationId' | 'createdAt' | 'provider' | 'lifecycle'>) {
+    const now = new Date().toISOString();
+    const message: NotificationMessage = {
+      ...input,
+      notificationId: crypto.randomUUID(),
+      createdAt: now,
       provider: 'mock_dev',
-      delivery: {
+      lifecycle: {
         status: 'queued',
         attempts: 0,
         maxAttempts: DEFAULT_MAX_ATTEMPTS,
+        updatedAt: now,
       },
     };
 
-    this.queueStore.push(queued);
-    this.logDelivery(queued, 'queued');
+    this.notificationStore.push(message);
+    this.emitLifecycle(message, 'queued');
 
-    return { queued: true, message: queued };
+    return { queued: true, message, templates: buildTemplateSet(message) };
   }
 
-  deliver(notificationId: string, shouldFail = false) {
-    const notification = this.queueStore.find((item) => item.id === notificationId);
-    if (!notification) return { delivered: false, reason: 'not_found' };
+  deliver(notificationId: string, opts: { forceFailure?: boolean } = {}) {
+    const message = this.notificationStore.find((item) => item.notificationId === notificationId);
+    if (!message) return { delivered: false, reason: 'not_found' as const };
 
-    notification.delivery.attempts += 1;
+    message.lifecycle.attempts += 1;
+    message.lifecycle.updatedAt = new Date().toISOString();
+    const status: NotificationLifecycleStatus = opts.forceFailure
+      ? message.lifecycle.attempts >= message.lifecycle.maxAttempts
+        ? 'failed'
+        : 'retrying'
+      : 'delivered';
 
-    if (shouldFail) {
-      notification.delivery.status = notification.delivery.attempts >= notification.delivery.maxAttempts ? 'failed' : 'retrying';
-      notification.delivery.failureReason = 'mock_provider_error';
-      notification.delivery.retryAt = new Date(Date.now() + 30_000).toISOString();
-      this.logDelivery(notification, notification.delivery.status, notification.delivery.failureReason);
-      return { delivered: false, message: notification };
-    }
+    message.lifecycle.status = status;
+    message.lifecycle.failureReason = status === 'failed' || status === 'retrying' ? 'mock_provider_error' : undefined;
+    message.lifecycle.retryAt = status === 'retrying' ? new Date(Date.now() + 30_000).toISOString() : undefined;
 
-    notification.delivery.status = 'delivered';
-    notification.delivery.failureReason = undefined;
-    notification.delivery.retryAt = undefined;
-    this.logDelivery(notification, 'delivered');
-    return { delivered: true, message: notification };
+    message.channels.forEach((channel) => this.logDelivery(message, channel, status));
+    this.emitLifecycle(message, status);
+    return { delivered: status === 'delivered', message };
+  }
+
+  archiveOperationalAlertsForBooking(bookingId: string) {
+    const now = new Date().toISOString();
+    this.notificationStore
+      .filter((item) => item.bookingId === bookingId && item.lifecycle.status !== 'archived')
+      .forEach((item) => {
+        item.lifecycle.status = 'archived';
+        item.lifecycle.archivedAt = now;
+        item.lifecycle.updatedAt = now;
+        this.emitLifecycle(item, 'archived');
+      });
+  }
+
+  listActiveOperationalAlerts(audience?: NotificationMessage['audience']) {
+    return this.notificationStore.filter(
+      (item) =>
+        item.lifecycle.status !== 'archived' &&
+        item.lifecycle.status !== 'delivered' &&
+        (!audience || item.audience === audience),
+    );
+  }
+
+  detectStaleOperations() {
+    const staleBefore = Date.now() - STALE_AFTER_MS;
+    return this.notificationStore.filter(
+      (item) =>
+        item.lifecycle.status !== 'archived' &&
+        item.lifecycle.status !== 'delivered' &&
+        new Date(item.lifecycle.updatedAt).getTime() < staleBefore,
+    );
+  }
+
+  restoreActiveNotifications(recipientId: string) {
+    return this.notificationStore.filter(
+      (item) =>
+        item.recipientId === recipientId && item.lifecycle.status !== 'archived' && item.lifecycle.status !== 'delivered',
+    );
+  }
+
+  createOperationalWarning(recipientId: string, bookingId: string, body: string, type: NotificationType = 'operational_warning') {
+    return this.queue({
+      bookingId,
+      recipientId,
+      audience: 'admin',
+      type,
+      channels: ['in_app'],
+      title: 'Operational warning',
+      body,
+      data: { severity: 'high' },
+    });
   }
 
   getDeliveryLogs() {
     return [...this.deliveryLogs];
   }
 
-  private logDelivery(message: NotificationMessage, status: NotificationDeliveryLog['status'], failureReason?: string) {
+  getLogs() {
+    return this.getDeliveryLogs();
+  }
+
+  private emitLifecycle(message: NotificationMessage, state: NotificationLifecycleStatus) {
+    emitNotificationEvent({
+      notificationId: message.notificationId,
+      bookingId: message.bookingId,
+      audience: message.audience,
+      type: message.type,
+      channels: message.channels,
+      state,
+      message: message.body,
+      occurredAt: new Date().toISOString(),
+    });
+  }
+
+  private logDelivery(message: NotificationMessage, channel: NotificationChannel, status: NotificationLifecycleStatus) {
     this.deliveryLogs.push({
-      notificationId: message.id,
+      id: `${message.notificationId}:${channel}:${message.lifecycle.attempts}`,
+      notificationId: message.notificationId,
+      bookingId: message.bookingId,
       recipientId: message.recipientId,
       audience: message.audience,
-      channel: message.channel,
+      channel,
       provider: message.provider,
       status,
-      attempt: message.delivery.attempts,
+      attempt: message.lifecycle.attempts,
       occurredAt: new Date().toISOString(),
-      failureReason,
+      failureReason: message.lifecycle.failureReason,
     });
-import type {
-  NotificationDeliveryLog,
-  NotificationLifecycleState,
-  NotificationMessage
-} from './notification.types.js';
-
-export class NotificationService {
-  queue(message: NotificationMessage) {
-    return {
-      queued: true,
-      queueName: 'notification.queue.main',
-      state: 'queued' as NotificationLifecycleState,
-      message
-    };
-  }
-
-  scheduleRetry(notificationId: string, attempt: number, nextAttemptAt: string) {
-    return {
-      notificationId,
-      attempt,
-      nextAttemptAt,
-      queueName: 'notification.queue.retry',
-      state: 'retrying' as NotificationLifecycleState
-    };
-  }
-
-  recordDeliveryLog(log: NotificationDeliveryLog) {
-    return {
-      persisted: true,
-      collection: 'notification_delivery_logs',
-      log
-    };
   }
 }
 
