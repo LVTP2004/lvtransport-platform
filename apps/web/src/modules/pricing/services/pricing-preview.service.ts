@@ -14,6 +14,11 @@ export class PricingPreviewService {
         discountsTotal: 0,
         taxes: [],
         total: 0,
+        diagnostics: {
+          operationalMinimumApplied: false,
+          realtimeRecalculationReady: true,
+          pricingVersion: 'pricing-architecture-v2-centralized-engine',
+        },
       },
       createdAt: new Date().toISOString(),
       expiresAt: new Date(Date.now() + 10 * 60_000).toISOString(),
