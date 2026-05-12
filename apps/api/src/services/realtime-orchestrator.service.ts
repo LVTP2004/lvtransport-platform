@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';
+import { operationalAnalyticsService } from './operational-analytics.service.js';
 
 export const BOOKING_LIFECYCLE = [
   'pending',
@@ -184,6 +185,7 @@ export const realtimeOrchestratorService = {
     if (lastSequence) for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent) as { sequence?: number }).sequence! > lastSequence) socket.send(replayEvent);
     socket.send(JSON.stringify({ event: 'booking.snapshot', payload: Array.from(bookings.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: 'driver.snapshot', payload: Array.from(driverStates.values()), sequence: eventSequence }));
+    socket.send(JSON.stringify({ event: 'admin.analytics.snapshot', payload: operationalAnalyticsService.getAdminSnapshot(), sequence: eventSequence }));
   },
 
   createBooking(input: { customerName: string; pickup: string; destination: string }): BookingRecord {
@@ -193,7 +195,7 @@ export const realtimeOrchestratorService = {
       status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
-    bookings.set(booking.id, booking); emit('booking.created', booking); return booking;
+    bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot()); return booking;
   },
 
   listBookings: () => Array.from(bookings.values()),
@@ -211,7 +213,11 @@ export const realtimeOrchestratorService = {
     booking.timeline.push({ status: 'assigned', actor: 'admin', at: now, note: `Driver ${params.driverName} assigned` });
     driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    operationalAnalyticsService.trackAssignmentIssued();
+    operationalAnalyticsService.trackBookingTransition(booking);
+    operationalAnalyticsService.trackDriverState(driverStates.get(params.driverId)!);
     emit('booking.updated', booking); emit('driver.assigned', booking); emit('driver.status.updated', driverStates.get(params.driverId)); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
+    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
     return booking;
   },
 
@@ -219,6 +225,7 @@ export const realtimeOrchestratorService = {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (booking.assignedDriverId !== params.driverId) throw new Error('DRIVER_MISMATCH');
     const now = new Date().toISOString();
+    const previousStatus = booking.status;
     if (params.action === 'reject') {
       booking.status = 'available'; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: 'available', actor: 'driver', at: now, note: 'Driver rejected assignment' });
       releaseDriver(params.driverId);
@@ -228,7 +235,11 @@ export const realtimeOrchestratorService = {
       const driver = driverStates.get(params.driverId);
       if (driver) driverStates.set(params.driverId, { ...driver, state: 'onderweg', activeBookingId: booking.id, lastUpdatedAt: now });
     }
+    operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
+    const trackedDriver = driverStates.get(params.driverId);
+    if (trackedDriver) operationalAnalyticsService.trackDriverState(trackedDriver);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
+    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
     return booking;
   },
 
@@ -237,9 +248,12 @@ export const realtimeOrchestratorService = {
     if (booking.status === params.nextStatus) return booking;
     if (!allowedTransitions[booking.status].includes(params.nextStatus)) throw new Error('INVALID_TRANSITION');
     const now = new Date().toISOString();
+    const previousStatus = booking.status;
     booking.status = params.nextStatus; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: params.nextStatus, actor: params.actor, at: now });
     if (['completed', 'cancelled', 'failed'].includes(params.nextStatus)) releaseDriver(booking.assignedDriverId);
+    operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, status: booking.status, at: now });
+    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
     return booking;
   },
 
@@ -250,7 +264,9 @@ export const realtimeOrchestratorService = {
     const next: DriverRealtimeState = { driverId: params.driverId, state: params.state, activeBookingId: params.bookingId, lastUpdatedAt: now, location: existing?.location, rating: typeof params.rating === 'number' ? params.rating : existing?.rating };
     if (params.location) next.location = { ...params.location, capturedAt: now };
     driverStates.set(params.driverId, next);
+    operationalAnalyticsService.trackDriverState(next);
     emit('driver.status.updated', next); emit('admin.live.updated', { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
+    emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
     return next;
   },
 
@@ -293,6 +309,7 @@ export const realtimeOrchestratorService = {
       booking.timeline.push({ status: 'available', actor: 'system', at: booking.updatedAt, note: 'Assignment timed out and was recycled' });
       releaseDriver(booking.assignedDriverId);
       released.push(booking.id);
+      operationalAnalyticsService.trackBookingTransition(booking, 'assigned');
       emit('booking.updated', booking);
     }
     return { releasedAssignments: released };
@@ -302,6 +319,7 @@ export const realtimeOrchestratorService = {
     const recovered = Array.from(bookings.values()).filter((booking) => booking.assignedDriverId === driverId && ['assigned', 'onderweg', 'arrived', 'in_progress'].includes(booking.status));
     const latest = recovered[recovered.length - 1];
     if (latest) this.updateDriverState({ driverId, state: latest.status === 'assigned' ? 'assigned' : (latest.status as DriverState), bookingId: latest.id });
+    operationalAnalyticsService.rebuildFromSnapshots(Array.from(bookings.values()), Array.from(driverStates.values()));
     return { recoveredBookings: recovered, driverState: driverStates.get(driverId) ?? null };
   },
 
@@ -314,6 +332,7 @@ export const realtimeOrchestratorService = {
       lastUpdatedAt: now, rating: current?.rating
     };
     driverStates.set(params.driverId, next);
+    operationalAnalyticsService.trackDriverState(next);
     emit('driver.location.updated', { driverId: params.driverId, bookingId: next.activeBookingId, location: next.location, at: now });
     return next;
   },
