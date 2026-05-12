@@ -10,7 +10,27 @@ Core style:
 - Realtime event propagation for booking + driver + admin synchronization
 - Domain modules that can scale independently toward SaaS-grade operations
 
-## 2) Platform Domains
+## 2) Operational Hierarchy Alignment (Preparation Layer)
+
+This repository now explicitly documents the conceptual LVTP hierarchy without changing existing runtime flows:
+
+- **CEO / Founder:** Leonardo Daniel Vargas Hinojosa
+- **Leo IA (Orchestration + Supervision Layer)**
+  - Executive Intelligence Layer
+  - LV Control Tower
+  - Technical Infrastructure
+  - AI Operations Layer
+  - Customer Layer
+  - Driver Layer
+  - Future Ecosystem
+
+Boundary rules:
+- **Leo IA** orchestrates and supervises cross-layer alignment.
+- **LV Control Tower** remains operational authority.
+- **Booking Engine** remains operational source of truth.
+- **Moni Assistant** remains inside AI Operations Layer.
+
+## 3) Platform Domains
 
 1. **LV Ride**
    - Customer booking lifecycle, pricing estimate, airport/business/long-distance requests.
@@ -27,7 +47,7 @@ Core style:
 7. **LV Eats foundation**
    - Future multi-service extensibility by reusing dispatch, driver, realtime, and billing patterns.
 
-## 3) Canonical Booking Lifecycle (Operations)
+## 4) Canonical Booking Lifecycle (Operations)
 
 Canonical lifecycle for operational sync:
 
@@ -40,7 +60,7 @@ Terminal branch:
 Architecture note:
 - Backward-compatible transitional states like `quoted`, `confirmed`, and `available` remain supported in realtime orchestration to avoid breaking existing deployments while migrating to the canonical premium lifecycle.
 
-## 4) Realtime Operational Model
+## 5) Realtime Operational Model
 
 Realtime architecture responsibilities:
 - **Booking stream:** create/update/lifecycle changes emitted as ordered events
@@ -50,7 +70,7 @@ Realtime architecture responsibilities:
 - **Version checks:** expected-version protection on critical status transitions
 - **Reconnect safety:** websocket clients receive snapshot hydration on reconnect before incremental events
 
-## 5) Centralized Orchestration Layers
+## 6) Centralized Orchestration Layers
 
 ### Booking orchestration
 - API-owned status transitions with transition policy enforcement.
@@ -66,7 +86,7 @@ Realtime architecture responsibilities:
 ### Payment + notification lifecycle
 - Payment events and notification templates remain modularized; wiring remains API-driven and environment-configurable.
 
-## 6) Admin Control Tower Architecture
+## 7) Admin Control Tower Architecture
 
 Admin is positioned as a realtime operations center:
 - Live booking queue and status timeline visibility
@@ -76,29 +96,26 @@ Admin is positioned as a realtime operations center:
 - Incident and operational event logging foundation
 - Readiness for live map/GPS and dispatch automation augmentation
 
-## 7) LV Business + VIP Architecture
+## 8) AI Operations Layer (Moni Preparation)
 
-- Company account abstraction with grouped rides and billing references
-- Recurring ride/fixed-route modeling readiness
-- VIP priority layer for dispatch strategy and premium communication flows
-- Monthly invoicing/reporting-ready data segmentation for future finance integration
+Non-destructive preparation contracts are now defined for:
+- Moni Assistant core context
+- Multilingual AI responses
+- Booking context reading boundaries
+- Escalation queue structures
+- AI audit log structures
+- Operational prompt template structures
 
-## 8) Moni Assistant Integration Layer
+These contracts are extension points only and do not change current booking/realtime behavior.
 
-Moni is integrated as a modular assistant domain:
-- Booking guidance flow orchestration
-- VIP/business route support workflows
-- Tracking and airport assistance patterns
-- Multilingual-ready structured assistant responses
-- Safe AI extension boundary for future policy-controlled copilots
+## 9) Multi-Service Expansion (LV Eats + Ecosystem Readiness)
 
-## 9) Multi-Service Expansion (LV Eats Readiness)
-
-LV Eats foundation leverages shared patterns:
+LV Eats and broader ecosystem foundation leverage shared patterns:
 - Booking lifecycle pattern -> order lifecycle analogue
 - Driver lifecycle pattern -> courier lifecycle analogue
 - Control tower pattern -> delivery operations analogue
 - Pricing + notification + auth + realtime modules reused with domain-specific adapters
+- Leo IA orchestration boundary reused across future service verticals
 
 ## 10) Operational Automation Foundation
 
