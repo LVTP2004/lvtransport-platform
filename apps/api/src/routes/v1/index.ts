@@ -74,4 +74,13 @@ router.post('/drivers/:driverId/status', (req, res, next) => {
   }
 });
 
+router.post('/drivers/:driverId/location', (req, res, next) => {
+  try {
+    const driver = realtimeOrchestratorService.updateDriverLocation({ driverId: req.params.driverId, ...req.body });
+    res.json({ driver });
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

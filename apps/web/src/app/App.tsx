@@ -1,3 +1,4 @@
+import { useEffect, useMemo, useState } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
@@ -35,6 +36,38 @@ const loadDraft = (): BookingDraft | null => {
   try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) as BookingDraft : null; } catch { return null; }
 };
 
+function TrackingPage({ code }: { code: string }) {
+  const [tracking, setTracking] = useState<{ status: string; lat?: number; lng?: number; updatedAt?: string } | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    const refresh = async () => {
+      const response = await fetch('http://localhost:8080/api/v1/bookings');
+      const result = await response.json();
+      const booking = (result.bookings ?? []).find((item: { code: string }) => item.code === code);
+      if (!mounted) return;
+      if (!booking) {
+        setTracking(null);
+        return;
+      }
+      setTracking({
+        status: booking.status,
+        lat: booking.tracking?.lastKnownLocation?.lat,
+        lng: booking.tracking?.lastKnownLocation?.lng,
+        updatedAt: booking.tracking?.updatedAt
+      });
+    };
+    refresh();
+    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+    ws.onmessage = () => refresh();
+    return () => {
+      mounted = false;
+      ws.close();
+    };
+  }, [code]);
+
+  return <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><section className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1><p className="mt-4 text-sm text-lv-mist sm:text-base">Tracking code <span className="font-semibold text-white">{code}</span> is valid and ready for live trip updates.</p><div className="mt-4 text-sm text-lv-mist">Status: {tracking?.status ?? 'Waiting for trip activation'}</div><div className="mt-1 text-sm text-lv-mist">Driver location: {tracking?.lat && tracking?.lng ? `${tracking.lat.toFixed(5)}, ${tracking.lng.toFixed(5)}` : 'GPS unavailable'}</div><div className="mt-1 text-sm text-lv-mist">ETA data: structure ready (location timestamp {tracking?.updatedAt ? new Date(tracking.updatedAt).toLocaleTimeString() : 'n/a'})</div></section></div></div>;
+}
 function TrackingPage({ code }: { code: string }) { return <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><section className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1><p className="mt-4 text-sm text-lv-mist sm:text-base">Tracking code <span className="font-semibold text-white">{code}</span> is valid and ready for live trip updates.</p></section></div><MoniAssistant /></div>; }
 
 export function App() {
