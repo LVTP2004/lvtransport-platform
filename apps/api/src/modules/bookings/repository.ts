@@ -5,12 +5,14 @@ import type { BookingRecord } from './dto.js';
 export interface BookingRepository {
   create(record: BookingRecord): Promise<BookingRecord>;
   findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
+  findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null>;
   list(): Promise<BookingRecord[]>;
 }
 
 type BookingStore = {
   bookings: BookingRecord[];
   idempotencyIndex: Record<string, string>;
+  fingerprintIndex?: Record<string, { bookingId: string; createdAt: string }>;
 };
 
 class FileBookingRepository implements BookingRepository {
@@ -31,6 +33,7 @@ class FileBookingRepository implements BookingRepository {
     return {
       bookings: Array.isArray(parsed.bookings) ? parsed.bookings : [],
       idempotencyIndex: parsed.idempotencyIndex ?? {},
+      fingerprintIndex: parsed.fingerprintIndex ?? {},
     };
   }
 
@@ -50,6 +53,9 @@ class FileBookingRepository implements BookingRepository {
 
     store.bookings.unshift(record);
     store.idempotencyIndex[idempotencyKey] = record.id;
+    const fingerprint = `${record.pickup.trim().toLowerCase()}|${record.destination.trim().toLowerCase()}|${record.scheduleAt}|${record.serviceType}`;
+    store.fingerprintIndex ??= {};
+    store.fingerprintIndex[fingerprint] = { bookingId: record.id, createdAt: record.createdAt };
     this.writeStore(store);
     return record;
   }
@@ -64,6 +70,15 @@ class FileBookingRepository implements BookingRepository {
   async list(): Promise<BookingRecord[]> {
     const store = this.readStore();
     return [...store.bookings];
+  }
+
+  async findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null> {
+    const store = this.readStore();
+    const entry = store.fingerprintIndex?.[fingerprint];
+    if (!entry) return null;
+    const age = Date.now() - new Date(entry.createdAt).getTime();
+    if (age > maxAgeMs) return null;
+    return store.bookings.find((booking) => booking.id === entry.bookingId) ?? null;
   }
 }
 

@@ -16,6 +16,9 @@ export const bookingFlowService = {
   async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
     const existing = await bookingRepository.findByIdempotencyKey(idempotencyKey);
     if (existing) return existing;
+    const duplicateFingerprint = `${input.pickup.trim().toLowerCase()}|${input.destination.trim().toLowerCase()}|${input.scheduleAt}|${input.serviceType}`;
+    const recentDuplicate = await bookingRepository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
+    if (recentDuplicate) return recentDuplicate;
 
     const quote = pricingEngine.createQuote({
       estimatedDistanceKm: input.estimatedDistanceKm ?? 5,
