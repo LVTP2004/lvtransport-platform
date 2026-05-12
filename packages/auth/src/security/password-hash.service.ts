@@ -1,3 +1,5 @@
+declare const Buffer: any;
+// @ts-ignore - node built-in is resolved in runtime node environments
 import { pbkdf2Sync, randomBytes, timingSafeEqual } from 'node:crypto';
 
 const ITERATIONS = 120000;
@@ -14,7 +16,8 @@ export function verifyPassword(password: string, storedHash: string): boolean {
   const [salt, expectedHash] = storedHash.split(':');
   if (!salt || !expectedHash) return false;
   const hash = pbkdf2Sync(password, salt, ITERATIONS, KEY_LENGTH, DIGEST).toString('hex');
-  const actualBuffer = Buffer.from(hash, 'hex');
-  const expectedBuffer = Buffer.from(expectedHash, 'hex');
+  const BufferCompat = Buffer as any;
+  const actualBuffer = BufferCompat.from(hash, 'hex');
+  const expectedBuffer = BufferCompat.from(expectedHash, 'hex');
   return actualBuffer.length === expectedBuffer.length && timingSafeEqual(actualBuffer, expectedBuffer);
 }

@@ -39,11 +39,12 @@ export function App() {
             return;
           }
           if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
+            const bookingPayload = payload.payload;
             setBookings((current) => {
               const next = [...current];
-              const index = next.findIndex((item) => item.id === payload.payload?.id);
-              if (index >= 0) next[index] = payload.payload;
-              else if (payload.payload.assignedDriverName === 'Marco V.' || payload.payload.status === 'assigned') next.unshift(payload.payload);
+              const index = next.findIndex((item) => item.id === bookingPayload.id);
+              if (index >= 0) next[index] = bookingPayload;
+              else if (bookingPayload.assignedDriverName === 'Marco V.' || bookingPayload.status === 'assigned') next.unshift(bookingPayload);
               return next.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned');
             });
           }
