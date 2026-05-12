@@ -1,5 +1,5 @@
-import type { FirebaseAppHandle } from "../core/firebase-app";
-import { realtimeDbPaths } from "./paths";
+import type { FirebaseAppHandle } from "../core/firebase-app.js";
+import { realtimeDbPaths } from "./paths.js";
 
 export interface RealtimeDbPreparation {
   app: FirebaseAppHandle;

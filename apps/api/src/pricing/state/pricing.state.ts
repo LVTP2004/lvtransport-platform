@@ -1,4 +1,4 @@
-import { AdminFareRule } from '../interfaces/admin-fare-rule.interface';
+import { AdminFareRule } from '../interfaces/admin-fare-rule.interface.js';
 
 export interface PricingRuntimeState {
   activeVersion: string;

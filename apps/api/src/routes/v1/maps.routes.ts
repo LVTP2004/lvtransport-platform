@@ -41,4 +41,38 @@ router.post('/maps/route-estimate', (req, res) => {
   return res.json({ route });
 });
 
+router.post('/maps/trips/:tripId/realtime-eta', (req, res) => {
+  const pickup = req.body?.pickup;
+  const destination = req.body?.destination;
+  const driverCoordinate = req.body?.driverCoordinate;
+  const driverId = req.body?.driverId;
+
+  const hasCoords = (value: unknown) => {
+    const candidate = value as { lat?: number; lng?: number };
+    return typeof candidate?.lat === 'number' && typeof candidate?.lng === 'number';
+  };
+
+  if (!driverId || typeof driverId !== 'string') {
+    return res.status(400).json({ error: 'driverId is required' });
+  }
+
+  if (!hasCoords(pickup) || !hasCoords(destination) || !hasCoords(driverCoordinate)) {
+    return res.status(400).json({
+      error: 'pickup, destination, and driverCoordinate coordinates are required',
+    });
+  }
+
+  const snapshot = mapsService.estimateRealtimeEtaSnapshot({
+    tripId: req.params.tripId,
+    bookingId: req.body?.bookingId,
+    driverId,
+    pickup,
+    destination,
+    driverCoordinate,
+    options: req.body?.options,
+  });
+
+  return res.json({ snapshot });
+});
+
 export default router;

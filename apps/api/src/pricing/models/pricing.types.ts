@@ -1,4 +1,4 @@
-import { FareRuleType, PricingTier, QuoteStatus } from '../enums/fare-rule.enum';
+import { FareRuleType, PricingTier, QuoteStatus } from '../enums/fare-rule.enum.js';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP';
 

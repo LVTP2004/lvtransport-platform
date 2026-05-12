@@ -1,5 +1,12 @@
 import { env } from '../../config/env.js';
-import type { PlaceDetailsDto, PlaceSuggestionDto, RouteEstimateDto, RouteEstimateRequestDto } from './dto.js';
+import type {
+  PlaceDetailsDto,
+  PlaceSuggestionDto,
+  RealtimeEtaSnapshotDto,
+  RealtimeEtaSnapshotRequestDto,
+  RouteEstimateDto,
+  RouteEstimateRequestDto,
+} from './dto.js';
 
 const GOOGLE_MAPS_BASE = 'https://maps.googleapis.com/maps/api';
 
@@ -71,6 +78,59 @@ export class MapsService {
         durationMin: Number((durationSeconds / 60).toFixed(1)),
         human: `${(distanceMeters / 1000).toFixed(1)} km • ${Math.round(durationSeconds / 60)} min`
       }
+    };
+  }
+
+  estimateRealtimeEtaSnapshot(input: RealtimeEtaSnapshotRequestDto): RealtimeEtaSnapshotDto {
+    const asOfIso = new Date().toISOString();
+    const coordinateCapturedAtIso = input.driverCoordinate.capturedAtIso ?? asOfIso;
+
+    const toPickup = this.estimateRoute({
+      pickup: {
+        placeId: 'driver-coordinate',
+        formattedAddress: 'Driver realtime coordinate',
+        lat: input.driverCoordinate.lat,
+        lng: input.driverCoordinate.lng,
+      },
+      destination: input.pickup,
+    });
+    const pickupToDestination = this.estimateRoute({
+      pickup: input.pickup,
+      destination: input.destination,
+    });
+
+    const totalDistanceMeters = toPickup.distanceMeters + pickupToDestination.distanceMeters;
+    const totalDurationSeconds = toPickup.durationSeconds + pickupToDestination.durationSeconds;
+    const totalToDestination: RouteEstimateDto = {
+      distanceMeters: totalDistanceMeters,
+      durationSeconds: totalDurationSeconds,
+      etaIso: new Date(Date.now() + totalDurationSeconds * 1000).toISOString(),
+      summary: {
+        distanceKm: Number((totalDistanceMeters / 1000).toFixed(2)),
+        durationMin: Number((totalDurationSeconds / 60).toFixed(1)),
+        human: `${(totalDistanceMeters / 1000).toFixed(1)} km • ${Math.round(totalDurationSeconds / 60)} min`,
+      },
+    };
+
+    const useGoogleWhenAvailable = input.options?.useGoogleWhenAvailable ?? true;
+    const notes = [
+      'ETA currently uses deterministic placeholder estimation from realtime driver coordinates.',
+      'Google Maps ETA provider can replace placeholder calculations without API contract changes.',
+    ];
+    if (input.options?.reason) notes.push(`Computation context: ${input.options.reason}`);
+
+    return {
+      tripId: input.tripId,
+      bookingId: input.bookingId,
+      driverId: input.driverId,
+      coordinateCapturedAtIso,
+      provider: 'placeholder',
+      asOfIso,
+      toPickup,
+      pickupToDestination,
+      totalToDestination,
+      isGoogleReady: useGoogleWhenAvailable,
+      notes,
     };
   }
 }

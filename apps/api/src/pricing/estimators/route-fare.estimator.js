@@ -1,5 +1,5 @@
-import { PRICING_CONSTANTS } from '../constants/pricing.config';
-import { FareRuleType, PricingTier } from '../enums/fare-rule.enum';
+import { PRICING_CONSTANTS } from '../constants/pricing.config.js';
+import { FareRuleType, PricingTier } from '../enums/fare-rule.enum.js';
 export class RouteFareEstimator {
     estimate(input) {
         const tier = input.tier ?? PricingTier.STANDARD;
