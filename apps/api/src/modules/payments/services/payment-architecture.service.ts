@@ -9,6 +9,7 @@ import {
 import { CreateCheckoutSessionDto, CreateRefundRequestDto, RetryPaymentDto } from '../dto/payment.dto.js';
 import { BookingPaymentSnapshot, MoneyAmount, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
 import { InvoiceDraft, TransactionHistoryEntry } from '../models/payment.models.js';
+import { recordOperationalIncident } from '../../../../utils/operational-monitoring.js';
 
 interface ReconnectSnapshot {
   sessions: PaymentSession[];
@@ -95,7 +96,10 @@ export class PaymentArchitectureService {
 
   scheduleRetry(dto: RetryPaymentDto) {
     const session = this.sessions.get(dto.sessionId);
-    if (!session) return { scheduled: false, reason: 'session_not_found' };
+    if (!session) {
+      recordOperationalIncident({ code: 'PAYMENT_RETRY_SESSION_NOT_FOUND', domain: 'payment', severity: 'warning', message: 'Payment retry requested for missing session', context: { sessionId: dto.sessionId, reason: dto.reason } });
+      return { scheduled: false, reason: 'session_not_found' };
+    }
 
     session.retryCount += 1;
     session.status = PaymentSessionStatus.RETRY_SCHEDULED;
@@ -136,7 +140,10 @@ export class PaymentArchitectureService {
   }
 
   handleWebhookEvent(eventType: string, sessionId?: string) {
-    if (!sessionId) return { accepted: false, replayDetected: false, reason: 'missing_session' };
+    if (!sessionId) {
+      recordOperationalIncident({ code: 'PAYMENT_WEBHOOK_MISSING_SESSION', domain: 'payment', severity: 'warning', message: 'Payment webhook missing sessionId', context: { eventType } });
+      return { accepted: false, replayDetected: false, reason: 'missing_session' };
+    }
     if (eventType === 'payment.succeeded') this.transitionPayment(sessionId, PaymentSessionStatus.CAPTURED);
     if (eventType === 'payment.failed') this.transitionPayment(sessionId, PaymentSessionStatus.FAILED);
     if (eventType === 'payment.cancelled') this.transitionPayment(sessionId, PaymentSessionStatus.CANCELLED);
@@ -215,6 +222,7 @@ export class PaymentArchitectureService {
     this.invoices = new Map(snapshot.invoices.map((inv) => [inv.invoiceId, inv]));
     this.businessAccounts = new Map(snapshot.businessAccounts.map((acc) => [acc.accountId, acc]));
     this.recurringCustomers = new Map(snapshot.recurringCustomers.map((profile) => [profile.customerId, profile]));
+    recordOperationalIncident({ code: 'PAYMENT_RECONNECT_RESTORE', domain: 'reconnect', severity: 'info', message: 'Payment state restored after reconnect', context: { sessions: this.sessions.size, bookings: this.bookingStates.size } });
     return { restored: true, sessions: this.sessions.size, bookings: this.bookingStates.size };
   }
 
@@ -305,3 +313,6 @@ export class PaymentArchitectureService {
 }
 
 export const paymentArchitectureService = new PaymentArchitectureService();
+    if (staleTransactions.length > 0) {
+      recordOperationalIncident({ code: 'PAYMENT_STALE_TRANSACTIONS', domain: 'payment', severity: 'warning', message: 'Detected stale payment transactions in diagnostics', context: { bookingId: bookingId ?? null, staleTransactionCount: staleTransactions.length } });
+    }
