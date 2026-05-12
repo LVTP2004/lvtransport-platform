@@ -77,6 +77,13 @@ type AssignmentCandidate = {
   state: DriverState;
   rating: number | null;
   locationKnown: boolean;
+  availabilityPrediction: {
+    nextAvailabilityMinutes: number;
+    confidence: number;
+    source: 'realtime_state' | 'operational_inference';
+  };
+  loadBalanceScore: number;
+  conflictFree: boolean;
 };
 
 type DriverLocationUpdate = {
@@ -106,6 +113,7 @@ const idempotencyKeys = new Set<string>();
 const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const eventReplayBuffer: string[] = [];
+const assignmentAttemptLedger = new Map<string, string>();
 let eventSequence = 0;
 let heartbeatInterval: NodeJS.Timeout | undefined;
 
@@ -154,6 +162,13 @@ const parseLastSequenceFromUrl = (url?: string): number | null => {
 };
 
 const createBookingCode = () => `LV-${Math.floor(100000 + Math.random() * 900000)}`;
+const createAssignmentAttemptKey = (bookingId: string, driverId: string) => `${bookingId}:${driverId}`;
+const getAvailabilityPrediction = (driver: DriverRealtimeState, activeRides: number) => {
+  if (driver.state === 'available' && activeRides === 0) return { nextAvailabilityMinutes: 0, confidence: 0.95, source: 'realtime_state' as const };
+  const stateMinutes: Record<DriverState, number> = { offline: 45, available: 0, assigned: 6, onderweg: 12, arrived: 4, in_progress: 18, completed: 2 };
+  const nextAvailabilityMinutes = stateMinutes[driver.state] + Math.max(0, activeRides - 1) * 10;
+  return { nextAvailabilityMinutes, confidence: 0.65, source: 'operational_inference' as const };
+};
 const releaseDriver = (driverId?: string) => {
   if (!driverId) return;
   const current = driverStates.get(driverId);
@@ -227,9 +242,13 @@ export const realtimeOrchestratorService = {
 
   assignDriver(params: { bookingId: string; driverId: string; driverName: string; idempotencyKey?: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
+    if (booking.assignedDriverId && booking.assignedDriverId !== params.driverId && ['assigned', 'onderweg', 'arrived', 'in_progress'].includes(booking.status)) throw new Error('BOOKING_ALREADY_ASSIGNED');
     const driver = driverStates.get(params.driverId);
     if (!driver || !['available', 'completed'].includes(driver.state) || driver.activeBookingId) throw new Error('DRIVER_NOT_ASSIGNABLE');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
+    const attemptKey = createAssignmentAttemptKey(params.bookingId, params.driverId);
+    const lastAttemptAt = assignmentAttemptLedger.get(attemptKey);
+    if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && booking.status === 'assigned') throw new Error('DUPLICATE_ASSIGNMENT_ATTEMPT');
     if (!['confirmed', 'available', 'assigned'].includes(booking.status)) throw new Error('INVALID_TRANSITION');
     const now = new Date().toISOString();
     booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName; booking.assignmentOfferedAt = now; booking.assignmentExpiresAt = new Date(Date.now() + ASSIGNMENT_TTL_MS).toISOString();
@@ -237,6 +256,7 @@ export const realtimeOrchestratorService = {
     booking.timeline.push({ status: 'assigned', actor: 'admin', at: now, note: `Driver ${params.driverName} assigned` });
     driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    assignmentAttemptLedger.set(attemptKey, now);
     operationalAnalyticsService.trackAssignmentIssued();
     operationalAnalyticsService.trackBookingTransition(booking);
     operationalAnalyticsService.trackDriverState(driverStates.get(params.driverId)!);
@@ -310,16 +330,20 @@ export const realtimeOrchestratorService = {
       const etaScore = etaMinutes === null ? 0.1 : Math.max(0, 1 - etaMinutes / 30);
       const availabilityScore = assignmentEligible ? 1 : 0;
       const activeRidesScore = activeRides === 0 ? 1 : 0;
+      const loadBalanceScore = Math.max(0, 1 - Math.min(3, activeRides) / 3);
       const driverStateScore = stateScoreMap[driver.state];
       const ratingScore = typeof driver.rating === 'number' ? Math.min(1, Math.max(0, driver.rating / 5)) : 0.5;
+      const availabilityPrediction = getAvailabilityPrediction(driver, activeRides);
+      const conflictFree = !driver.activeBookingId || driver.activeBookingId === booking.id;
       return {
         driverId: driver.driverId, distanceKm: distanceKm === null ? null : Number(distanceKm.toFixed(2)), etaMinutes, assignmentEligible,
         notEligibleReason: assignmentEligible ? undefined : isStale ? 'stale_driver_presence' : driver.state !== 'available' ? 'driver_busy_or_offline' : 'active_ride_exists',
         availabilityScore, activeRidesScore, driverStateScore, ratingScore, etaScore,
-        totalScore: Number((distanceScore * 0.35 + etaScore * 0.2 + availabilityScore * 0.2 + activeRidesScore * 0.15 + driverStateScore * 0.05 + ratingScore * 0.05).toFixed(4)),
-        activeRides, state: driver.state, rating: driver.rating ?? null, locationKnown: Boolean(driver.location)
+        totalScore: Number((distanceScore * 0.3 + etaScore * 0.25 + availabilityScore * 0.2 + activeRidesScore * 0.1 + loadBalanceScore * 0.1 + driverStateScore * 0.03 + ratingScore * 0.02).toFixed(4)),
+        activeRides, state: driver.state, rating: driver.rating ?? null, locationKnown: Boolean(driver.location),
+        availabilityPrediction, loadBalanceScore: Number(loadBalanceScore.toFixed(4)), conflictFree
       };
-    }).sort((a, b) => b.totalScore - a.totalScore);
+    }).sort((a, b) => b.totalScore - a.totalScore || (a.etaMinutes ?? Number.MAX_SAFE_INTEGER) - (b.etaMinutes ?? Number.MAX_SAFE_INTEGER) || (a.distanceKm ?? Number.MAX_SAFE_INTEGER) - (b.distanceKm ?? Number.MAX_SAFE_INTEGER) || a.driverId.localeCompare(b.driverId));
     return { bookingId: booking.id, candidates: candidates.slice(0, input.maxCandidates ?? 10) };
   },
 
@@ -344,6 +368,7 @@ export const realtimeOrchestratorService = {
     const latest = recovered[recovered.length - 1];
     if (latest) this.updateDriverState({ driverId, state: latest.status === 'assigned' ? 'assigned' : (latest.status as DriverState), bookingId: latest.id });
     operationalAnalyticsService.rebuildFromSnapshots(Array.from(bookings.values()), Array.from(driverStates.values()));
+    emit('dispatch.recovery.completed', { driverId, recoveredBookings: recovered.map((booking) => booking.id), at: new Date().toISOString() });
     return { recoveredBookings: recovered, driverState: driverStates.get(driverId) ?? null };
   },
 
@@ -407,6 +432,14 @@ export const realtimeOrchestratorService = {
   getDispatchDiagnostics() {
     const staleAssignments = Array.from(bookings.values()).filter((booking) => booking.status === 'assigned' && booking.assignmentExpiresAt && new Date(booking.assignmentExpiresAt).getTime() <= Date.now());
     const staleDrivers = Array.from(driverStates.values()).filter((driver) => Date.now() - new Date(driver.lastUpdatedAt).getTime() > DRIVER_STALE_MS);
-    return { totalBookings: bookings.size, totalDrivers: driverStates.size, staleAssignments: staleAssignments.map((b) => b.id), staleDrivers: staleDrivers.map((d) => d.driverId) };
+    const duplicateAttemptsBlocked = Array.from(assignmentAttemptLedger.values()).filter((at) => Date.now() - new Date(at).getTime() <= ASSIGNMENT_TTL_MS).length;
+    return {
+      totalBookings: bookings.size,
+      totalDrivers: driverStates.size,
+      staleAssignments: staleAssignments.map((b) => b.id),
+      staleDrivers: staleDrivers.map((d) => d.driverId),
+      activeAssignmentAttempts: duplicateAttemptsBlocked,
+      operationalSnapshotAt: new Date().toISOString()
+    };
   }
 };
