@@ -74,4 +74,24 @@ router.post('/drivers/:driverId/status', (req, res, next) => {
   }
 });
 
+router.post('/drivers/:driverId/location', (req, res, next) => {
+  try {
+    const result = realtimeOrchestratorService.shareDriverLocation({
+      driverId: req.params.driverId,
+      bookingId: req.body.bookingId,
+      source: req.body.source,
+      location: {
+        lat: Number(req.body.lat),
+        lng: Number(req.body.lng),
+        heading: typeof req.body.heading === 'number' ? req.body.heading : undefined,
+        accuracyMeters: typeof req.body.accuracyMeters === 'number' ? req.body.accuracyMeters : undefined,
+      },
+    });
+    if (!result.accepted) return res.status(409).json(result);
+    res.json(result);
+  } catch (error) {
+    next(error);
+  }
+});
+
 export default router;

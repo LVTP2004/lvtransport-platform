@@ -37,13 +37,43 @@ const loadDraft = (): BookingDraft | null => {
   try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) as BookingDraft : null; } catch { return null; }
 };
 
-function TrackingPage({ code }: { code: string }) { return <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><section className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1><p className="mt-4 text-sm text-lv-mist sm:text-base">Tracking code <span className="font-semibold text-white">{code}</span> is valid and ready for live trip updates.</p></section></div><MoniAssistant /></div>; }
+function TrackingPage({ code }: { code: string }) { return <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><section className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1><p className="mt-4 text-sm text-lv-mist sm:text-base">Tracking code <span className="font-semibold text-white">{code}</span> is active. Customer-safe location updates stream only while ride is live.</p></section></div><MoniAssistant /></div>; }
 
+
+type LiveLocation = { lat: number; lng: number; heading?: number; updatedAt?: string };
+
+function DriverLocationPanel() {
+  const [driverId, setDriverId] = useState('DRV-001');
+  const [bookingId, setBookingId] = useState('');
+  const [sharing, setSharing] = useState(false);
+  const [status, setStatus] = useState('GPS idle');
+  const watcherRef = useRef<number | null>(null);
+  const stop = () => { if (watcherRef.current !== null) navigator.geolocation.clearWatch(watcherRef.current); watcherRef.current = null; setSharing(false); };
+  const push = async (coords: GeolocationCoordinates) => {
+    await fetch(`${API_BASE}/drivers/${encodeURIComponent(driverId)}/location`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bookingId, lat: coords.latitude, lng: coords.longitude, heading: coords.heading ?? undefined, accuracyMeters: coords.accuracy, source: 'gps' }) });
+  };
+  const start = async () => {
+    if (!bookingId) { setStatus('Add active booking ID first.'); return; }
+    if (!('geolocation' in navigator)) { setStatus('Geolocation unavailable on this device/browser.'); return; }
+    setStatus('Requesting GPS permission...');
+    watcherRef.current = navigator.geolocation.watchPosition(async (position) => { setSharing(true); setStatus(`Live GPS enabled • ±${Math.round(position.coords.accuracy)}m`); await push(position.coords); }, () => { setStatus('GPS denied/unavailable. Sharing stopped safely.'); stop(); }, { enableHighAccuracy: true, maximumAge: 4000, timeout: 12000 });
+  };
+  return <article className="glass-panel rounded-3xl p-5 sm:p-6 space-y-3"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Driver live GPS</p><input className="field-wrap" value={driverId} onChange={(e)=>setDriverId(e.target.value)} placeholder="Driver ID" /><input className="field-wrap" value={bookingId} onChange={(e)=>setBookingId(e.target.value)} placeholder="Assigned Booking ID" /><p className="text-xs text-lv-mist">{status}</p><div className="flex gap-2"><Button onClick={start} className="flex-1" disabled={sharing}>Start sharing</Button><Button onClick={stop} variant="secondary" className="flex-1">Stop sharing</Button></div></article>;
+}
+
+function AdminLivePanel() {
+  const [last, setLast] = useState<{driverId?:string;bookingId?:string;location?:LiveLocation;updatedAt?:string}|null>(null);
+  useEffect(()=>{ const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`); ws.onmessage=(m)=>{ try { const data=JSON.parse(m.data as string); if(data.event==='admin.live.updated' && data.payload?.location) setLast(data.payload); } catch {} }; return ()=>ws.close(); },[]);
+  return <article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Admin control tower live map feed</p><p className="mt-2 text-sm text-lv-mist">{last ? `Driver ${last.driverId} • Booking ${last.bookingId}` : 'Waiting for live driver coordinates...'}</p>{last?.location && <p className="mt-2 text-sm">Lat {last.location.lat.toFixed(5)}, Lng {last.location.lng.toFixed(5)}</p>}</article>;
+}
 export function App() {
   const params = new URLSearchParams(window.location.search);
   const presentationMode = params.get('mode') === 'demo';
+  const mode = params.get('mode');
   const trackingMatch = window.location.pathname.match(/^\/tracking\/([A-Za-z0-9-]+)/);
   if (trackingMatch) return <TrackingPage code={trackingMatch[1]} />;
+  if (mode === 'driver') return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-4xl"><DriverLocationPanel /></div></div>;
+  if (mode === 'admin') return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-4xl"><AdminLivePanel /></div></div>;
 
   const restored = loadDraft();
   const [step, setStep] = useState<Step>(restored?.step ?? 1);
