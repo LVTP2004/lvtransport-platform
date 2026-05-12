@@ -91,3 +91,8 @@ Exit criteria:
 
 - Cross-module governance model formalized.
 - Expansion prioritization framework approved.
+
+## Future Concept Branch (2026-05-12)
+
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-ROADMAP.md` for long-term ecosystem planning.
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-DIAGRAMS.md` for conceptual architecture diagrams.
