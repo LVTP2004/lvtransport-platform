@@ -12,13 +12,5 @@ export type BookingEventPayload = {
 export const emitBookingEvent = (payload: BookingEventPayload): void => {
   eventBus.emit(WS_EVENTS.BOOKING_UPDATED, payload);
 };
-import { BOOKING_EVENTS } from '../constants/index.js';
 
-export type BookingEventName = (typeof BOOKING_EVENTS)[keyof typeof BOOKING_EVENTS];
-
-export interface BookingEventPayload {
-  bookingId: string;
-  customerId?: string;
-  driverId?: string;
-  metadata?: Record<string, unknown>;
-}
+export type BookingEventName = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
