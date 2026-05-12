@@ -116,3 +116,7 @@ Guardrails:
 Reference architecture document:
 
 - `docs/LV-TECH-OPERATIONS-CONCEPTUAL-BRANCH.md`
+## Future Concept Branch (2026-05-12)
+
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-ROADMAP.md` for long-term ecosystem planning.
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-DIAGRAMS.md` for conceptual architecture diagrams.
