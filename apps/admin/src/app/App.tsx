@@ -46,6 +46,7 @@ export function App() {
   const [bookings, setBookings] = useState<AdminBooking[]>([]);
   const [driverLocations, setDriverLocations] = useState<DriverLocation[]>(seedDriverLocations);
   const [realtimeState, setRealtimeState] = useState<'connecting' | 'connected' | 'reconnecting' | 'offline'>('connecting');
+  let lastSequence = 0;
 
   useEffect(() => {
     const load = async () => {
@@ -66,14 +67,16 @@ export function App() {
     const connect = () => {
       if (!active) return;
       setRealtimeState(attempts > 0 ? 'reconnecting' : 'connecting');
-      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
+      const query = lastSequence > 0 ? `?lastSequence=${lastSequence}` : '';
+      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`);
       ws.onopen = () => {
         attempts = 0;
         setRealtimeState('connected');
       };
       ws.onmessage = (message) => {
         try {
-          const payload = JSON.parse(message.data as string) as { event?: string; payload?: AdminBooking | AdminBooking[] };
+          const payload = JSON.parse(message.data as string) as { event?: string; payload?: AdminBooking | AdminBooking[]; sequence?: number };
+          if (typeof payload.sequence === 'number' && payload.sequence > lastSequence) lastSequence = payload.sequence;
           if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) setBookings(payload.payload);
           if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
             setBookings((current) => {
