@@ -42,10 +42,25 @@ export const startBookingFlow = async (
   booking.status = "validated";
   booking.updatedAt = now();
 
-  const price = await deps.estimatePrice(request);
-  booking.estimatedPrice = price.amount;
-  booking.status = "priced";
-  booking.updatedAt = now();
+  try {
+    const price = await deps.estimatePrice(request);
+    booking.estimatedPrice = price.amount;
+    booking.status = "priced";
+    booking.updatedAt = now();
+  } catch (error) {
+    const pricingMessage =
+      error instanceof Error && error.message ? error.message : "Pricing service unavailable during booking.";
+
+    booking.status = "issue";
+    booking.issueMessage = pricingMessage;
+    booking.updatedAt = now();
+
+    return {
+      booking,
+      notifications: [buildCustomerStatusNotification(booking, "We're reviewing your fare before dispatching a driver.")],
+      adminAlert: createAdminAlert(booking, "pricing_unavailable", pricingMessage, now()),
+    };
+  }
 
   booking.trackingCode = deps.generateTrackingCode(booking.id);
 
