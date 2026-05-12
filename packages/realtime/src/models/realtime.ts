@@ -1,4 +1,4 @@
-import { BookingLifecycle, DriverState, TrackingState } from "./enums";
+import { BookingLifecycle, DriverState, TrackingState } from "./enums.js";
 
 export interface Coordinates {
   lat: number;

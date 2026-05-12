@@ -1,6 +1,6 @@
-import { PRICING_CONSTANTS } from '../constants/pricing.config';
-import { FareRuleType, PricingTier } from '../enums/fare-rule.enum';
-import { FareComponent, RouteEstimateInput, TripCostBreakdown } from '../models/pricing.types';
+import { PRICING_CONSTANTS } from '../constants/pricing.config.js';
+import { FareRuleType, PricingTier } from '../enums/fare-rule.enum.js';
+import { FareComponent, RouteEstimateInput, TripCostBreakdown } from '../models/pricing.types.js';
 
 export class RouteFareEstimator {
   estimate(input: RouteEstimateInput): TripCostBreakdown {

@@ -4,6 +4,7 @@ export class PricingPreviewService {
         // Placeholder for future API call: /v1/pricing/quote
         return {
             quoteId: 'preview-placeholder',
+            status: QuoteStatus.DRAFT,
             status: QuoteStatus.PREVIEW,
             input,
             breakdown: {

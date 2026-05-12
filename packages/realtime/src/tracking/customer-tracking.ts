@@ -1,5 +1,5 @@
-import { realtimeEvents } from "../events/names";
-import { TrackingState } from "../models/enums";
+import { realtimeEvents } from "../events/names.js";
+import { TrackingState } from "../models/enums.js";
 
 export const customerTrackingStateArchitecture = {
   stateEnum: TrackingState,

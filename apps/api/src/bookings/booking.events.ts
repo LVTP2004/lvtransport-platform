@@ -15,3 +15,5 @@ export type BookingEventPayload = {
 export const emitBookingEvent = (payload: BookingEventPayload): void => {
   eventBus.emit(BOOKING_EVENTS.CREATED, payload);
 };
+
+export type BookingEventName = (typeof WS_EVENTS)[keyof typeof WS_EVENTS];
