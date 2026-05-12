@@ -20,9 +20,10 @@ export const bookingNotificationFlowService = {
       recipientId: context.customerId,
       audience: 'customer',
       type: 'booking_confirmation',
-      channels: ['email', 'in_app'],
+      channels: ['email', 'in_app', 'push'],
       title: 'Booking confirmed',
       body: `Your ride is confirmed for booking ${context.bookingId}.`,
+      data: { bookingStatus: 'confirmed' },
     });
   },
 
@@ -32,45 +33,47 @@ export const bookingNotificationFlowService = {
       recipientId: context.customerId,
       audience: 'customer',
       type: 'booking_status_update',
-      channels: ['in_app', 'email'],
+      channels: ['in_app', 'push', 'email'],
       title: 'Booking status updated',
       body: `Booking ${context.bookingId} is now ${context.status}.`,
+      data: { bookingStatus: context.status },
     });
   },
 
   onDriverAssigned(context: BookingNotificationContext) {
-    const customerResult = notificationService.queue({
+    if (!context.driverId) {
+      return { customerResult: null, driverResult: null, adminResult: null };
+    }
+
+    const dispatch = notificationService.createDriverAssignmentDispatchNotification({
       bookingId: context.bookingId,
-      recipientId: context.customerId,
-      audience: 'customer',
-      type: 'driver_assignment',
-      channels: ['in_app', 'email'],
-      title: 'Driver assigned',
-      body: `A driver has been assigned to booking ${context.bookingId}.`,
+      customerId: context.customerId,
+      driverId: context.driverId,
+      adminId: context.adminId,
     });
 
-    const driverResult = context.driverId
-      ? notificationService.queue({
-          bookingId: context.bookingId,
-          recipientId: context.driverId,
-          audience: 'driver',
-          type: 'driver_assignment',
-          channels: ['push', 'in_app'],
-          title: 'New trip assignment',
-          body: `You have been assigned to booking ${context.bookingId}.`,
-        })
-      : null;
-
-    return { customerResult, driverResult };
+    return {
+      customerResult: dispatch.customer,
+      driverResult: dispatch.driver,
+      adminResult: dispatch.admin,
+    };
   },
 
   onAdminNewBookingAlert(context: BookingNotificationContext) {
-    return notificationService.createOperationalWarning(
-      context.adminId,
-      context.bookingId,
-      `Booking ${context.bookingId} requires dispatch review.`,
-      'admin_alert',
-    );
+    return notificationService.queue({
+      bookingId: context.bookingId,
+      recipientId: context.adminId,
+      audience: 'admin',
+      type: 'admin_alert',
+      channels: ['in_app', 'push'],
+      title: 'Dispatch alert',
+      body: `Booking ${context.bookingId} requires dispatch review.`,
+      data: { bookingStatus: context.status, dedupeKey: `${context.bookingId}:admin_alert` },
+    });
+  },
+
+  onReconnectRestore(recipientId: string, checkpoint?: string) {
+    return notificationService.restoreActiveNotifications(recipientId, checkpoint);
   },
 
   onRideCompleted(context: BookingNotificationContext) {
@@ -80,9 +83,10 @@ export const bookingNotificationFlowService = {
       recipientId: context.customerId,
       audience: 'customer',
       type: 'booking_status_update',
-      channels: ['in_app'],
+      channels: ['in_app', 'push'],
       title: 'Ride completed',
       body: `Ride ${context.bookingId} is completed. Thank you for riding with LV Transport.`,
+      data: { bookingStatus: 'completed' },
     });
   },
 };
