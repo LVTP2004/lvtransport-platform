@@ -1,5 +1,5 @@
-import { realtimeEvents } from "../events/names";
-import { DriverState } from "../models/enums";
+import { realtimeEvents } from "../events/names.js";
+import { DriverState } from "../models/enums.js";
 
 export const driverLiveStatusArchitecture = {
   stateEnum: DriverState,

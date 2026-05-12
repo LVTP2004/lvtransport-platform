@@ -1,4 +1,4 @@
-import { pricingConstants } from './constants';
+import { pricingConstants } from './constants.js';
 
 export const isNightWindow = (hour24: number): boolean =>
   hour24 >= pricingConstants.nightWindow.startHour || hour24 < pricingConstants.nightWindow.endHour;

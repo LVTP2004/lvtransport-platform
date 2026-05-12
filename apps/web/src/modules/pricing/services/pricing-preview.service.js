@@ -1,9 +1,10 @@
+import { QuoteStatus } from '../../../../../api/src/pricing';
 export class PricingPreviewService {
     async fetchQuotePreview(input) {
         // Placeholder for future API call: /v1/pricing/quote
         return {
             quoteId: 'preview-placeholder',
-            status: 'PREVIEW',
+            status: QuoteStatus.DRAFT,
             input,
             breakdown: {
                 currency: 'USD',

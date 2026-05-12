@@ -1,6 +1,6 @@
-import { RouteFareEstimator } from '../estimators/route-fare.estimator';
-import { QuoteStatus } from '../enums/fare-rule.enum';
-import { BookingQuote, RouteEstimateInput } from '../models/pricing.types';
+import { RouteFareEstimator } from '../estimators/route-fare.estimator.js';
+import { QuoteStatus } from '../enums/fare-rule.enum.js';
+import { BookingQuote, RouteEstimateInput } from '../models/pricing.types.js';
 
 export class PricingEngineService {
   constructor(private readonly estimator = new RouteFareEstimator()) {}

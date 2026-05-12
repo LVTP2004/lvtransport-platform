@@ -1,4 +1,4 @@
-import { realtimeEvents } from "../events/names";
+import { realtimeEvents } from "../events/names.js";
 
 export const adminMonitoringEventArchitecture = {
   events: [realtimeEvents.ADMIN_MONITORING_EVENT],

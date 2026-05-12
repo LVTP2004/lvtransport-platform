@@ -1,11 +1,12 @@
 import type { BookingQuote, RouteEstimateInput } from '../../../../../api/src/pricing';
+import { QuoteStatus } from '../../../../../api/src/pricing';
 
 export class PricingPreviewService {
   async fetchQuotePreview(input: RouteEstimateInput): Promise<BookingQuote> {
     // Placeholder for future API call: /v1/pricing/quote
     return {
       quoteId: 'preview-placeholder',
-      status: 'PREVIEW' as const,
+      status: QuoteStatus.DRAFT,
       input,
       breakdown: {
         currency: 'USD',
