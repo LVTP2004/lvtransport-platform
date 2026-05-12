@@ -1,15 +1,24 @@
-export type MoniLanguage = 'nl' | 'es' | 'en';
+export type MoniLanguage = 'nl' | 'es' | 'en' | 'fr';
+
+export type MoniAudience = 'customer' | 'admin' | 'driver';
 
 export type MoniIntent =
   | 'booking_request'
-  | 'price_request'
+  | 'booking_status_explanation'
+  | 'missing_booking_info'
+  | 'admin_operational_summary'
+  | 'driver_support'
   | 'airport_transfer'
   | 'business_request'
   | 'vip_request'
-  | 'tracking_request'
   | 'contact_request'
-  | 'complaint_or_problem'
   | 'language_switch'
+  | 'price_request'
+  | 'tracking_request'
+  | 'payment_issue'
+  | 'complaint_or_problem'
+  | 'safety_or_legal'
+  | 'escalation_request'
   | 'general_question';
 
 export type MoniBookingFields = {
@@ -18,6 +27,7 @@ export type MoniBookingFields = {
   date?: string;
   time?: string;
   passengers?: string;
+  contactDetails?: string;
   luggage?: string;
   vehiclePreference?: string;
   flightNumber?: string;
@@ -30,3 +40,20 @@ export type MoniBookingFields = {
 };
 
 export type MoniMessage = { role: 'assistant' | 'user'; text: string };
+
+export type MoniEscalationReason = 'sensitive' | 'unclear' | 'payment' | 'complaint' | 'safety' | 'legal';
+
+export type MoniContextEnvelope = {
+  booking?: { bookingId?: string; status?: string; knownFields?: MoniBookingFields };
+  admin?: { activeBookings?: number; delayedBookings?: number; openIncidents?: number; notes?: string[] };
+  driver?: { driverId?: string; activeRideId?: string; supportTopic?: string };
+};
+
+export type MoniResponse = {
+  language: MoniLanguage;
+  audience: MoniAudience;
+  intent: MoniIntent;
+  text: string;
+  escalation: { required: boolean; reason?: MoniEscalationReason; owner?: string };
+  audit: { safe: boolean; flags: string[]; timestampIso: string };
+};

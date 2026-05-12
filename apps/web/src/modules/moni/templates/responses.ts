@@ -3,18 +3,26 @@ import type { MoniIntent, MoniLanguage } from '../types/moni.types';
 const intro: Record<MoniLanguage, string> = {
   nl: 'Natuurlijk, ik help u graag met uw rit bij LV Transport.',
   en: 'Of course, I can help with your booking at LV Transport.',
-  es: 'Claro, le ayudo con su reserva en LV Transport.'
+  es: 'Claro, le ayudo con su reserva en LV Transport.',
+  fr: 'Bien sûr, je peux vous aider avec votre réservation chez LV Transport.'
 };
 
 const intentReply: Record<MoniLanguage, Partial<Record<MoniIntent, string>>> = {
   nl: {
-    price_request: 'Ik kan een geschatte prijs delen op basis van route, tijd, afstand en opties. Definitieve prijzen worden altijd bevestigd in het boekingssysteem.',
-    tracking_request: 'Graag uw reserveringscode. U kunt die ook invoeren op de trackingpagina voor statusupdates: pending, accepted, assigned, onderweg, arrived, in_progress, completed of cancelled.',
-    contact_request: 'U kunt ons rechtstreeks contacteren voor dringende hulp. Ik help u ook graag eerst met een samenvatting van uw aanvraag.',
-    business_request: 'Voor zakelijke klanten bieden we terugkerende ritten, vaste luchthavenroutes en maandelijkse facturatie op maat.',
-    vip_request: 'Onze VIP-service omvat executive rides, discrete service en prioritaire dispatch.'
+    booking_request: 'Ik kan uw boeking voorbereiden zodra ophaalpunt, bestemming, datum, uur, passagiers en contactgegevens bevestigd zijn.',
+    booking_status_explanation: 'Ik deel alleen geverifieerde statusinformatie uit het boekingssysteem.',
+    admin_operational_summary: 'Ik kan een operationele samenvatting geven op basis van bevestigde metrics.',
+    driver_support: 'Ik kan basis chauffeurondersteuning geven en escaleren als nodig.'
   },
-  en: {}, es: {}
+  en: {
+    booking_request: 'I can prepare your booking once pickup, destination, date, time, passenger count, and contact details are confirmed.'
+  },
+  es: {
+    booking_request: 'Puedo preparar su reserva cuando confirme recogida, destino, fecha, hora, pasajeros y datos de contacto.'
+  },
+  fr: {
+    booking_request: 'Je peux préparer votre réservation après confirmation du départ, destination, date, heure, passagers et coordonnées.'
+  }
 };
 
 export const buildIntro = (lang: MoniLanguage) => intro[lang];
