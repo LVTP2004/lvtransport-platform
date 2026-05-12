@@ -1,103 +1,102 @@
-# LV Transport Platform — Operational Booking Flow Validation Report
+# LV Transport Platform — Full Operational Retest Report
 
 Date: 2026-05-12 (UTC)
-Scope: one complete operational booking lifecycle validation attempt under current repository/runtime conditions
+Retest trigger: post-blocker-fix validation request
 
-## Objective Coverage
-
-Requested scenario:
+## Retest Scope
+Validated against requested lifecycle and stress scenarios:
 1. customer creates booking
 2. admin receives booking
 3. admin assigns driver
-4. driver receives realtime assignment
-5. driver accepts ride
-6. GPS/tracking activates
-7. ETA/route updates synchronize
-8. customer tracking updates
-9. ride completed
-10. payment/pricing finalizes
-11. operational analytics updates
+4. driver accepts/rejects ride
+5. realtime synchronization across panels
+6. GPS tracking activation
+7. ETA update flow
+8. reconnect/recovery state restoration
+9. ride completion
+10. payment/pricing finalization
 
-## Validation Method Executed
+Stress focus:
+- rapid lifecycle updates
+- reconnect scenarios
+- duplicate realtime events
+- stale state recovery
+- simultaneous panel updates
+- mobile/PWA refresh behavior
+- repeated dispatch cycles
 
-Because no integrated staging/production credentials, seeded operational data, or orchestrated multi-client runtime harness are present in this repo, validation was executed via the strongest available production-adjacent gates:
+## Method Executed
+Given repository-only environment (no integrated staging backend credentials, seeded operational dataset, or multi-actor runtime harness), retest used strongest executable gates plus architecture/codepath inspection:
+- `pnpm build` (customer/admin/driver production artifact integrity)
+- `pnpm typecheck` (cross-app operational contract integrity)
+- targeted source inspection of booking, realtime, tracking, reconnect, and notification modules
 
-- dependency lock integrity (`pnpm install --frozen-lockfile`)
-- workspace operational type contract gate (`pnpm typecheck`)
-- deployable client artifact gate (`pnpm build`)
-- static inspection of known lifecycle/realtime/payment/tracking integration modules in `apps/api`
+## Command Results
 
-## Execution Results
-
-| Area | Result | Evidence |
+| Validation Gate | Result | Notes |
 |---|---|---|
-| Install/dependency integrity | ✅ Pass | lockfile-resolved workspace install succeeds |
-| End-user web build (customer surface) | ✅ Pass | web build artifact generated |
-| Admin build (control tower surface) | ✅ Pass | admin build artifact generated |
-| Driver build (driver surface) | ✅ Pass | driver build artifact generated |
-| API lifecycle integrity/type contracts | ❌ Fail | API compile/type gate fails with cross-lifecycle contract errors |
-| True realtime end-to-end ride lifecycle (11-step flow) | ❌ Not certifiable | blocked by API type failures + missing real multi-actor runtime environment |
+| `pnpm build` | ✅ PASS | web/admin/driver builds complete successfully |
+| `pnpm typecheck` | ❌ FAIL | API compile/type errors still block operational certification |
 
-## Operational Issues Found
+## End-to-End Lifecycle Retest Outcome
 
-### 1) Authentication domain contract mismatches (critical)
-- `apps/api/src/auth/middleware/authenticate.ts` uses literal values that do not match declared auth/account enums/types (`AuthProvider`, `AccountType`, `AccountStatus`, onboarding state).
-- Operational impact: session/auth state drift between customer/admin/driver actors, causing lifecycle gating failures before dispatch events are reliable.
+| Lifecycle Step | Status | Retest Decision |
+|---|---|---|
+| 1. Customer creates booking | ⚠️ Partially evidenced | UI/build path healthy, but backend booking integrity not certifiable due to API type failures |
+| 2. Admin receives booking | ❌ Blocked | backend contract instability prevents reliable intake stream validation |
+| 3. Admin assigns driver | ❌ Blocked | dispatch path cannot be certified while API type/runtime contracts fail |
+| 4. Driver accepts/rejects ride | ❌ Blocked | lifecycle/realtime event contract failures remain |
+| 5. Realtime sync across panels | ❌ Blocked | event constant/export and route conflicts undermine trust in sync behavior |
+| 6. GPS tracking activates | ⚠️ At risk | tracking-related architecture exists, but integrated runtime not certifiable |
+| 7. ETA updates correctly | ⚠️ At risk | no successful integrated lifecycle run to verify ETA continuity |
+| 8. Reconnect/recovery | ❌ Blocked | reconnect behavior cannot be trusted with unresolved API contract errors |
+| 9. Ride completes successfully | ❌ Blocked | lifecycle transition map mismatch remains |
+| 10. Payment/pricing finalization | ❌ Blocked | end-to-end completion path not certifiable |
 
-### 2) Booking lifecycle transition map inconsistency (critical)
-- `apps/api/src/bookings/bookings.service.ts` transition map omits statuses present in `BookingStatus` (e.g. `onderweg`, `arrived`).
-- Operational impact: broken lifecycle transitions and inconsistent state propagation across realtime subscribers.
+## Stress-Test Retest Outcome
 
-### 3) Notification orchestration contract breakage (critical)
-- `apps/api/src/bookings/notification-orchestrator.service.ts` imports unavailable notification builders/types and emits payload keys that diverge from `NotificationMessage` contract (`channel` vs `channels`).
-- Operational impact: alert/notification failures and potential duplicate/invalid dispatch messaging.
+| Stress Area | Result |
+|---|---|
+| Rapid lifecycle updates | ❌ Not certifiable |
+| Reconnect scenarios | ❌ Not certifiable |
+| Duplicate realtime events | ❌ Not certifiable |
+| Stale state recovery | ❌ Not certifiable |
+| Simultaneous panel updates | ❌ Not certifiable |
+| Mobile/PWA refresh behavior | ⚠️ UI build healthy; operational sync not certifiable |
+| Repeated dispatch cycles | ❌ Not certifiable |
 
-### 4) Routing/controller duplication and symbol conflicts (critical)
-- `apps/api/src/routes/v1/booking.routes.ts` and `apps/api/src/server.ts` report redeclarations.
-- Operational impact: unstable API boot/runtime behavior under real traffic; reconnect and dispatch recovery cannot be trusted.
+## Validation Criteria Checks
 
-### 5) Realtime event constant mismatch (high)
-- `apps/api/src/services/booking-lifecycle-realtime.service.ts` imports `WS_EVENTS` that is not exported from `apps/api/src/constants/index.ts`.
-- Operational impact: realtime assignment/acceptance/tracking events may not emit/subscribe correctly.
+- Invalid lifecycle transitions prevented: **FAIL** (transition map missing statuses such as `onderweg` and `arrived`).
+- Duplicated assignments prevented: **NOT CERTIFIED** (no dependable integrated dispatch runtime gate passed).
+- Stale operational states prevented: **NOT CERTIFIED**.
+- Realtime synchronization stability: **FAIL-RISK HIGH**.
+- Telemetry integrity (GPS/ETA): **AT RISK / NOT CERTIFIED**.
+- Payment state consistency: **NOT CERTIFIED**.
+- Reconnect desynchronization prevention: **FAIL-RISK HIGH**.
+- `pnpm build` pass requirement: **PASS**.
 
-### 6) Notification operations API surface gaps (high)
-- `apps/api/src/routes/v1/notifications.routes.ts` references methods absent on `NotificationService` (`getLogs`, `listActiveOperationalAlerts`, `detectStaleOperations`).
-- Operational impact: operational monitoring/analytics endpoints are incomplete, reducing incident detection capability.
+## Remaining Blockers (Current)
+1. Auth enum/type mismatches in API middleware.
+2. Booking lifecycle transition map missing declared states.
+3. Notification orchestrator imports/contracts out of sync.
+4. Duplicate/redeclared route/server symbols in API.
+5. Realtime constant export mismatch (`WS_EVENTS`).
+6. Notification operations route methods missing on service.
 
-## Realtime, Reconnect, and Mobile/PWA Assessment
+## Highest Operational Risk
+**Canonical lifecycle divergence across actors (customer/admin/driver) caused by unresolved API contract instability in booking + realtime paths.**
 
-- **Realtime synchronization:** **Fail-risk high**, blocked at API contract integrity.
-- **Lifecycle consistency:** **Fail**, transition map and enum mismatches detected.
-- **Reconnect behavior:** **Not certifiable**, cannot run dependable backend lifecycle runtime.
-- **Mobile/PWA behavior:** **Frontend artifacts pass build**, but end-to-end operational sync is **not certified** without a healthy API runtime.
-- **Admin-driver-customer synchronization:** **Not certifiable**, backend failures prevent real multi-actor validation.
-- **GPS/telemetry consistency:** **At risk**, lifecycle/realtime event integrity not stable.
-- **Pricing/payment consistency:** **Not fully validated**, no complete successful ride completion lifecycle executed in integrated runtime.
-
-## Pass/Fail Decision
-
-**Overall Result: FAIL** for the requested real-world operational booking lifecycle validation.
-
-Reason: The 11-step operational lifecycle cannot be completed and verified as a consistent real-time system while API type/runtime contracts are failing.
-
-## Highest-Priority Blocker
-
-**API lifecycle contract instability in core booking/auth/realtime paths (`apps/api`)** is the primary blocker. Until `pnpm typecheck` passes for API, any end-to-end operational certification is unsafe.
-
-## Safest Next Fix
-
-1. Repair API compile/type contract errors in strict dependency order:
-   - auth literal/enums alignment,
-   - booking transition map completeness,
-   - notification orchestrator interface alignment,
-   - route/server redeclaration cleanup,
-   - realtime constants export alignment.
-2. Re-run `pnpm typecheck` until fully green.
-3. Stand up a controlled multi-actor validation run (customer/admin/driver) against a live API instance and verify telemetry + reconnect + notifications.
+Impact: desynchronized state, invalid transition handling, and unreliable dispatch/acceptance telemetry under real traffic.
 
 ## Updated Operational Readiness Score
+**46 / 100**
 
-**44 / 100 (Not ready for full operational launch validation).**
+Rationale: frontend operational surfaces remain build-stable, but backend lifecycle/realtime correctness gates are still red; no integrated multi-actor lifecycle can be certified.
 
-Why improved from previous baseline: all three client apps now build successfully, indicating improved frontend packaging readiness.
-Why still below launch threshold: backend lifecycle/realtime/payment-adjacent orchestration contracts are not yet stable enough for real-world end-to-end certification.
+## Estimated Readiness for First Real Pilot Ride
+**Not ready for first real pilot ride today (2026-05-12).**
+
+Conditional estimate after blocker closure:
+- If all API type/contract blockers are fixed and a controlled multi-actor dry-run passes reconnect + duplicate-event tests, readiness could move to pilot-candidate range (roughly 70+).
+- Until then, recommended posture is internal-only hardening and controlled simulation.
