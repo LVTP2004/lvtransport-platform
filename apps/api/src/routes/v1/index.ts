@@ -9,7 +9,6 @@ import bookingRoutes from './booking.routes.js';
 import bookingsRoutes from './bookings.routes.js';
 
 const router = Router();
-
 router.use(healthRoutes);
 router.use('/payments', paymentRoutes);
 router.use(trackingRoutes);
@@ -36,6 +35,18 @@ router.post('/bookings/:bookingId/assign-driver', (req, res, next) => {
   try {
     const booking = realtimeOrchestratorService.assignDriver({ bookingId: req.params.bookingId, ...req.body });
     res.json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/bookings/:bookingId/assign-driver/preparation', (req, res, next) => {
+  try {
+    const assignmentPreparation = realtimeOrchestratorService.prepareDriverAssignment({
+      bookingId: req.params.bookingId,
+      pickupLocation: req.body.pickupLocation
+    });
+    res.json({ assignmentPreparation });
   } catch (error) {
     next(error);
   }

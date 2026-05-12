@@ -2,17 +2,38 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-const toNumber = (value: string | undefined, fallback: number): number => {
-  const parsed = Number(value);
-  return Number.isNaN(parsed) ? fallback : parsed;
+const asNumber = (name: string, fallback: number): number => {
+  const raw = process.env[name];
+  if (!raw) return fallback;
+  const parsed = Number(raw);
+  if (Number.isNaN(parsed)) {
+    throw new Error(`Invalid numeric environment variable: ${name}`);
+  }
+  return parsed;
 };
 
+const requiredWhenProduction = (name: string): string | undefined => {
+  const value = process.env[name];
+  if (process.env.NODE_ENV === 'production' && (!value || value.includes('PLACEHOLDER'))) {
+    throw new Error(`Missing required production environment variable: ${name}`);
+  }
+  return value;
+};
+
+const nodeEnv = process.env.NODE_ENV ?? 'development';
+
 export const env = {
-  nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: toNumber(process.env.PORT, 4000),
+  nodeEnv,
+  isProduction: nodeEnv === 'production',
+  port: asNumber('PORT', 4000),
   corsOrigin: process.env.CORS_ORIGIN ?? '*',
   appName: process.env.APP_NAME ?? 'lvtransport-api',
-  googleMapsApiKey: process.env.GOOGLE_MAPS_API_KEY ?? 'GOOGLE_MAPS_API_KEY_PLACEHOLDER',
+  googleMapsApiKey: requiredWhenProduction('GOOGLE_MAPS_API_KEY') ?? 'GOOGLE_MAPS_API_KEY_PLACEHOLDER',
   mapsDefaultSpeedKph: process.env.MAPS_DEFAULT_SPEED_KPH ?? '38',
-  mapsRoadFactor: process.env.MAPS_ROAD_FACTOR ?? '1.25'
+  mapsRoadFactor: process.env.MAPS_ROAD_FACTOR ?? '1.25',
+  trustProxy: (process.env.TRUST_PROXY ?? 'false').toLowerCase() === 'true',
 };
+
+if (env.isProduction && env.corsOrigin === '*') {
+  throw new Error('CORS_ORIGIN cannot be wildcard (*) in production');
+}
