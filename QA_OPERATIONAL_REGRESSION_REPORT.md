@@ -1,116 +1,103 @@
-# LV Transport Platform — Final Operational QA & Regression Report
+# LV Transport Platform — Operational Booking Flow Validation Report
 
 Date: 2026-05-12 (UTC)
-Scope: validation-only regression pass for soft-launch readiness
+Scope: one complete operational booking lifecycle validation attempt under current repository/runtime conditions
 
-## Execution Summary
+## Objective Coverage
 
-Performed automated stability checks currently available in-repo:
+Requested scenario:
+1. customer creates booking
+2. admin receives booking
+3. admin assigns driver
+4. driver receives realtime assignment
+5. driver accepts ride
+6. GPS/tracking activates
+7. ETA/route updates synchronize
+8. customer tracking updates
+9. ride completed
+10. payment/pricing finalizes
+11. operational analytics updates
 
-- dependency/install integrity (`pnpm install --frozen-lockfile`) ✅
-- workspace type safety (`pnpm typecheck`) ❌
-- production build path requested for soft-launch (`pnpm build`) ❌
+## Validation Method Executed
 
-No UI redesign, no feature implementation, no architecture refactor performed.
+Because no integrated staging/production credentials, seeded operational data, or orchestrated multi-client runtime harness are present in this repo, validation was executed via the strongest available production-adjacent gates:
 
-## Test Matrix vs Requested Operational Flows
+- dependency lock integrity (`pnpm install --frozen-lockfile`)
+- workspace operational type contract gate (`pnpm typecheck`)
+- deployable client artifact gate (`pnpm build`)
+- static inspection of known lifecycle/realtime/payment/tracking integration modules in `apps/api`
 
-| Area | Validation method | Result | Notes |
-|---|---|---|---|
-| Customer booking flow | API compile + controller/event integrity inspection | ❌ Blocked | Booking controller and booking event modules contain merged/duplicated code fragments and syntax breakage. |
-| Admin control tower flow | admin app inclusion in workspace typecheck | ⚠️ Inconclusive | Global typecheck aborted early due to API syntax failures. |
-| Driver assignment flow | realtime/shared model compile path + enum integrity | ❌ Blocked | Realtime model imports duplicated type + missing `TrackingState` enum export. |
-| Realtime lifecycle synchronization | shared realtime package compile + tracking architecture inspection | ❌ Blocked | Tracking state contract references missing enum symbol. |
-| GPS/telemetry readiness | static architecture checks in realtime tracking module | ❌ Blocked | Tracking state architecture cannot compile due to missing enum definition. |
-| ETA/routing readiness | event/telemetry event contract inspection | ⚠️ At risk | ETA event is referenced but depends on broken tracking enum contract. |
-| Pricing/payment lifecycle | compile-path dependency check | ⚠️ Not fully validated | Not directly failing in current outputs, but end-to-end cannot be trusted while API/realtime are broken. |
-| Business/VIP account flow | auth package compile path via app build | ❌ Blocked | Browser apps compile against Node crypto + Buffer without Node typings in app tsconfigs. |
-| Notifications/alerts | booking/realtime event surface validation | ❌ Blocked | booking event publisher file is malformed and duplicates contradictory event contracts. |
-| PWA/mobile behavior | web app build gate | ❌ Blocked | web build fails before asset/PWA verification due to shared package type errors. |
-| Reconnect/recovery behavior | realtime contract verification | ❌ Blocked | lifecycle and tracking states are not in a stable compile-ready contract. |
-| `pnpm build` | requested build check | ❌ Failed | Multiple cross-package TS errors. |
+## Execution Results
 
-## Critical Blockers
+| Area | Result | Evidence |
+|---|---|---|
+| Install/dependency integrity | ✅ Pass | lockfile-resolved workspace install succeeds |
+| End-user web build (customer surface) | ✅ Pass | web build artifact generated |
+| Admin build (control tower surface) | ✅ Pass | admin build artifact generated |
+| Driver build (driver surface) | ✅ Pass | driver build artifact generated |
+| API lifecycle integrity/type contracts | ❌ Fail | API compile/type gate fails with cross-lifecycle contract errors |
+| True realtime end-to-end ride lifecycle (11-step flow) | ❌ Not certifiable | blocked by API type failures + missing real multi-actor runtime environment |
 
-1. **API booking event module is malformed and duplicated**
-   - `apps/api/src/bookings/booking.events.ts` contains a partial function followed by a second duplicate implementation block.
-   - This causes parser failure (`'}' expected`) and blocks all backend booking lifecycle validation.
+## Operational Issues Found
 
-2. **API booking controller module is malformed and duplicated**
-   - `apps/api/src/controllers/booking.controller.ts` includes two different controller styles in one file with missing closure.
-   - Parser error prevents booking flow confidence.
+### 1) Authentication domain contract mismatches (critical)
+- `apps/api/src/auth/middleware/authenticate.ts` uses literal values that do not match declared auth/account enums/types (`AuthProvider`, `AccountType`, `AccountStatus`, onboarding state).
+- Operational impact: session/auth state drift between customer/admin/driver actors, causing lifecycle gating failures before dispatch events are reliable.
 
-3. **Realtime type model contract is internally inconsistent**
-   - `packages/realtime/src/models/realtime.ts` imports `BookingLifecycle` twice (value + type) and references `TrackingState` that is not exported by enums.
-   - `packages/realtime/src/tracking/customer-tracking.ts` also imports missing `TrackingState`.
+### 2) Booking lifecycle transition map inconsistency (critical)
+- `apps/api/src/bookings/bookings.service.ts` transition map omits statuses present in `BookingStatus` (e.g. `onderweg`, `arrived`).
+- Operational impact: broken lifecycle transitions and inconsistent state propagation across realtime subscribers.
 
-4. **Frontend build chain broken by Node runtime assumptions in shared auth package**
-   - `packages/auth/src/security/jwt.service.ts` (and sibling crypto service) depend on `node:crypto` and `Buffer`, but app TS compile context lacks compatible Node typings/runtime assumptions.
+### 3) Notification orchestration contract breakage (critical)
+- `apps/api/src/bookings/notification-orchestrator.service.ts` imports unavailable notification builders/types and emits payload keys that diverge from `NotificationMessage` contract (`channel` vs `channels`).
+- Operational impact: alert/notification failures and potential duplicate/invalid dispatch messaging.
 
-## Operational Risks
+### 4) Routing/controller duplication and symbol conflicts (critical)
+- `apps/api/src/routes/v1/booking.routes.ts` and `apps/api/src/server.ts` report redeclarations.
+- Operational impact: unstable API boot/runtime behavior under real traffic; reconnect and dispatch recovery cannot be trusted.
 
-- **High risk of lifecycle drift across channels (customer/admin/driver)** due to event contract duplication and inconsistent status vocabularies (`onderweg` mixed with standard states).
-- **High risk of alerting/notification misfires** because booking event emitters are currently structurally broken.
-- **Soft-launch monitoring blind spots likely** since realtime tracking/ETA architecture cannot compile into a deployable baseline.
-- **Deployment risk is critical** because build is red and cannot produce stable artifacts for web/admin/driver.
+### 5) Realtime event constant mismatch (high)
+- `apps/api/src/services/booking-lifecycle-realtime.service.ts` imports `WS_EVENTS` that is not exported from `apps/api/src/constants/index.ts`.
+- Operational impact: realtime assignment/acceptance/tracking events may not emit/subscribe correctly.
 
-## Broken or Duplicated Flows Detected
+### 6) Notification operations API surface gaps (high)
+- `apps/api/src/routes/v1/notifications.routes.ts` references methods absent on `NotificationService` (`getLogs`, `listActiveOperationalAlerts`, `detectStaleOperations`).
+- Operational impact: operational monitoring/analytics endpoints are incomplete, reducing incident detection capability.
 
-- Duplicate booking event definitions in one backend module.
-- Duplicate booking controller handler sets in one backend module.
-- Duplicate `BookingLifecycle` import pattern in realtime models.
-- Divergent booking status vocabulary likely introducing downstream mapping bugs.
+## Realtime, Reconnect, and Mobile/PWA Assessment
 
-## Unstable Realtime States
+- **Realtime synchronization:** **Fail-risk high**, blocked at API contract integrity.
+- **Lifecycle consistency:** **Fail**, transition map and enum mismatches detected.
+- **Reconnect behavior:** **Not certifiable**, cannot run dependable backend lifecycle runtime.
+- **Mobile/PWA behavior:** **Frontend artifacts pass build**, but end-to-end operational sync is **not certified** without a healthy API runtime.
+- **Admin-driver-customer synchronization:** **Not certifiable**, backend failures prevent real multi-actor validation.
+- **GPS/telemetry consistency:** **At risk**, lifecycle/realtime event integrity not stable.
+- **Pricing/payment consistency:** **Not fully validated**, no complete successful ride completion lifecycle executed in integrated runtime.
 
-- `TrackingState` referenced but not defined/exported in realtime enums.
-- Realtime tracking architecture object cannot be trusted in runtime or compile-time until enum contract is repaired.
+## Pass/Fail Decision
 
-## Mobile/PWA Issues
+**Overall Result: FAIL** for the requested real-world operational booking lifecycle validation.
 
-- Web/PWA validation is **blocked at compile stage**; no reliable runtime PWA/mobile assessment can proceed until build is green.
-- Shared auth runtime assumptions (Node crypto/Buffer) currently conflict with browser app build typing constraints.
+Reason: The 11-step operational lifecycle cannot be completed and verified as a consistent real-time system while API type/runtime contracts are failing.
 
-## Deployment Risks
+## Highest-Priority Blocker
 
-- **Immediate release blocker:** `pnpm build` fails.
-- **Immediate QA blocker:** end-to-end/regression scenarios cannot be certified because baseline artifacts do not compile.
-- **Operational blast radius:** auth + realtime + booking flows are cross-cutting dependencies affecting all client surfaces.
+**API lifecycle contract instability in core booking/auth/realtime paths (`apps/api`)** is the primary blocker. Until `pnpm typecheck` passes for API, any end-to-end operational certification is unsafe.
 
-## Recommended Fix Order (Pre-Soft-Launch)
+## Safest Next Fix
 
-1. **Repair parser-level blockers first (API booking files)**
-   - Resolve duplicated/merged code in booking controller and booking events.
-2. **Normalize realtime state contracts**
-   - Define/export `TrackingState`, remove duplicate imports, align tracking architecture dependencies.
-3. **Stabilize shared auth for browser consumers**
-   - Resolve Node crypto/Buffer typing/runtime boundary for web/admin/driver compile targets.
-4. **Re-run full workspace gates**
-   - `pnpm typecheck` then `pnpm build` must both pass.
-5. **Only then run controlled soft-launch scenario tests**
-   - booking→dispatch→driver→trip lifecycle,
-   - reconnect/recovery,
-   - telemetry/ETA updates,
-   - notifications/alerts,
-   - PWA offline/restore.
+1. Repair API compile/type contract errors in strict dependency order:
+   - auth literal/enums alignment,
+   - booking transition map completeness,
+   - notification orchestrator interface alignment,
+   - route/server redeclaration cleanup,
+   - realtime constants export alignment.
+2. Re-run `pnpm typecheck` until fully green.
+3. Stand up a controlled multi-actor validation run (customer/admin/driver) against a live API instance and verify telemetry + reconnect + notifications.
 
-## Operational Readiness Score
+## Updated Operational Readiness Score
 
-**Readiness: 31 / 100 (Not ready for soft-launch).**
+**44 / 100 (Not ready for full operational launch validation).**
 
-Rationale:
-- Core multi-app build is failing.
-- Critical lifecycle modules contain structural defects.
-- Realtime and auth contracts currently prevent reliable integrated testing.
-
-## What Is Stable
-
-- Workspace dependency graph installs cleanly with a locked dependency set.
-- Monorepo command structure and app/package segmentation are intact.
-
-## Must Be Fixed Before Controlled Soft Launch
-
-- Booking API syntax/duplication defects.
-- Realtime state contract/export defects.
-- Shared auth compile compatibility for browser-targeted apps.
-- Global `pnpm typecheck` and `pnpm build` pass state.
+Why improved from previous baseline: all three client apps now build successfully, indicating improved frontend packaging readiness.
+Why still below launch threshold: backend lifecycle/realtime/payment-adjacent orchestration contracts are not yet stable enough for real-world end-to-end certification.
