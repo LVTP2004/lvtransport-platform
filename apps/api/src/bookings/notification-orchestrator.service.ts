@@ -1,65 +1,65 @@
-import { NotificationService, buildEmailTemplate, buildTrackingCode, buildTrackingUrl, buildWhatsAppTemplate } from '../notifications/notification.service.js';
-import type { BookingNotificationContext } from '../notifications/notification.types.js';
+import { NotificationService } from '../notifications/notification.service.js';
 
 const notificationService = new NotificationService();
 
+type OrchestratorContext = {
+  bookingId: string;
+  customerId: string;
+  adminId?: string;
+  status?: string;
+  driverId?: string;
+  [key: string]: unknown;
+};
+
 export const notificationOrchestrator = {
-  createBookingConfirmation(input: Omit<BookingNotificationContext, 'trackingCode' | 'trackingUrl'>) {
-    const trackingCode = buildTrackingCode(input.bookingId);
-    const trackingUrl = buildTrackingUrl(trackingCode);
-    const context: BookingNotificationContext = { ...input, trackingCode, trackingUrl };
+  createBookingConfirmation(input: OrchestratorContext) {
+    const trackingCode = input.bookingId.slice(0, 8).toUpperCase();
+    const trackingUrl = `https://track.lvtransport.local/${trackingCode}`;
 
     const customerNotification = notificationService.queue({
-      recipientId: context.customerId,
+      recipientId: input.customerId,
       audience: 'customer',
-      channel: 'email',
+      type: 'booking_confirmation',
+      channels: ['email'],
       title: 'Your booking is confirmed',
       body: `Track your ride at ${trackingUrl}`,
-      template: 'booking_confirmation',
-      templateData: context,
+      data: input as Record<string, unknown>,
     });
 
     const adminAlert = notificationService.queue({
-      recipientId: 'admin_dispatch',
+      recipientId: (input.adminId as string) ?? 'admin_dispatch',
       audience: 'admin',
-      channel: 'in_app',
+      type: 'admin_alert',
+      channels: ['in_app'],
       title: 'New booking received',
-      body: `Booking ${context.bookingId} from ${context.pickup} to ${context.dropoff}`,
-      template: 'admin_new_booking_alert',
-      templateData: context,
+      body: `Booking ${input.bookingId} received`,
+      data: input as Record<string, unknown>,
     });
 
-    return {
-      trackingCode,
-      trackingUrl,
-      customerNotification,
-      adminAlert,
-      emailTemplate: buildEmailTemplate('booking_confirmation', context),
-      whatsappTemplate: buildWhatsAppTemplate('booking_confirmation', context),
-    };
+    return { trackingCode, trackingUrl, customerNotification, adminAlert };
   },
 
-  createDriverAssigned(context: BookingNotificationContext) {
+  createDriverAssigned(context: OrchestratorContext) {
     return notificationService.queue({
       recipientId: context.customerId,
       audience: 'customer',
-      channel: 'in_app',
+      type: 'driver_assignment',
+      channels: ['in_app'],
       title: 'Driver assigned',
-      body: `${context.driverName ?? 'Your driver'} is heading to pickup.`,
-      template: 'driver_assigned',
-      templateData: context,
+      body: `Driver assigned for booking ${context.bookingId}.`,
+      data: context as Record<string, unknown>,
     });
   },
 
-  createBookingStatusUpdate(context: BookingNotificationContext) {
+  createBookingStatusUpdate(context: OrchestratorContext) {
     return notificationService.queue({
       recipientId: context.customerId,
       audience: 'customer',
-      channel: 'in_app',
-      title: `Booking ${context.status}`,
-      body: `Status changed to ${context.status}. Track: ${context.trackingUrl}`,
-      template: 'booking_status_update',
-      templateData: context,
+      type: 'booking_status_update',
+      channels: ['in_app'],
+      title: `Booking ${context.status ?? 'updated'}`,
+      body: `Status changed to ${context.status ?? 'updated'}.`,
+      data: context as Record<string, unknown>,
     });
   },
 

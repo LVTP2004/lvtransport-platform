@@ -6,7 +6,6 @@ import { logger } from './utils/logger.js';
 const app = createApp();
 realtimeOrchestratorService.initialize();
 
-const { start } = bootstrapHttpAndWebSocketServer(app);
 const { start, stop } = bootstrapHttpAndWebSocketServer(app);
 
 const handleShutdown = async (signal: string): Promise<void> => {

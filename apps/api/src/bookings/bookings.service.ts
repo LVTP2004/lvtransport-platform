@@ -20,6 +20,8 @@ const allowedTransitions: Record<BookingStatus, ReadonlySet<BookingStatus>> = {
   in_progress: new Set(['completed', 'cancelled']),
   completed: new Set(),
   cancelled: new Set(),
+  onderweg: new Set(['arrived', 'cancelled']),
+  arrived: new Set(['in_progress', 'cancelled']),
 };
 
 const bookingStore = new Map<string, BookingRecord>();
@@ -50,7 +52,7 @@ export const bookingsService = {
 
     const next: BookingRecord = {
       bookingId: payload.bookingId,
-      customerId: payload.customerId,
+      customerId: payload.customerId ?? existing?.customerId ?? 'unknown',
       driverId: payload.driverId ?? existing?.driverId,
       status,
       updatedAt: now,

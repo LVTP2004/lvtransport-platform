@@ -1,5 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
-import { verifyJwt } from '@lvtransport/auth';
+import { AccountStatus, AccountType, AuthProvider, OnboardingStep, UserRole, verifyJwt } from '@lvtransport/auth';
 import { AUTH_HEADER, BEARER_PREFIX } from '../constants/auth.constants.js';
 import type { RequestAuthContext } from '../models/request-auth-context.js';
 
@@ -23,7 +23,7 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     authReq.session = {
       sessionId: claims.sessionId,
       userId: claims.sub,
-      provider: 'email_password',
+      provider: AuthProvider.EMAIL_PASSWORD,
       createdAt: claims.iat * 1000,
       lastSeenAt: Date.now(),
       mfaVerified: false,
@@ -32,11 +32,11 @@ export async function authenticate(req: Request, res: Response, next: NextFuncti
     authReq.user = {
       id: claims.sub,
       email: claims.email,
-      accountType: claims.roles.includes('admin') ? 'admin' : 'driver',
+      accountType: claims.roles.includes(UserRole.ADMIN) ? AccountType.ADMIN : AccountType.DRIVER,
       roles: claims.roles,
       permissions: claims.permissions,
-      status: 'active',
-      onboardingStep: 'complete',
+      status: AccountStatus.ACTIVE,
+      onboardingStep: OnboardingStep.COMPLETE,
       profile: { firstName: '', lastName: '' }
     };
     next();
