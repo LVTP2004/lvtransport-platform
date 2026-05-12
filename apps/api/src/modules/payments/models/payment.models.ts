@@ -35,11 +35,20 @@ export interface InvoiceDraft {
   invoiceId: string;
   bookingId: string;
   customerId: string;
+  businessAccountId?: string;
+  lifecycle: 'draft' | 'validated' | 'issued' | 'paid' | 'cancelled';
+  synchronizedAt: string;
+  issuedBy: 'system' | 'ops_admin';
   subtotal: MoneyAmount;
   vatAmount: MoneyAmount;
   discounts?: MoneyAmount;
   total: MoneyAmount;
   issuedAt?: string;
+  rideSummary?: {
+    pickup: string;
+    destination: string;
+    serviceType: 'standard' | 'airport' | 'vip';
+  };
 }
 
 export interface PromoCodeApplication {

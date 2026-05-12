@@ -29,12 +29,23 @@ export const bookingFlowService = {
       status: 'pending',
       createdAt: new Date().toISOString(),
       ...input,
+      customerTier: input.customerTier ?? (input.serviceType === 'vip' ? 'vip' : 'retail'),
       fareQuote: {
         fareTotal: quote.breakdown.total,
         pricingVersion: quote.pricingVersion,
         breakdown: quote.breakdown,
         synchronizedAt: new Date().toISOString()
-      }
+      },
+      billing: {
+        invoiceLifecycleState: 'ready_for_invoice',
+        isBillingConsistent: true,
+        synchronizedAt: new Date().toISOString(),
+      },
+      rideHistoryMeta: {
+        firstRideAt: new Date().toISOString(),
+        lastRideAt: new Date().toISOString(),
+        ridesCompletedUnderAccount: 0,
+      },
     };
 
     return bookingRepository.create(booking);
