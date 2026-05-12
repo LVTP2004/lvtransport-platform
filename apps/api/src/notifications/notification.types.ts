@@ -68,3 +68,16 @@ export interface NotificationEventEnvelope {
   occurredAt: string;
   reconnectSafe: boolean;
 }
+
+
+export interface NotificationTemplate {
+  id: string;
+  type: NotificationType;
+  channel: NotificationChannel;
+  subject?: string;
+  bodyText: string;
+  bodyHtml?: string;
+  placeholders: string[];
+  enabled: boolean;
+  version: number;
+}

@@ -9,7 +9,7 @@ import {
 import { CreateCheckoutSessionDto, CreateRefundRequestDto, RetryPaymentDto } from '../dto/payment.dto.js';
 import { BookingPaymentSnapshot, MoneyAmount, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
 import { InvoiceDraft, TransactionHistoryEntry } from '../models/payment.models.js';
-import { recordOperationalIncident } from '../../../../utils/operational-monitoring.js';
+import { recordOperationalIncident } from '../../../utils/operational-monitoring.js';
 
 interface ReconnectSnapshot {
   sessions: PaymentSession[];
@@ -194,6 +194,10 @@ export class PaymentArchitectureService {
     const list = this.getTransactionHistory(bookingId);
     const now = Date.now();
     const staleTransactions = list.filter((txn) => now - Date.parse(txn.createdAt) > STALE_TXN_THRESHOLD_MS);
+    if (staleTransactions.length > 0) {
+      recordOperationalIncident({ code: 'PAYMENT_STALE_TRANSACTIONS', domain: 'payment', severity: 'warning', message: 'Detected stale payment transactions in diagnostics', context: { bookingId: bookingId ?? null, staleTransactionCount: staleTransactions.length } });
+    }
+
     return {
       totalSessions: this.sessions.size,
       staleTransactionCount: staleTransactions.length,
@@ -313,6 +317,3 @@ export class PaymentArchitectureService {
 }
 
 export const paymentArchitectureService = new PaymentArchitectureService();
-    if (staleTransactions.length > 0) {
-      recordOperationalIncident({ code: 'PAYMENT_STALE_TRANSACTIONS', domain: 'payment', severity: 'warning', message: 'Detected stale payment transactions in diagnostics', context: { bookingId: bookingId ?? null, staleTransactionCount: staleTransactions.length } });
-    }
