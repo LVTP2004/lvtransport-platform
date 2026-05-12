@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 
 type Booking = { id: string; code: string; status: string; assignedDriverName?: string; version: number };
 
-const statusFlow = ['assigned', 'driver_arriving', 'passenger_onboard', 'completed'] as const;
+const statusFlow = ['assigned', 'onderweg', 'arrived', 'in_progress', 'completed'] as const;
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
 export function App() {
@@ -16,8 +16,24 @@ export function App() {
 
   useEffect(() => {
     refresh();
-    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
-    ws.onmessage = () => refresh();
+    const wsBase = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`;
+    const ws = new WebSocket(wsBase);
+    ws.onmessage = (message) => {
+      try {
+        const payload = JSON.parse(message.data as string) as { event?: string; payload?: Booking };
+        if (payload.event === 'booking.updated' && payload.payload) {
+          setBookings((current) => {
+            const next = [...current];
+            const index = next.findIndex((item) => item.id === payload.payload?.id);
+            if (index >= 0) next[index] = payload.payload;
+            else if (payload.payload.assignedDriverName === 'Marco V.' || payload.payload.status === 'assigned') next.unshift(payload.payload);
+            return next.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned');
+          });
+        }
+      } catch {
+        refresh();
+      }
+    };
     return () => ws.close();
   }, []);
 
