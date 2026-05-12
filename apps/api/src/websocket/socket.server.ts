@@ -6,6 +6,7 @@ import { logger } from '../utils/logger.js';
 import { eventBus } from '../events/event-bus.js';
 import { WS_EVENTS } from '../constants/app.constants.js';
 import { bookingLifecycleRealtimeService } from '../services/booking-lifecycle-realtime.service.js';
+import { realtimeOrchestratorService } from '../services/realtime-orchestrator.service.js';
 
 export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   const server = createServer(app);
@@ -50,6 +51,7 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
       }
     });
 
+    realtimeOrchestratorService.registerClient(socket);
     socket.on('close', () => logger.info('WebSocket client disconnected'));
   });
 
@@ -57,5 +59,13 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
     server.listen(env.port, () => logger.info(`API + WebSocket server listening on port ${env.port}`));
   };
 
-  return { server, wss, start };
+  const stop = async (): Promise<void> => {
+    await new Promise<void>((resolve) => {
+      wss.close(() => {
+        server.close(() => resolve());
+      });
+    });
+  };
+
+  return { server, wss, start, stop };
 };
