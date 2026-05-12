@@ -32,6 +32,10 @@ export interface BookingPaymentSnapshot {
   state: BookingPaymentState;
   activePaymentSessionId?: string;
   lastTransactionId?: string;
+  invoiceLifecycleState?: 'draft' | 'validated' | 'issued' | 'paid' | 'cancelled';
+  invoiceId?: string;
+  billingSynchronizedAt?: string;
+  consistencyHash?: string;
 }
 
 export interface RefundRecord {
