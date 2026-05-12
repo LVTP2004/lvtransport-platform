@@ -1,45 +1,26 @@
 import { BookingLifecycle, DriverState, TrackingState } from "./enums.js";
+import type { BookingLifecycle } from './enums';
 
-export interface Coordinates {
-  lat: number;
-  lng: number;
-  heading?: number;
-  speedKph?: number;
-  accuracyMeters?: number;
-  source?: "gps" | "network" | "manual";
-}
+export type BookingActor = 'customer' | 'admin' | 'driver' | 'system';
 
-export interface DriverLiveStatus {
-  driverId: string;
-  state: DriverState;
-  position?: Coordinates;
-  updatedAt: string;
-}
+export type BookingTimelineEntry = {
+  status: BookingLifecycle;
+  actor: BookingActor;
+  at: string;
+  note?: string;
+};
 
-export interface BookingRealtimeState {
-  bookingId: string;
-  lifecycle: BookingLifecycle;
-  trackingState: TrackingState;
-  etaSeconds?: number;
+export type BookingRecord = {
+  id: string;
+  code: string;
+  customerName: string;
+  pickup: string;
+  destination: string;
+  status: BookingLifecycle;
   assignedDriverId?: string;
-  updatedAt: string;
-}
-
-export interface AdminMonitoringEvent {
-  eventId: string;
-  eventName: string;
-  severity: "info" | "warning" | "critical";
-  entityType: "booking" | "driver" | "system" | "tracking";
-  entityId: string;
-  payload: Record<string, unknown>;
+  assignedDriverName?: string;
+  version: number;
+  timeline: BookingTimelineEntry[];
   createdAt: string;
-}
-
-export interface CustomerTrackingState {
-  customerId: string;
-  bookingId: string;
-  trackingState: TrackingState;
-  driverStatus?: DriverLiveStatus;
-  bookingState?: BookingRealtimeState;
   updatedAt: string;
-}
+};
