@@ -91,3 +91,28 @@ Exit criteria:
 
 - Cross-module governance model formalized.
 - Expansion prioritization framework approved.
+
+## Conceptual Branch — LV Tech Operations (Future)
+
+**Status:** Conceptual roadmap only (non-production).
+
+Purpose:
+
+- Establish a future AI-powered operational technology and business solutions branch for SMBs in Belgium.
+
+Scope preparation:
+
+- premium websites, booking systems, operational dashboards
+- AI assistants, realtime coordination/tracking, automation workflows
+- VPS deployment preparation, PM2/Nginx operational readiness
+- reusable SaaS modules and multilingual support
+
+Guardrails:
+
+- No interference with LV Ride active operations.
+- No production API behavior changes.
+- No live billing implementation in conceptual stage.
+
+Reference architecture document:
+
+- `docs/LV-TECH-OPERATIONS-CONCEPTUAL-BRANCH.md`
