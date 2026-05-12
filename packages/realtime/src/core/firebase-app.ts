@@ -1,4 +1,4 @@
-import type { FirebaseAppConfig } from "../config/env";
+import type { FirebaseAppConfig } from "../config/env.js";
 
 export interface FirebaseAppHandle {
   name: string;

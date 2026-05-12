@@ -1,4 +1,4 @@
-import type { RealtimeEventEnvelope, RealtimeTransport } from "./event-bus";
+import type { RealtimeEventEnvelope, RealtimeTransport } from "./event-bus.js";
 
 export interface BridgeAdapters {
   firebase: RealtimeTransport;

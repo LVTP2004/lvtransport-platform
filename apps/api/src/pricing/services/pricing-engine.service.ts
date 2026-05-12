@@ -1,3 +1,6 @@
+import { RouteFareEstimator } from '../estimators/route-fare.estimator.js';
+import { QuoteStatus } from '../enums/fare-rule.enum.js';
+import { BookingQuote, RouteEstimateInput } from '../models/pricing.types.js';
 import { PRICING_CONSTANTS } from '../constants/pricing.config';
 import { RouteFareEstimator } from '../estimators/route-fare.estimator';
 import { QuoteStatus } from '../enums/fare-rule.enum';

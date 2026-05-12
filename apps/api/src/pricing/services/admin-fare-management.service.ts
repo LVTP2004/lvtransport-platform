@@ -1,4 +1,4 @@
-import { AdminFareRule } from '../interfaces/admin-fare-rule.interface';
+import { AdminFareRule } from '../interfaces/admin-fare-rule.interface.js';
 
 export class AdminFareManagementService {
   private rules: AdminFareRule[] = [];
