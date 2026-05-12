@@ -65,4 +65,9 @@ export interface BookingRecord extends CreateBookingDto {
     lastRideAt: string;
     ridesCompletedUnderAccount: number;
   };
+  lifecycle: {
+    initializedAt: string;
+    state: 'pending';
+    initIdempotencyKey: string;
+  };
 }

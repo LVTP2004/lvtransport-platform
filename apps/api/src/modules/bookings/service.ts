@@ -13,7 +13,10 @@ const createReferenceCode = (): string => {
 };
 
 export const bookingFlowService = {
-  async createBooking(input: CreateBookingDto): Promise<BookingRecord> {
+  async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
+    const existing = await bookingRepository.findByIdempotencyKey(idempotencyKey);
+    if (existing) return existing;
+
     const quote = pricingEngine.createQuote({
       estimatedDistanceKm: input.estimatedDistanceKm ?? 5,
       estimatedDurationMin: input.estimatedDurationMin ?? 15,
@@ -23,28 +26,34 @@ export const bookingFlowService = {
       tier: input.serviceType === 'vip' ? PricingTier.VIP : PricingTier.STANDARD
     });
 
+    const now = new Date().toISOString();
     const booking: BookingRecord = {
       id: randomUUID(),
       referenceCode: createReferenceCode(),
       status: 'pending',
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       ...input,
       customerTier: input.customerTier ?? (input.serviceType === 'vip' ? 'vip' : 'retail'),
       fareQuote: {
         fareTotal: quote.breakdown.total,
         pricingVersion: quote.pricingVersion,
         breakdown: quote.breakdown,
-        synchronizedAt: new Date().toISOString()
+        synchronizedAt: now
       },
       billing: {
         invoiceLifecycleState: 'ready_for_invoice',
         isBillingConsistent: true,
-        synchronizedAt: new Date().toISOString(),
+        synchronizedAt: now,
       },
       rideHistoryMeta: {
-        firstRideAt: new Date().toISOString(),
-        lastRideAt: new Date().toISOString(),
+        firstRideAt: now,
+        lastRideAt: now,
         ridesCompletedUnderAccount: 0,
+      },
+      lifecycle: {
+        initializedAt: now,
+        state: 'pending',
+        initIdempotencyKey: idempotencyKey,
       },
     };
 
