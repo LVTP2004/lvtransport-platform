@@ -29,6 +29,9 @@ export type BookingRecord = {
   customerName: string;
   pickup: string;
   destination: string;
+  serviceType: 'standard' | 'airport' | 'vip';
+  scheduledAt: string;
+  paymentStatus: 'pending' | 'authorized' | 'paid' | 'failed' | 'cancelled';
   status: BookingLifecycleStatus;
   assignedDriverId?: string;
   assignedDriverName?: string;
@@ -243,10 +246,11 @@ export const realtimeOrchestratorService = {
     socket.send(JSON.stringify({ event: 'admin.analytics.snapshot', payload: operationalAnalyticsService.getAdminSnapshot(), sequence: eventSequence }));
   },
 
-  createBooking(input: { customerName: string; pickup: string; destination: string }): BookingRecord {
+  createBooking(input: { customerName?: string; pickup: string; destination: string; serviceType?: 'standard' | 'airport' | 'vip'; scheduledAt?: string; paymentStatus?: 'pending' | 'authorized' | 'paid' | 'failed' | 'cancelled' }): BookingRecord {
     const now = new Date().toISOString();
+    const scheduledAt = input.scheduledAt && !Number.isNaN(new Date(input.scheduledAt).getTime()) ? input.scheduledAt : now;
     const booking: BookingRecord = {
-      id: randomUUID(), code: createBookingCode(), customerName: input.customerName, pickup: input.pickup, destination: input.destination,
+      id: randomUUID(), code: createBookingCode(), customerName: input.customerName?.trim() || 'Guest rider', pickup: input.pickup, destination: input.destination, serviceType: input.serviceType ?? 'standard', scheduledAt, paymentStatus: input.paymentStatus ?? 'pending',
       status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
