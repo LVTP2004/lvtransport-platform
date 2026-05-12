@@ -94,6 +94,11 @@ type DriverLocationUpdate = {
 const ASSIGNMENT_TTL_MS = 45_000;
 const DRIVER_STALE_MS = 5 * 60_000;
 const MAX_REPLAY_EVENTS = 250;
+const AUTO_ACCEPT_AFTER_MS = 10_000;
+const AUTO_QUOTE_AFTER_MS = 20_000;
+const AUTO_CONFIRM_AFTER_MS = 30_000;
+const AUTO_AVAILABLE_AFTER_MS = 40_000;
+const IN_PROGRESS_TIMEOUT_MS = 2 * 60 * 60_000;
 
 const bookingEvents = new EventEmitter();
 const bookings = new Map<string, BookingRecord>();
@@ -157,11 +162,30 @@ const releaseDriver = (driverId?: string) => {
   emit('driver.status.updated', driverStates.get(driverId));
 };
 
+
+const getBookingAgeMs = (booking: BookingRecord, nowMs: number) => nowMs - new Date(booking.createdAt).getTime();
+
+const transitionBySystemRule = (booking: BookingRecord, nextStatus: BookingLifecycleStatus, note: string) => {
+  const now = new Date().toISOString();
+  const previousStatus = booking.status;
+  if (previousStatus === nextStatus || !allowedTransitions[previousStatus].includes(nextStatus)) return false;
+  booking.status = nextStatus;
+  booking.version += 1;
+  booking.updatedAt = now;
+  booking.timeline.push({ status: nextStatus, actor: 'system', at: now, note });
+  operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
+  emit('booking.updated', booking);
+  emit('booking.lifecycle.changed', booking);
+  emit('automation.trigger.executed', { bookingId: booking.id, from: previousStatus, to: nextStatus, note, at: now });
+  return true;
+};
+
 export const realtimeOrchestratorService = {
   initialize(): void {
     if (heartbeatInterval) return;
     heartbeatInterval = setInterval(() => {
       this.cleanupStaleAssignments();
+      this.runAutomationSweep();
       for (const socket of websocketClients) {
         const client = socket as RealtimeSocket;
         if (client.isAlive === false) {
@@ -195,7 +219,7 @@ export const realtimeOrchestratorService = {
       status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
-    bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot()); return booking;
+    bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); this.runAutomationSweep(); emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot()); return booking;
   },
 
   listBookings: () => Array.from(bookings.values()),
@@ -335,6 +359,49 @@ export const realtimeOrchestratorService = {
     operationalAnalyticsService.trackDriverState(next);
     emit('driver.location.updated', { driverId: params.driverId, bookingId: next.activeBookingId, location: next.location, at: now });
     return next;
+  },
+
+  runAutomationSweep(): { transitioned: string[]; recovered: string[] } {
+    const nowMs = Date.now();
+    const transitioned: string[] = [];
+    const recovered: string[] = [];
+    for (const booking of Array.from(bookings.values()).sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
+      const age = getBookingAgeMs(booking, nowMs);
+      if (booking.status === 'pending' && age >= AUTO_ACCEPT_AFTER_MS && transitionBySystemRule(booking, 'accepted', 'Auto-accepted by workflow trigger')) transitioned.push(booking.id);
+      if (booking.status === 'accepted' && age >= AUTO_QUOTE_AFTER_MS && transitionBySystemRule(booking, 'quoted', 'Auto-quoted by pricing workflow')) transitioned.push(booking.id);
+      if (booking.status === 'quoted' && age >= AUTO_CONFIRM_AFTER_MS && transitionBySystemRule(booking, 'confirmed', 'Auto-confirmed by booking policy')) transitioned.push(booking.id);
+      if (booking.status === 'confirmed' && age >= AUTO_AVAILABLE_AFTER_MS && transitionBySystemRule(booking, 'available', 'Auto-published for dispatch')) transitioned.push(booking.id);
+      if (booking.status === 'in_progress') {
+        const inProgressAt = [...booking.timeline].reverse().find((entry) => entry.status === 'in_progress')?.at;
+        if (inProgressAt && nowMs - new Date(inProgressAt).getTime() >= IN_PROGRESS_TIMEOUT_MS) {
+          if (transitionBySystemRule(booking, 'failed', 'Ride timed out without completion signal')) recovered.push(booking.id);
+          releaseDriver(booking.assignedDriverId);
+        }
+      }
+      if (booking.status === 'completed') {
+        const hasFinalized = booking.timeline.some((entry) => entry.note === 'Operational finalization completed');
+        if (!hasFinalized) {
+          booking.version += 1;
+          booking.updatedAt = new Date().toISOString();
+          booking.timeline.push({ status: 'completed', actor: 'system', at: booking.updatedAt, note: 'Operational finalization completed' });
+          emit('booking.finalized', { bookingId: booking.id, synchronizedAt: booking.updatedAt, paymentState: 'ready_for_capture', pricingState: 'locked' });
+          transitioned.push(booking.id);
+        }
+      }
+    }
+    if (transitioned.length || recovered.length) emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
+    return { transitioned, recovered };
+  },
+
+  restoreAutomationState(): { restoredBookings: string[] } {
+    const restoredBookings: string[] = [];
+    this.cleanupStaleAssignments();
+    for (const booking of bookings.values()) {
+      if (['pending', 'accepted', 'quoted', 'confirmed', 'assigned', 'onderweg', 'arrived', 'in_progress'].includes(booking.status)) restoredBookings.push(booking.id);
+    }
+    this.runAutomationSweep();
+    emit('automation.restore.completed', { restoredBookings, at: new Date().toISOString() });
+    return { restoredBookings };
   },
 
   getDispatchDiagnostics() {
