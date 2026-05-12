@@ -8,6 +8,7 @@ import {
   bookingOperationalState,
   realtimeOperationalEvents
 } from './booking-operational-state.service.js';
+import { operationalObservabilityService } from './operational-observability.service.js';
 
 export { BOOKING_LIFECYCLE };
 
@@ -57,25 +58,30 @@ export const realtimeOrchestratorService = {
   },
   registerClient(socket: WebSocket): void {
     const client = socket as RealtimeSocket; client.isAlive = true; websocketClients.add(socket);
-    socket.on('pong', () => { client.isAlive = true; }); socket.on('close', () => websocketClients.delete(socket));
+    socket.on('pong', () => { client.isAlive = true; operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.pong' }); }); socket.on('close', () => { websocketClients.delete(socket); operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.disconnected' }); });
     const last = parseLastSequenceFromUrl((socket as unknown as { url?: string }).url);
+    operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.connected', details: { lastSequence: last, activeClients: websocketClients.size } });
     if (last) for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent).sequence ?? 0) > last) socket.send(replayEvent);
     socket.send(JSON.stringify({ event: realtimeOperationalEvents.bookingSnapshot, payload: Array.from(bookings.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: realtimeOperationalEvents.driverSnapshot, payload: Array.from(driverStates.values()), sequence: eventSequence }));
+    socket.send(JSON.stringify({ event: realtimeOperationalEvents.operationalLogSnapshot, payload: operationalObservabilityService.getOperationalLogs(), sequence: eventSequence }));
   },
   on(event: string, handler: (payload: unknown) => void): void { bookingEvents.on(event, handler); },
   createBooking(input: { customerName: string; pickup: string; destination: string }): BookingRecord {
     const now = new Date().toISOString();
     const booking: BookingRecord = { id: randomUUID(), code: createBookingCode(), customerName: input.customerName, pickup: input.pickup, destination: input.destination, status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now, tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now } };
-    bookings.set(booking.id, booking); emit(realtimeOperationalEvents.bookingCreated, booking); return booking;
+    bookings.set(booking.id, booking);
+    operationalObservabilityService.seedInitialTimeline(booking.id, 'pending', 'customer', now, 'Booking created');
+    operationalObservabilityService.log({ level: 'info', domain: 'customer', action: 'booking.created', bookingId: booking.id, actor: 'customer' });
+    emit(realtimeOperationalEvents.bookingCreated, booking); return booking;
   },
   listBookings(): BookingRecord[] { return Array.from(bookings.values()); },
   assignDriver(params: { bookingId: string; driverId: string; driverName: string; idempotencyKey?: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
     const result = bookingOperationalState.transition(booking.status, 'assigned');
-    if (result.outcome === 'rejected_invalid_transition') throw new Error('INVALID_TRANSITION');
-    if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: 'assigned', actor: 'admin', at: booking.updatedAt, note: `Driver ${params.driverName} assigned` }); }
+    if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: params.nextStatus, actor: params.actor, reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
+    if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: 'assigned', actor: 'admin', at: booking.updatedAt, note: `Driver ${params.driverName} assigned` }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: 'pending', to: result.status, actor: 'admin', note: `Driver ${params.driverName} assigned`, at: booking.updatedAt }); }
     booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName;
     driverStates.set(params.driverId, { driverId: params.driverId, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: booking.updatedAt });
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
@@ -84,10 +90,10 @@ export const realtimeOrchestratorService = {
   transitionStatus(params: { bookingId: string; nextStatus: BookingLifecycleStatus; actor: BookingActor; idempotencyKey?: string; expectedVersion?: number }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
-    if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) throw new Error('VERSION_CONFLICT');
+    if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) { operationalObservabilityService.logSyncConflict({ bookingId: booking.id, expectedVersion: params.expectedVersion, actualVersion: booking.version, actor: params.actor }); throw new Error('VERSION_CONFLICT'); }
     const result = bookingOperationalState.transition(booking.status, params.nextStatus);
-    if (result.outcome === 'rejected_invalid_transition') throw new Error('INVALID_TRANSITION');
-    if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: result.status, actor: params.actor, at: booking.updatedAt }); }
+    if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: params.nextStatus, actor: params.actor, reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
+    if (result.outcome === 'applied') { const fromStatus = booking.status; booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: result.status, actor: params.actor, at: booking.updatedAt }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: fromStatus, to: result.status, actor: params.actor, at: booking.updatedAt }); }
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
     emit(realtimeOperationalEvents.bookingUpdated, booking); emit(realtimeOperationalEvents.bookingLifecycleChanged, booking); emit(realtimeOperationalEvents.adminLiveUpdated, { bookingId: booking.id, status: booking.status, at: booking.updatedAt }); return booking;
   },
@@ -104,13 +110,15 @@ export const realtimeOrchestratorService = {
         const mappedStatus = (params.state === 'available' ? 'available' : params.state) as BookingLifecycleStatus;
         const result = bookingOperationalState.transition(booking.status, mappedStatus);
         if (result.outcome === 'applied') {
-          booking.status = result.status; booking.version += 1; booking.updatedAt = now;
+          const fromStatus = booking.status; booking.status = result.status; booking.version += 1; booking.updatedAt = now;
           booking.timeline.push({ status: result.status, actor: 'driver', at: now, note: 'Synced from driver state' });
+          operationalObservabilityService.logTransition({ bookingId: booking.id, from: fromStatus, to: result.status, actor: 'driver', note: 'Synced from driver state', at: now });
           emit(realtimeOperationalEvents.bookingUpdated, booking); emit(realtimeOperationalEvents.bookingLifecycleChanged, booking);
         }
       }
     }
     if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    operationalObservabilityService.log({ level: 'info', domain: 'driver', action: 'driver.state.updated', actor: 'driver', bookingId: params.bookingId, state: params.state, details: { driverId: params.driverId } });
     emit(realtimeOperationalEvents.driverStatusUpdated, next); emit(realtimeOperationalEvents.adminLiveUpdated, { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
     return next;
   },

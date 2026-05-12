@@ -69,5 +69,6 @@ export const realtimeOperationalEvents = {
   driverSnapshot: 'driver.snapshot',
   driverAssigned: 'driver.assigned',
   driverStatusUpdated: 'driver.status.updated',
-  adminLiveUpdated: 'admin.live.updated'
+  adminLiveUpdated: 'admin.live.updated',
+  operationalLogSnapshot: 'operational.log.snapshot'
 } as const;
