@@ -7,7 +7,7 @@
     "dev:web": "pnpm --filter @lvtransport/web dev",
     "dev:admin": "pnpm --filter @lvtransport/admin dev",
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
-    "build": "pnpm -r --filter './apps/*' build",
+    "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build",
     "typecheck": "pnpm -r --filter './apps/*' typecheck"
   },
   "devDependencies": {

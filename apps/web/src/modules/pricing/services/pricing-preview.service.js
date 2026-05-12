@@ -5,6 +5,7 @@ export class PricingPreviewService {
         return {
             quoteId: 'preview-placeholder',
             status: QuoteStatus.DRAFT,
+            status: QuoteStatus.PREVIEW,
             input,
             breakdown: {
                 currency: 'USD',

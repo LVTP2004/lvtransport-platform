@@ -3,6 +3,7 @@ import { env } from './env.js';
 
 export const corsOptions: CorsOptions = {
   origin: env.corsOrigin === '*' ? true : env.corsOrigin.split(',').map((item) => item.trim()),
+  origin: env.corsOrigin === '*' ? true : env.corsOrigin.split(',').map((item: string) => item.trim()),
   credentials: true,
 };
 
