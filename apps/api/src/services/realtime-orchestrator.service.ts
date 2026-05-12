@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';
 import { operationalAnalyticsService } from './operational-analytics.service.js';
+import { recordOperationalIncident, summarizeOperationalIncidents } from '../utils/operational-monitoring.js';
 
 export const BOOKING_LIFECYCLE = [
   'pending',
@@ -173,6 +174,16 @@ const emitAdminAnalytics = (force = false) => {
   emit('admin.analytics.updated', operationalAnalyticsService.getAdminSnapshot());
 };
 
+const reportLifecycleAnomaly = (booking: BookingRecord, from: BookingLifecycleStatus, to: BookingLifecycleStatus) => {
+  recordOperationalIncident({
+    code: 'BOOKING_LIFECYCLE_ANOMALY',
+    domain: 'lifecycle',
+    severity: 'warning',
+    message: 'Invalid booking lifecycle transition blocked',
+    context: { bookingId: booking.id, from, to, version: booking.version }
+  });
+};
+
 const parseLastSequenceFromUrl = (url?: string): number | null => {
   if (!url) return null;
   const parsed = new URLSearchParams(url.includes('?') ? url.split('?')[1] : '').get('lastSequence');
@@ -240,7 +251,10 @@ export const realtimeOrchestratorService = {
     socket.on('pong', () => { client.isAlive = true; });
     socket.on('close', () => websocketClients.delete(socket));
     const lastSequence = parseLastSequenceFromUrl((socket as unknown as { url?: string }).url);
-    if (lastSequence) for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent) as { sequence?: number }).sequence! > lastSequence) socket.send(replayEvent);
+    if (lastSequence) {
+      recordOperationalIncident({ code: 'REALTIME_RECONNECT_REPLAY', domain: 'reconnect', severity: 'info', message: 'Client requested realtime replay after reconnect', context: { lastSequence } });
+      for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent) as { sequence?: number }).sequence! > lastSequence) socket.send(replayEvent);
+    }
     socket.send(JSON.stringify({ event: 'booking.snapshot', payload: Array.from(bookings.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: 'driver.snapshot', payload: Array.from(driverStates.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: 'admin.analytics.snapshot', payload: operationalAnalyticsService.getAdminSnapshot(), sequence: eventSequence }));
@@ -269,7 +283,10 @@ export const realtimeOrchestratorService = {
     const attemptKey = createAssignmentAttemptKey(params.bookingId, params.driverId);
     const lastAttemptAt = assignmentAttemptLedger.get(attemptKey);
     if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && booking.status === 'assigned') throw new Error('DUPLICATE_ASSIGNMENT_ATTEMPT');
-    if (!['confirmed', 'available', 'assigned'].includes(booking.status)) throw new Error('INVALID_TRANSITION');
+    if (!['confirmed', 'available', 'assigned'].includes(booking.status)) {
+      reportLifecycleAnomaly(booking, booking.status, 'assigned');
+      throw new Error('INVALID_TRANSITION');
+    }
     const now = new Date().toISOString();
     booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName; booking.assignmentOfferedAt = now; booking.assignmentExpiresAt = new Date(Date.now() + ASSIGNMENT_TTL_MS).toISOString();
     booking.status = 'assigned'; booking.version += 1; booking.updatedAt = now;
@@ -358,6 +375,9 @@ export const realtimeOrchestratorService = {
       const ratingScore = typeof driver.rating === 'number' ? Math.min(1, Math.max(0, driver.rating / 5)) : 0.5;
       const availabilityPrediction = getAvailabilityPrediction(driver, activeRides);
       const conflictFree = !driver.activeBookingId || driver.activeBookingId === booking.id;
+      if (!conflictFree) {
+        recordOperationalIncident({ code: 'DISPATCH_CONFLICT_ACTIVE_BOOKING', domain: 'dispatch', severity: 'warning', message: 'Dispatch candidate has conflicting active booking', context: { bookingId: booking.id, driverId: driver.driverId, activeBookingId: driver.activeBookingId } });
+      }
       return {
         driverId: driver.driverId, distanceKm: distanceKm === null ? null : Number(distanceKm.toFixed(2)), etaMinutes, assignmentEligible,
         notEligibleReason: assignmentEligible ? undefined : isStale ? 'stale_driver_presence' : driver.state !== 'available' ? 'driver_busy_or_offline' : 'active_ride_exists',
@@ -401,6 +421,10 @@ export const realtimeOrchestratorService = {
 
   updateDriverLocation(params: DriverLocationUpdate) {
     const now = new Date().toISOString();
+    if (!Number.isFinite(params.lat) || !Number.isFinite(params.lng)) {
+      recordOperationalIncident({ code: 'TELEMETRY_INVALID_COORDINATES', domain: 'telemetry', severity: 'warning', message: 'Dropped telemetry update due to invalid coordinates', context: { driverId: params.driverId, lat: params.lat, lng: params.lng } });
+      throw new Error('INVALID_TELEMETRY_COORDINATES');
+    }
     const current = driverStates.get(params.driverId);
     const next: DriverRealtimeState = {
       driverId: params.driverId, state: current?.state ?? 'available', activeBookingId: params.bookingId ?? current?.activeBookingId,
@@ -411,6 +435,9 @@ export const realtimeOrchestratorService = {
     operationalAnalyticsService.trackDriverState(next);
     const ledger = telemetryIngestLedger.get(params.driverId);
     const capturedMs = new Date(next.location?.capturedAt ?? now).getTime();
+    if (capturedMs < Date.now() - DRIVER_STALE_MS) {
+      recordOperationalIncident({ code: 'TELEMETRY_STALE', domain: 'telemetry', severity: 'warning', message: 'Stale telemetry ingest detected', context: { driverId: params.driverId, capturedAt: next.location?.capturedAt } });
+    }
     const isRapid = ledger && capturedMs - ledger.at < TELEMETRY_MIN_INTERVAL_MS;
     const isDuplicateCoordinate = ledger && Math.abs(ledger.lat - params.lat) < 0.00001 && Math.abs(ledger.lng - params.lng) < 0.00001;
     telemetryIngestLedger.set(params.driverId, { at: capturedMs, lat: params.lat, lng: params.lng });
@@ -478,6 +505,19 @@ export const realtimeOrchestratorService = {
       websocketClients: websocketClients.size,
       replayBufferSize: eventReplayBuffer.length,
       operationalSnapshotAt: new Date().toISOString()
+    };
+  },
+
+  getOperationalDiagnostics() {
+    const now = Date.now();
+    const staleBookings = Array.from(bookings.values())
+      .filter((booking) => !['completed', 'cancelled', 'failed'].includes(booking.status) && now - new Date(booking.updatedAt).getTime() > 15 * 60_000)
+      .map((booking) => ({ bookingId: booking.id, status: booking.status, updatedAt: booking.updatedAt }));
+    return {
+      incidentSummary: summarizeOperationalIncidents(),
+      staleBookings,
+      telemetryTrackedDrivers: telemetryIngestLedger.size,
+      activeAssignments: Array.from(bookings.values()).filter((booking) => ['assigned', 'onderweg', 'arrived', 'in_progress'].includes(booking.status)).length
     };
   },
 
