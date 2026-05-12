@@ -14,6 +14,25 @@ interface ReconnectSnapshot {
   sessions: PaymentSession[];
   bookingStates: BookingPaymentSnapshot[];
   transactions: TransactionHistoryEntry[];
+  invoices: InvoiceDraft[];
+  businessAccounts: BusinessOperationalAccount[];
+  recurringCustomers: RecurringCustomerProfile[];
+}
+interface BusinessOperationalAccount {
+  accountId: string;
+  legalName: string;
+  tier: 'business' | 'vip';
+  status: 'active' | 'suspended';
+  billingEmail: string;
+  invoiceTermsDays: number;
+  recurringEnabled: boolean;
+  createdAt: string;
+}
+interface RecurringCustomerProfile {
+  customerId: string;
+  bookingIds: string[];
+  totalCompletedRides: number;
+  lastRideAt?: string;
 }
 
 const money = (valueMinor: number): MoneyAmount => ({ currency: 'EUR', valueMinor });
@@ -25,6 +44,9 @@ export class PaymentArchitectureService {
   private sessions = new Map<string, PaymentSession>();
   private bookingStates = new Map<string, BookingPaymentSnapshot>();
   private transactions: TransactionHistoryEntry[] = [];
+  private invoices = new Map<string, InvoiceDraft>();
+  private businessAccounts = new Map<string, BusinessOperationalAccount>();
+  private recurringCustomers = new Map<string, RecurringCustomerProfile>();
 
   createCheckoutSession(dto: CreateCheckoutSessionDto): PaymentSession {
     const id = `pay_${dto.provider}_${Date.now()}`;
@@ -62,6 +84,7 @@ export class PaymentArchitectureService {
       status: session.status,
       amount: session.amount,
     });
+    this.trackRecurringCustomer(dto.customerId, dto.bookingId);
 
     return session;
   }
@@ -127,15 +150,29 @@ export class PaymentArchitectureService {
       : undefined;
     const subtotal = session?.amount ?? money(5500);
     const vatAmount = money(Math.round(subtotal.valueMinor * 0.21));
-    return {
+    const invoice: InvoiceDraft = {
       invoiceId: `draft_${bookingId}`,
       bookingId,
       customerId,
+      lifecycle: bookingPayment.state === BookingPaymentState.PAID ? 'paid' : 'draft',
+      synchronizedAt: new Date().toISOString(),
+      issuedBy: 'system',
       subtotal,
       vatAmount,
       total: money(subtotal.valueMinor + vatAmount.valueMinor),
       issuedAt: new Date().toISOString(),
     };
+    this.invoices.set(invoice.invoiceId, invoice);
+    this.syncBookingPaymentState(bookingId, {
+      state: bookingPayment.state,
+      activePaymentSessionId: bookingPayment.activePaymentSessionId,
+      lastTransactionId: bookingPayment.lastTransactionId,
+      invoiceLifecycleState: invoice.lifecycle,
+      invoiceId: invoice.invoiceId,
+      billingSynchronizedAt: invoice.synchronizedAt,
+      consistencyHash: this.computeConsistencyHash(bookingId, invoice.total.valueMinor, bookingPayment.state),
+    });
+    return invoice;
   }
 
   getTransactionHistory(bookingId?: string) {
@@ -165,6 +202,9 @@ export class PaymentArchitectureService {
       sessions: [...this.sessions.values()],
       bookingStates: [...this.bookingStates.values()],
       transactions: [...this.transactions],
+      invoices: [...this.invoices.values()],
+      businessAccounts: [...this.businessAccounts.values()],
+      recurringCustomers: [...this.recurringCustomers.values()],
     };
   }
 
@@ -172,7 +212,28 @@ export class PaymentArchitectureService {
     this.sessions = new Map(snapshot.sessions.map((s) => [s.id, s]));
     this.bookingStates = new Map(snapshot.bookingStates.map((s) => [s.bookingId, s]));
     this.transactions = [...snapshot.transactions];
+    this.invoices = new Map(snapshot.invoices.map((inv) => [inv.invoiceId, inv]));
+    this.businessAccounts = new Map(snapshot.businessAccounts.map((acc) => [acc.accountId, acc]));
+    this.recurringCustomers = new Map(snapshot.recurringCustomers.map((profile) => [profile.customerId, profile]));
     return { restored: true, sessions: this.sessions.size, bookings: this.bookingStates.size };
+  }
+
+  registerBusinessAccount(input: Omit<BusinessOperationalAccount, 'createdAt'>) {
+    const record: BusinessOperationalAccount = { ...input, createdAt: new Date().toISOString() };
+    this.businessAccounts.set(record.accountId, record);
+    return record;
+  }
+
+  getAdminBillingLifecycle(bookingId?: string) {
+    const snapshots = bookingId ? [this.getBookingPaymentState(bookingId)] : [...this.bookingStates.values()];
+    return snapshots.map((snapshot) => ({
+      bookingId: snapshot.bookingId,
+      paymentState: snapshot.state,
+      invoiceState: snapshot.invoiceLifecycleState ?? 'draft',
+      invoiceId: snapshot.invoiceId ?? null,
+      synchronizedAt: snapshot.billingSynchronizedAt ?? null,
+      consistencyHash: snapshot.consistencyHash ?? null,
+    }));
   }
 
   private transitionPayment(sessionId: string, status: PaymentSessionStatus): PaymentSession | undefined {
@@ -207,6 +268,20 @@ export class PaymentArchitectureService {
 
   private syncBookingPaymentState(bookingId: string, patch: Omit<BookingPaymentSnapshot, 'bookingId'>) {
     this.bookingStates.set(bookingId, { bookingId, ...patch });
+  }
+
+  private trackRecurringCustomer(customerId: string, bookingId: string) {
+    const existing = this.recurringCustomers.get(customerId);
+    if (!existing) {
+      this.recurringCustomers.set(customerId, { customerId, bookingIds: [bookingId], totalCompletedRides: 0 });
+      return;
+    }
+    if (!existing.bookingIds.includes(bookingId)) existing.bookingIds.push(bookingId);
+    existing.lastRideAt = new Date().toISOString();
+  }
+
+  private computeConsistencyHash(bookingId: string, invoiceTotalMinor: number, paymentState: BookingPaymentState) {
+    return createHash('sha256').update(`${bookingId}:${invoiceTotalMinor}:${paymentState}`).digest('hex');
   }
 
   private recordTransaction(input: Omit<TransactionHistoryEntry, 'id' | 'createdAt' | 'providerTransactionRef'>) {
