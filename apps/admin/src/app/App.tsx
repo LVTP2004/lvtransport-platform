@@ -79,11 +79,12 @@ export function App() {
           if (typeof payload.sequence === 'number' && payload.sequence > lastSequence) lastSequence = payload.sequence;
           if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) setBookings(payload.payload);
           if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
+            const bookingPayload = payload.payload;
             setBookings((current) => {
               const next = [...current];
-              const index = next.findIndex((item) => item.id === payload.payload?.id);
-              if (index >= 0) next[index] = payload.payload;
-              else next.unshift(payload.payload);
+              const index = next.findIndex((item) => item.id === bookingPayload.id);
+              if (index >= 0) next[index] = bookingPayload;
+              else next.unshift(bookingPayload);
               return next;
             });
           }

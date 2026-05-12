@@ -1,4 +1,7 @@
+// @ts-ignore - node built-in is resolved in runtime node environments
 import { createHmac, timingSafeEqual } from 'node:crypto';
+declare const Buffer: any;
+
 import type { Permission, UserRole } from '../enums/auth.enums';
 
 export interface JwtClaims {
@@ -11,8 +14,9 @@ export interface JwtClaims {
   exp: number;
 }
 
-const base64UrlEncode = (value: string) => Buffer.from(value).toString('base64url');
-const base64UrlDecode = (value: string) => Buffer.from(value, 'base64url').toString('utf8');
+const BufferCompat = Buffer as any;
+const base64UrlEncode = (value: string) => BufferCompat.from(value).toString('base64url');
+const base64UrlDecode = (value: string) => BufferCompat.from(value, 'base64url').toString('utf8');
 
 const sign = (headerPayload: string, secret: string) =>
   createHmac('sha256', secret).update(headerPayload).digest('base64url');
@@ -31,8 +35,8 @@ export function verifyJwt(token: string, secret: string): JwtClaims {
   if (!header || !payload || !signature) throw new Error('Invalid token format');
   const data = `${header}.${payload}`;
   const expected = sign(data, secret);
-  const actualBuffer = Buffer.from(signature);
-  const expectedBuffer = Buffer.from(expected);
+  const actualBuffer = BufferCompat.from(signature);
+  const expectedBuffer = BufferCompat.from(expected);
   if (actualBuffer.length !== expectedBuffer.length || !timingSafeEqual(actualBuffer, expectedBuffer)) {
     throw new Error('Invalid token signature');
   }
