@@ -11,6 +11,7 @@ export interface BookingEventPayload {
   status?: 'pending' | 'accepted' | 'assigned' | 'onderweg' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
   occurredAt?: string;
   metadata?: Record<string, unknown>;
+  eventId?: string;
 }
 
 export const emitBookingEvent = (payload: BookingEventPayload): void => {

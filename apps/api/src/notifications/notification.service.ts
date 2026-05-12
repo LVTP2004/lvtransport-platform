@@ -5,11 +5,21 @@ import type {
   NotificationMessage,
   NotificationStatus,
   NotificationTemplateSet,
+  NotificationType,
 } from './notification.types.js';
 
 const deliveryLogs: NotificationDeliveryLog[] = [];
 
-const buildTemplateSet = (message: NotificationMessage): NotificationTemplateSet => ({
+type NormalizedNotificationMessage = NotificationMessage & {
+  notificationId: string;
+  bookingId: string;
+  channels: NotificationChannel[];
+};
+
+export const buildTrackingCode = (bookingId: string): string => bookingId.slice(0, 8).toUpperCase();
+export const buildTrackingUrl = (trackingCode: string): string => `https://track.lvtransport.example/${trackingCode}`;
+
+const buildTemplateSet = (message: NormalizedNotificationMessage): NotificationTemplateSet => ({
   email: {
     subject: message.title,
     preview: message.body,
@@ -18,30 +28,41 @@ const buildTemplateSet = (message: NotificationMessage): NotificationTemplateSet
   },
   whatsapp: {
     text: `${message.title} - ${message.body}`,
-    variables: {
-      bookingId: message.bookingId,
-      audience: message.audience,
-    },
+    variables: { bookingId: message.bookingId, audience: message.audience },
   },
 });
 
+export const buildEmailTemplate = (type: NotificationType, context: object) => ({ type, context });
+export const buildWhatsAppTemplate = (type: NotificationType, context: object) => ({ type, context });
+
 export class NotificationService {
   queue(message: NotificationMessage) {
-    const templates = buildTemplateSet(message);
-    const logs = message.channels.map((channel) => this.deliverWithMockProvider(message, channel));
+    const channels = message.channels ?? (message.channel ? [message.channel] : []);
+    const normalized: NormalizedNotificationMessage = {
+      ...message,
+      notificationId: message.notificationId ?? `notif_${Date.now()}`,
+      bookingId: message.bookingId ?? 'unknown_booking',
+      channels,
+    };
+
+    const templates = buildTemplateSet(normalized);
+    const logs = normalized.channels.map((channel) => this.deliverWithMockProvider(normalized, channel));
 
     emitNotificationEvent({
-      notificationId: message.notificationId,
-      audience: message.audience,
-      channels: message.channels,
-      message: message.body,
+      notificationId: normalized.notificationId,
+      bookingId: normalized.bookingId,
+      audience: normalized.audience,
+      type: normalized.type ?? normalized.template ?? 'booking_status_update',
+      channels: normalized.channels,
+      state: normalized.state ?? 'queued',
+      message: normalized.body,
       occurredAt: new Date().toISOString(),
     });
 
-    return { queued: true, message, templates, logs };
+    return { queued: true, message: normalized, templates, logs };
   }
 
-  private deliverWithMockProvider(message: NotificationMessage, channel: NotificationChannel): NotificationDeliveryLog {
+  private deliverWithMockProvider(message: NormalizedNotificationMessage, channel: NotificationChannel): NotificationDeliveryLog {
     const now = new Date().toISOString();
     const failureRequested = Boolean(message.data?.['forceFailure']);
     const status: NotificationStatus = failureRequested ? 'failed' : 'sent';
@@ -61,18 +82,8 @@ export class NotificationService {
     return log;
   }
 
-  markRetry(notificationId: string, channel: NotificationChannel) {
-    const entry = deliveryLogs.find((log) => log.notificationId === notificationId && log.channel === channel);
-    if (!entry) return null;
-    entry.status = 'retrying';
-    entry.attempts += 1;
-    entry.updatedAt = new Date().toISOString();
-    return entry;
-  }
-
-  getLogs() {
-    return deliveryLogs;
-  }
+  getDeliveryLogs() { return deliveryLogs; }
+  getLogs() { return deliveryLogs; }
 }
 
 export const notificationService = new NotificationService();

@@ -18,7 +18,9 @@ const terminalStatuses: ReadonlySet<BookingStatus> = new Set(['completed', 'canc
 const allowedTransitions: Record<BookingStatus, ReadonlySet<BookingStatus>> = {
   pending: new Set(['assigned', 'cancelled']),
   assigned: new Set(['accepted', 'cancelled']),
-  accepted: new Set(['in_progress', 'cancelled']),
+  accepted: new Set(['onderweg', 'cancelled']),
+  onderweg: new Set(['arrived', 'cancelled']),
+  arrived: new Set(['in_progress', 'cancelled']),
   in_progress: new Set(['completed', 'cancelled']),
   completed: new Set(),
   cancelled: new Set(),
@@ -67,6 +69,9 @@ export const bookingsService = {
     const status: BookingStatus = payload.status ?? 'pending';
     const now = payload.occurredAt ?? new Date().toISOString();
     const eventId = payload.eventId ?? `${payload.bookingId}:${status}:${now}`;
+    if (!payload.customerId && !bookingStore.get(payload.bookingId)?.customerId) {
+      throw new Error(`Booking ${payload.bookingId} is missing customer id.`);
+    }
 
     if (processedEventIds.has(eventId)) {
       const existing = bookingStore.get(payload.bookingId);
@@ -103,7 +108,7 @@ export const bookingsService = {
 
     const next: BookingRecord = {
       bookingId: payload.bookingId,
-      customerId: payload.customerId,
+      customerId: payload.customerId ?? existing?.customerId ?? '',
       driverId: payload.driverId ?? existing?.driverId,
       status,
       updatedAt: now,

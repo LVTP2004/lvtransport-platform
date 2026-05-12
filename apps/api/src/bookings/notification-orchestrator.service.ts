@@ -5,7 +5,7 @@ const notificationService = new NotificationService();
 
 export const notificationOrchestrator = {
   createBookingConfirmation(input: Omit<BookingNotificationContext, 'trackingCode' | 'trackingUrl'>) {
-    const trackingCode = buildTrackingCode(input.bookingId);
+    const trackingCode = buildTrackingCode(input.bookingId ?? '');
     const trackingUrl = buildTrackingUrl(trackingCode);
     const context: BookingNotificationContext = { ...input, trackingCode, trackingUrl };
 
