@@ -1,30 +1,30 @@
 export const notificationArchitecture = {
   modules: {
     orchestration: 'notification-orchestrator',
-    templates: 'template-registry',
-    preferences: 'preference-service',
-    providers: ['email-provider-placeholder', 'push-provider-placeholder', 'sms-provider-placeholder', 'whatsapp-provider-placeholder'],
-    deliveryLogging: 'delivery-log-service'
+    pushGateway: 'push-notification-gateway',
+    realtimeLifecycle: 'operational-communication-lifecycle',
+    reconnectRecovery: 'notification-recovery-service',
+    diagnostics: 'notification-diagnostics-service',
+    providers: ['firebase-fcm-ready', 'apns-ready', 'web-push-ready', 'email-provider-placeholder', 'sms-provider-placeholder'],
+    deliveryLogging: 'delivery-log-service',
   },
+  operationalCommunicationLifecycle: ['booking_created', 'driver_assigned', 'driver_en_route', 'ride_in_progress', 'ride_completed', 'booking_cancelled'],
   queues: {
     main: 'notification.queue.main',
     retry: 'notification.queue.retry',
     deadLetter: 'notification.queue.dead_letter',
-    webhook: 'notification.queue.webhook_events'
+    websocketReplay: 'notification.queue.realtime_replay',
+    operationalEvent: 'notification.queue.operational_events',
+  },
+  reconnectRecovery: {
+    mode: 'cursor_checkpoint_replay',
+    consistency: 'at_least_once_with_deduplication',
+    staleThresholdSec: 600,
   },
   retryPolicy: {
     strategy: 'exponential_backoff_with_jitter',
     maxAttempts: 6,
     scheduleSec: [30, 120, 600, 1800, 3600, 21600],
-    moveToDeadLetterOnMaxAttempts: true
+    moveToDeadLetterOnMaxAttempts: true,
   },
-  webhooks: [
-    'notification.requested.v1',
-    'notification.queued.v1',
-    'notification.processing.v1',
-    'notification.sent.v1',
-    'notification.delivered.v1',
-    'notification.failed.v1',
-    'notification.dead_lettered.v1'
-  ]
 } as const;

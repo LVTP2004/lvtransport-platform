@@ -3,34 +3,26 @@ import { emitNotificationEvent } from './notification.events.js';
 import type {
   NotificationChannel,
   NotificationDeliveryLog,
+  NotificationDiagnostics,
+  NotificationEventEnvelope,
   NotificationLifecycleStatus,
   NotificationMessage,
-  NotificationTemplateSet,
+  NotificationProvider,
+  NotificationQueueEntry,
   NotificationType,
 } from './notification.types.js';
 
-const DEFAULT_MAX_ATTEMPTS = 3;
+const DEFAULT_MAX_ATTEMPTS = 4;
 const STALE_AFTER_MS = 10 * 60 * 1000;
 
-const buildTemplateSet = (message: NotificationMessage): NotificationTemplateSet => ({
-  email: {
-    subject: message.title,
-    preview: message.body,
-    text: `${message.title}\n\n${message.body}`,
-    html: `<h2>${message.title}</h2><p>${message.body}</p><p>Booking: ${message.bookingId ?? 'n/a'}</p>`,
-  },
-  whatsapp: {
-    text: `${message.title} - ${message.body}`,
-    variables: {
-      bookingId: message.bookingId ?? 'n/a',
-      audience: message.audience,
-    },
-  },
-});
+const shouldArchiveOnDelivery = (message: NotificationMessage) =>
+  message.type === 'booking_status_update' && message.data?.bookingStatus === 'completed';
 
 export class NotificationService {
   private notificationStore: NotificationMessage[] = [];
   private deliveryLogs: NotificationDeliveryLog[] = [];
+  private operationalQueue: NotificationQueueEntry[] = [];
+  private reconnectCheckpoints = new Map<string, string>();
 
   queue(input: Omit<NotificationMessage, 'notificationId' | 'createdAt' | 'provider' | 'lifecycle'>) {
     const now = new Date().toISOString();
@@ -38,7 +30,7 @@ export class NotificationService {
       ...input,
       notificationId: crypto.randomUUID(),
       createdAt: now,
-      provider: 'mock_dev',
+      provider: 'internal_push_router',
       lifecycle: {
         status: 'queued',
         attempts: 0,
@@ -48,17 +40,26 @@ export class NotificationService {
     };
 
     this.notificationStore.push(message);
+    this.operationalQueue.push({
+      queueId: `${message.notificationId}:queued`,
+      notificationId: message.notificationId,
+      state: 'queued',
+      enqueuedAt: now,
+      audience: message.audience,
+    });
     this.emitLifecycle(message, 'queued');
 
-    return { queued: true, message, templates: buildTemplateSet(message) };
+    return { queued: true, message };
   }
 
-  deliver(notificationId: string, opts: { forceFailure?: boolean } = {}) {
+  deliver(notificationId: string, opts: { forceFailure?: boolean; provider?: NotificationProvider } = {}) {
     const message = this.notificationStore.find((item) => item.notificationId === notificationId);
     if (!message) return { delivered: false, reason: 'not_found' as const };
 
     message.lifecycle.attempts += 1;
     message.lifecycle.updatedAt = new Date().toISOString();
+    if (opts.provider) message.provider = opts.provider;
+
     const status: NotificationLifecycleStatus = opts.forceFailure
       ? message.lifecycle.attempts >= message.lifecycle.maxAttempts
         ? 'failed'
@@ -66,11 +67,23 @@ export class NotificationService {
       : 'delivered';
 
     message.lifecycle.status = status;
-    message.lifecycle.failureReason = status === 'failed' || status === 'retrying' ? 'mock_provider_error' : undefined;
+    message.lifecycle.failureReason = status === 'failed' || status === 'retrying' ? 'provider_delivery_error' : undefined;
     message.lifecycle.retryAt = status === 'retrying' ? new Date(Date.now() + 30_000).toISOString() : undefined;
 
     message.channels.forEach((channel) => this.logDelivery(message, channel, status));
+    this.operationalQueue.push({
+      queueId: `${message.notificationId}:${status}:${message.lifecycle.attempts}`,
+      notificationId: message.notificationId,
+      state: status,
+      enqueuedAt: new Date().toISOString(),
+      audience: message.audience,
+    });
     this.emitLifecycle(message, status);
+
+    if (status === 'delivered' && shouldArchiveOnDelivery(message) && message.bookingId) {
+      this.archiveOperationalAlertsForBooking(message.bookingId);
+    }
+
     return { delivered: status === 'delivered', message };
   }
 
@@ -86,55 +99,79 @@ export class NotificationService {
       });
   }
 
-  listActiveOperationalAlerts(audience?: NotificationMessage['audience']) {
-    return this.notificationStore.filter(
-      (item) =>
-        item.lifecycle.status !== 'archived' &&
-        item.lifecycle.status !== 'delivered' &&
-        (!audience || item.audience === audience),
-    );
-  }
-
-  detectStaleOperations() {
-    const staleBefore = Date.now() - STALE_AFTER_MS;
-    return this.notificationStore.filter(
-      (item) =>
-        item.lifecycle.status !== 'archived' &&
-        item.lifecycle.status !== 'delivered' &&
-        new Date(item.lifecycle.updatedAt).getTime() < staleBefore,
-    );
-  }
-
-  restoreActiveNotifications(recipientId: string) {
-    return this.notificationStore.filter(
-      (item) =>
-        item.recipientId === recipientId && item.lifecycle.status !== 'archived' && item.lifecycle.status !== 'delivered',
-    );
-  }
-
-  createOperationalWarning(recipientId: string, bookingId: string, body: string, type: NotificationType = 'operational_warning') {
-    return this.queue({
-      bookingId,
-      recipientId,
-      audience: 'admin',
-      type,
-      channels: ['in_app'],
-      title: 'Operational warning',
-      body,
-      data: { severity: 'high' },
+  restoreActiveNotifications(recipientId: string, checkpoint?: string) {
+    const baseline = checkpoint ?? this.reconnectCheckpoints.get(recipientId);
+    const pending = this.notificationStore.filter((item) => {
+      if (item.recipientId !== recipientId) return false;
+      if (item.lifecycle.status === 'archived' || item.lifecycle.status === 'delivered') return false;
+      if (!baseline) return true;
+      return item.createdAt > baseline;
     });
+
+    this.reconnectCheckpoints.set(recipientId, new Date().toISOString());
+    return pending;
+  }
+
+  createDriverAssignmentDispatchNotification(input: { bookingId: string; customerId: string; driverId: string; adminId: string }) {
+    return {
+      customer: this.queue({
+        bookingId: input.bookingId,
+        recipientId: input.customerId,
+        audience: 'customer',
+        type: 'driver_assignment',
+        channels: ['in_app', 'push'],
+        title: 'Driver assigned',
+        body: `Driver assignment confirmed for booking ${input.bookingId}.`,
+        data: { bookingStatus: 'driver_assigned' },
+      }),
+      driver: this.queue({
+        bookingId: input.bookingId,
+        recipientId: input.driverId,
+        audience: 'driver',
+        type: 'driver_assignment',
+        channels: ['push', 'in_app'],
+        title: 'New dispatch assignment',
+        body: `Dispatch assigned booking ${input.bookingId}.`,
+        data: { bookingStatus: 'driver_assigned' },
+      }),
+      admin: this.queue({
+        bookingId: input.bookingId,
+        recipientId: input.adminId,
+        audience: 'admin',
+        type: 'admin_alert',
+        channels: ['in_app', 'push'],
+        title: 'Dispatch assignment sent',
+        body: `Driver assignment push has been issued for booking ${input.bookingId}.`,
+        data: { bookingStatus: 'driver_assigned' },
+      }),
+    };
+  }
+
+  getDiagnostics(): NotificationDiagnostics {
+    const active = this.notificationStore.filter((n) => !['archived', 'delivered'].includes(n.lifecycle.status)).length;
+    const failed = this.notificationStore.filter((n) => n.lifecycle.status === 'failed').length;
+    const retrying = this.notificationStore.filter((n) => n.lifecycle.status === 'retrying').length;
+
+    return {
+      totalNotifications: this.notificationStore.length,
+      activeNotifications: active,
+      failedNotifications: failed,
+      retryingNotifications: retrying,
+      queuedEvents: this.operationalQueue.length,
+      lastUpdatedAt: new Date().toISOString(),
+    };
   }
 
   getDeliveryLogs() {
     return [...this.deliveryLogs];
   }
 
-  getLogs() {
-    return this.getDeliveryLogs();
+  getOperationalQueue() {
+    return [...this.operationalQueue];
   }
 
   private emitLifecycle(message: NotificationMessage, state: NotificationLifecycleStatus) {
-    emitNotificationEvent({
+    const payload: NotificationEventEnvelope = {
       notificationId: message.notificationId,
       bookingId: message.bookingId,
       audience: message.audience,
@@ -143,7 +180,10 @@ export class NotificationService {
       state,
       message: message.body,
       occurredAt: new Date().toISOString(),
-    });
+      reconnectSafe: true,
+    };
+
+    emitNotificationEvent(payload);
   }
 
   private logDelivery(message: NotificationMessage, channel: NotificationChannel, status: NotificationLifecycleStatus) {
