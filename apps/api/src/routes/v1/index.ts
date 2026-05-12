@@ -7,6 +7,7 @@ import notificationRoutes from './notifications.routes.js';
 import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
 import bookingsRoutes from './bookings.routes.js';
+import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
 
 const router = Router();
 router.use(healthRoutes);
@@ -94,6 +95,21 @@ router.post('/drivers/:driverId/status', (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+
+router.get('/admin/analytics/operational-snapshot', (_req, res) => {
+  res.json({ analytics: operationalAnalyticsService.getAdminSnapshot() });
+});
+
+router.get('/admin/analytics/diagnostics', (_req, res) => {
+  const snapshot = operationalAnalyticsService.getAdminSnapshot();
+  res.json({
+    synchronizedRevenueBookings: snapshot.revenueTracking.synchronizedBookingIds.length,
+    completionRate: snapshot.bookingAnalytics.completionRate,
+    trackedBusinessAccounts: snapshot.businessAccounts.trackedAccounts,
+    dispatchAcceptanceRate: snapshot.dispatchEfficiency.acceptanceRate
+  });
 });
 
 router.post('/drivers/:driverId/location', (req, res, next) => {
