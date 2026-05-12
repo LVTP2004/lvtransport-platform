@@ -8,3 +8,5 @@ export * from "./operationsManager";
 
 export * from "./architecture/lvtp-hierarchy";
 export * from "./ai-operations/ai-operations-architecture";
+
+export * from "./bookingIntegration";
