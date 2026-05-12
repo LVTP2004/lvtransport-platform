@@ -1,6 +1,7 @@
 import {
   BookingPaymentState,
   PaymentProvider,
+  PaymentRetryStrategy,
   PaymentSessionStatus,
   RefundState,
 } from '../enums/payment.enums';
@@ -24,6 +25,10 @@ export class PaymentArchitectureService {
       provider: dto.provider,
       status: PaymentSessionStatus.CHECKOUT_PENDING,
       amount: money(5500),
+      retryStrategy: PaymentRetryStrategy.EXPONENTIAL_BACKOFF,
+      retryCount: 0,
+      maxRetryCount: 3,
+      idempotencyKey: `idem_${id}`,
       expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
       metadata: {
         mode: 'test_only',
@@ -40,6 +45,7 @@ export class PaymentArchitectureService {
       bookingId: dto.bookingId,
       type: 'authorization',
       status: PaymentSessionStatus.CHECKOUT_PENDING,
+      customerId: dto.customerId,
       amount: session.amount,
       createdAt: new Date().toISOString(),
     });
@@ -64,7 +70,7 @@ export class PaymentArchitectureService {
   }
 
   prepareRefund(dto: CreateRefundRequestDto): RefundRecord {
-    return { id: `refund_${Date.now()}`, transactionId: dto.transactionId, reason: dto.reasonCode, state: RefundState.REQUESTED, amount: money(2500) };
+    return { id: `refund_${Date.now()}`, transactionId: dto.transactionId, reason: dto.reasonCode, state: RefundState.REQUESTED, amount: money(2500), requestedBy: dto.requestedBy };
   }
 
   handleWebhookEvent(eventType: string, sessionId?: string) {

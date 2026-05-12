@@ -25,3 +25,5 @@ export const NOTIFICATION_CHANNELS = {
   PUSH: 'push',
   IN_APP: 'in_app'
 } as const;
+
+export { WS_EVENTS } from './app.constants.js';
