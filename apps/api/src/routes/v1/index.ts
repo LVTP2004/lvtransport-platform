@@ -52,6 +52,28 @@ router.post('/bookings/:bookingId/assign-driver/preparation', (req, res, next) =
   }
 });
 
+
+router.post('/bookings/:bookingId/driver-response', (req, res, next) => {
+  try {
+    const booking = realtimeOrchestratorService.driverRespondToAssignment({ bookingId: req.params.bookingId, ...req.body });
+    res.json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/dispatch/cleanup-stale-assignments', (_req, res) => {
+  res.json(realtimeOrchestratorService.cleanupStaleAssignments());
+});
+
+router.get('/dispatch/diagnostics', (_req, res) => {
+  res.json(realtimeOrchestratorService.getDispatchDiagnostics());
+});
+
+router.post('/drivers/:driverId/restore-assignments', (req, res) => {
+  res.json(realtimeOrchestratorService.restoreDriverAssignments(req.params.driverId));
+});
+
 router.post('/bookings/:bookingId/status', (req, res, next) => {
   try {
     const booking = realtimeOrchestratorService.transitionStatus({ bookingId: req.params.bookingId, ...req.body });
