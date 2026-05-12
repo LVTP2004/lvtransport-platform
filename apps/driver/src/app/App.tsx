@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 
 type Booking = { id: string; code: string; status: string; assignedDriverName?: string; version: number };
 
@@ -7,6 +7,8 @@ const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api
 
 export function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [realtimeState, setRealtimeState] = useState<'connecting'|'connected'|'reconnecting'|'offline'>('connecting');
+  const lastSequenceRef = useRef(0);
 
   const refresh = async () => {
     const response = await fetch(`${API_BASE}/bookings`);
@@ -16,25 +18,50 @@ export function App() {
 
   useEffect(() => {
     refresh();
-    const wsBase = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`;
-    const ws = new WebSocket(wsBase);
-    ws.onmessage = (message) => {
-      try {
-        const payload = JSON.parse(message.data as string) as { event?: string; payload?: Booking };
-        if (payload.event === 'booking.updated' && payload.payload) {
-          setBookings((current) => {
-            const next = [...current];
-            const index = next.findIndex((item) => item.id === payload.payload?.id);
-            if (index >= 0) next[index] = payload.payload;
-            else if (payload.payload.assignedDriverName === 'Marco V.' || payload.payload.status === 'assigned') next.unshift(payload.payload);
-            return next.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned');
-          });
+    let ws: WebSocket | null = null;
+    let reconnectTimer: number | undefined;
+    let attempts = 0;
+    let active = true;
+
+    const connect = () => {
+      if (!active) return;
+      setRealtimeState(attempts > 0 ? 'reconnecting' : 'connecting');
+      const wsBase = `${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`;
+      const query = lastSequenceRef.current > 0 ? `?lastSequence=${lastSequenceRef.current}` : '';
+      ws = new WebSocket(`${wsBase}${query}`);
+      ws.onopen = () => { attempts = 0; setRealtimeState('connected'); };
+      ws.onmessage = (message) => {
+        try {
+          const payload = JSON.parse(message.data as string) as { event?: string; payload?: Booking | Booking[]; sequence?: number };
+          if (typeof payload.sequence === 'number' && payload.sequence > lastSequenceRef.current) lastSequenceRef.current = payload.sequence;
+          if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
+            setBookings(payload.payload.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned'));
+            return;
+          }
+          if (payload.event === 'booking.updated' && payload.payload && !Array.isArray(payload.payload)) {
+            setBookings((current) => {
+              const next = [...current];
+              const index = next.findIndex((item) => item.id === payload.payload?.id);
+              if (index >= 0) next[index] = payload.payload;
+              else if (payload.payload.assignedDriverName === 'Marco V.' || payload.payload.status === 'assigned') next.unshift(payload.payload);
+              return next.filter((b) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned');
+            });
+          }
+        } catch {
+          refresh();
         }
-      } catch {
-        refresh();
-      }
+      };
+      ws.onclose = () => {
+        if (!active) return;
+        attempts += 1;
+        setRealtimeState('offline');
+        reconnectTimer = window.setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(attempts, 4)));
+      };
+      ws.onerror = () => ws?.close();
     };
-    return () => ws.close();
+
+    connect();
+    return () => { active = false; if (reconnectTimer) window.clearTimeout(reconnectTimer); ws?.close(); };
   }, []);
 
   const updateStatus = async (booking: Booking) => {
@@ -52,6 +79,7 @@ export function App() {
 
   return <main className="min-h-screen bg-zinc-950 p-6 text-white">
     <h1 className="text-2xl font-bold text-amber-300">Driver Dispatch Realtime</h1>
+    <p className="mt-1 text-sm text-zinc-400">Realtime link: <span className={realtimeState === 'connected' ? 'text-emerald-300' : realtimeState === 'reconnecting' ? 'text-amber-200' : 'text-rose-300'}>{realtimeState.toUpperCase()}</span></p>
     <div className="mt-4 grid gap-3">
       {bookings.map((booking) => <article key={booking.id} className="rounded-xl border border-zinc-700 bg-zinc-900 p-4">
         <p className="font-semibold">{booking.code}</p>

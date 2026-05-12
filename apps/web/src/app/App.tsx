@@ -19,6 +19,8 @@ type DemoOpsMetric = { label: string; value: string; detail: string };
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const STORAGE_KEY = 'lvtransport.booking.v1';
+const TRACKING_KEY = 'lvtransport.tracking.v1';
+const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
 
 const vehicles: Vehicle[] = [
   { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
@@ -58,7 +60,9 @@ export function App() {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const [liveStatus, setLiveStatus] = useState<string | null>(restored?.confirmation?.status ?? null);
+  const [socketState, setSocketState] = useState<'connecting' | 'connected' | 'reconnecting' | 'offline'>('connecting');
   const inFlightKeyRef = useRef<string | null>(null);
+  const lastSequenceRef = useRef(0);
 
   useEffect(() => {
     if (!presentationMode || restored) return;
@@ -84,16 +88,53 @@ export function App() {
 
   useEffect(() => {
     if (!confirmation?.id) return;
-    setLiveStatus(confirmation.status);
-    const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`);
-    ws.onmessage = (message) => {
-      try {
-        const payload = JSON.parse(message.data as string) as { event?: string; payload?: { id?: string; status?: string } };
-        if (payload.event === 'booking.updated' && payload.payload?.id === confirmation.id && payload.payload.status) setLiveStatus(payload.payload.status);
-      } catch {}
+    const tracked = localStorage.getItem(TRACKING_KEY);
+    if (tracked !== confirmation.id) localStorage.setItem(TRACKING_KEY, confirmation.id);
+    if (TERMINAL_STATUSES.has(confirmation.status)) {
+      setLiveStatus(confirmation.status);
+      setSocketState('offline');
+      return;
+    }
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: number | undefined;
+    let attempts = 0;
+    let active = true;
+
+    const connect = () => {
+      if (!active) return;
+      setSocketState(attempts > 0 ? 'reconnecting' : 'connecting');
+      const query = lastSequenceRef.current > 0 ? `?lastSequence=${lastSequenceRef.current}` : '';
+      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`);
+      ws.onopen = () => { attempts = 0; setSocketState('connected'); };
+      ws.onmessage = (message) => {
+        try {
+          const payload = JSON.parse(message.data as string) as { event?: string; payload?: { id?: string; status?: string } | Array<{ id?: string; status?: string }>; sequence?: number };
+          if (typeof payload.sequence === 'number' && payload.sequence > lastSequenceRef.current) lastSequenceRef.current = payload.sequence;
+          if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
+            const current = payload.payload.find((item) => item.id === confirmation.id);
+            if (current?.status) setLiveStatus(current.status);
+          }
+          if (payload.event === 'booking.updated' && !Array.isArray(payload.payload) && payload.payload?.id === confirmation.id && payload.payload.status) {
+            setLiveStatus(payload.payload.status);
+          }
+        } catch {}
+      };
+      ws.onclose = () => {
+        if (!active || TERMINAL_STATUSES.has(liveStatus ?? '')) return;
+        attempts += 1;
+        setSocketState('offline');
+        reconnectTimer = window.setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(attempts, 4)));
+      };
+      ws.onerror = () => ws?.close();
     };
-    return () => ws.close();
-  }, [confirmation?.id, confirmation?.status]);
+    connect();
+    return () => {
+      active = false;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [confirmation?.id, confirmation?.status, liveStatus]);
 
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
@@ -144,9 +185,10 @@ export function App() {
 
   const resetDraft = () => {
     localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TRACKING_KEY);
     appendEvent('draft_cleared');
     window.location.reload();
   };
 
-  return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl">{presentationMode && <section className="mb-6 rounded-3xl border border-lv-gold/30 bg-gradient-to-r from-lv-gold/20 via-black/40 to-black/20 p-4"><p className="text-xs uppercase tracking-[0.25em] text-lv-champagne">Investor demo mode</p><p className="mt-2 text-sm text-lv-mist">Preloaded premium itinerary, resilient booking draft recovery, and live operational telemetry for realistic service simulation.</p></section>}<section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">{confirmation ? <div className="space-y-4"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking confirmed</p><h2 className="text-2xl font-semibold">Reference: {confirmation.referenceCode}</h2><p className="text-lv-mist">Status: {liveStatus ?? confirmation.status}</p><Button className="shadow-gold-md" onClick={resetDraft}>Create another booking</Button></div> : <><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p><div className="flex w-32 gap-2">{[1, 2, 3].map((i) => <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />)}</div></div><div className="booking-step-fade space-y-4">{step === 1 && <><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." /></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Airport, venue, client site..." /></label><label className="field-wrap"><span>Date & time</span><input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} /></label></>}{step === 2 && <><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={() => setPassengers((v) => Math.max(1, v - 1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={() => setPassengers((v) => Math.min(12, v + 1))}>+</button></div></div><div><p className="mb-2 text-sm text-lv-mist">Vehicle</p><div className="grid gap-3">{vehicles.map((item) => <button key={item.name} onClick={() => setVehicle(item)} className={`vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`}><div><p className="font-medium">{item.name}</p><p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p></div><p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p></button>)}</div></div></>}{step === 3 && <><button className={`toggle-card ${airportTransfer ? 'toggle-card--active' : ''}`} onClick={() => setAirportTransfer((v) => !v)}><div><p className="font-medium">Airport transfer</p><p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p></div><span>{airportTransfer ? 'On' : 'Off'}</span></button><button className={`toggle-card ${businessVip ? 'toggle-card--active' : ''}`} onClick={() => setBusinessVip((v) => !v)}><div><p className="font-medium">Business / VIP</p><p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p></div><span>{businessVip ? 'On' : 'Off'}</span></button></>}</div>{error && <p className="mt-4 text-sm text-rose-300">{error}</p>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={prevStep}>Back</Button>{step < 3 ? <Button className="flex-1" onClick={nextStep}>Continue</Button> : <Button className="flex-1 shadow-gold-md" onClick={submitBooking} disabled={loading || !pickup || !destination || !dateTime}>{loading ? 'Submitting...' : 'Confirm booking'}</Button>}</div></>}</div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p><ul className="mt-4 space-y-3 text-sm"><li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li><li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li><li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li><li><span className="text-lv-mist">Passengers:</span> {passengers}</li><li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li><li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li></ul></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Operations snapshot</p><div className="mt-4 grid gap-3">{opsMetrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-white/10 bg-black/30 p-3"><p className="text-xs uppercase tracking-[0.14em] text-lv-mist">{metric.label}</p><p className="mt-1 text-2xl font-semibold">{metric.value}</p><p className="text-xs text-lv-mist">{metric.detail}</p></div>)}</div></article></aside></section></div><MoniAssistant /></div>;
+  return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl">{presentationMode && <section className="mb-6 rounded-3xl border border-lv-gold/30 bg-gradient-to-r from-lv-gold/20 via-black/40 to-black/20 p-4"><p className="text-xs uppercase tracking-[0.25em] text-lv-champagne">Investor demo mode</p><p className="mt-2 text-sm text-lv-mist">Preloaded premium itinerary, resilient booking draft recovery, and live operational telemetry for realistic service simulation.</p></section>}<section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">{confirmation ? <div className="space-y-4"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking confirmed</p><h2 className="text-2xl font-semibold">Reference: {confirmation.referenceCode}</h2><p className="text-lv-mist">Status: {liveStatus ?? confirmation.status}</p><p className="text-xs text-lv-mist">Realtime channel: <span className={socketState === 'connected' ? 'text-emerald-300' : socketState === 'reconnecting' ? 'text-amber-200' : 'text-rose-300'}>{socketState.toUpperCase()}</span></p><Button className="shadow-gold-md" onClick={resetDraft}>Create another booking</Button></div> : <><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p><div className="flex w-32 gap-2">{[1, 2, 3].map((i) => <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />)}</div></div><div className="booking-step-fade space-y-4">{step === 1 && <><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." /></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Airport, venue, client site..." /></label><label className="field-wrap"><span>Date & time</span><input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} /></label></>}{step === 2 && <><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={() => setPassengers((v) => Math.max(1, v - 1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={() => setPassengers((v) => Math.min(12, v + 1))}>+</button></div></div><div><p className="mb-2 text-sm text-lv-mist">Vehicle</p><div className="grid gap-3">{vehicles.map((item) => <button key={item.name} onClick={() => setVehicle(item)} className={`vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`}><div><p className="font-medium">{item.name}</p><p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p></div><p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p></button>)}</div></div></>}{step === 3 && <><button className={`toggle-card ${airportTransfer ? 'toggle-card--active' : ''}`} onClick={() => setAirportTransfer((v) => !v)}><div><p className="font-medium">Airport transfer</p><p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p></div><span>{airportTransfer ? 'On' : 'Off'}</span></button><button className={`toggle-card ${businessVip ? 'toggle-card--active' : ''}`} onClick={() => setBusinessVip((v) => !v)}><div><p className="font-medium">Business / VIP</p><p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p></div><span>{businessVip ? 'On' : 'Off'}</span></button></>}</div>{error && <p className="mt-4 text-sm text-rose-300">{error}</p>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={prevStep}>Back</Button>{step < 3 ? <Button className="flex-1" onClick={nextStep}>Continue</Button> : <Button className="flex-1 shadow-gold-md" onClick={submitBooking} disabled={loading || !pickup || !destination || !dateTime}>{loading ? 'Submitting...' : 'Confirm booking'}</Button>}</div></>}</div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p><ul className="mt-4 space-y-3 text-sm"><li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li><li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li><li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li><li><span className="text-lv-mist">Passengers:</span> {passengers}</li><li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li><li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li></ul></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Operations snapshot</p><div className="mt-4 grid gap-3">{opsMetrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-white/10 bg-black/30 p-3"><p className="text-xs uppercase tracking-[0.14em] text-lv-mist">{metric.label}</p><p className="mt-1 text-2xl font-semibold">{metric.value}</p><p className="text-xs text-lv-mist">{metric.detail}</p></div>)}</div></article></aside></section></div><MoniAssistant /></div>;
 }

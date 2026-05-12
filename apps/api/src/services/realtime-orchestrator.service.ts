@@ -23,11 +23,14 @@ type RealtimeSocket = WebSocket & { isAlive?: boolean };
 const bookingEvents = new EventEmitter();
 const bookings = new Map<string, BookingRecord>();
 const idempotencyKeys = new Set<string>();
+const idempotencyKeyTimestamps = new Map<string, number>();
 const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const eventReplayBuffer: string[] = [];
 let eventSequence = 0;
 let heartbeatInterval: NodeJS.Timeout | undefined;
+let staleCleanupInterval: NodeJS.Timeout | undefined;
+const IDEMPOTENCY_TTL_MS = 10 * 60 * 1000;
 
 const emit = (event: string, payload: unknown) => {
   const envelope = JSON.stringify({ event, payload, at: new Date().toISOString(), sequence: ++eventSequence });
@@ -55,6 +58,16 @@ export const realtimeOrchestratorService = {
         client.isAlive = false; socket.ping();
       }
     }, 30000);
+    staleCleanupInterval = setInterval(() => {
+      const cutoff = Date.now() - IDEMPOTENCY_TTL_MS;
+      for (const [key, createdAt] of idempotencyKeyTimestamps.entries()) {
+        if (createdAt < cutoff) {
+          idempotencyKeyTimestamps.delete(key);
+          idempotencyKeys.delete(key);
+        }
+      }
+      operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'recovery.cleanup', details: { activeSockets: websocketClients.size, replayBufferSize: eventReplayBuffer.length, idempotencyCacheSize: idempotencyKeys.size } });
+    }, 60000);
   },
   registerClient(socket: WebSocket): void {
     const client = socket as RealtimeSocket; client.isAlive = true; websocketClients.add(socket);
@@ -84,7 +97,7 @@ export const realtimeOrchestratorService = {
     if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: 'assigned', actor: 'admin', at: booking.updatedAt, note: `Driver ${params.driverName} assigned` }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: 'pending', to: result.status, actor: 'admin', note: `Driver ${params.driverName} assigned`, at: booking.updatedAt }); }
     booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName;
     driverStates.set(params.driverId, { driverId: params.driverId, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: booking.updatedAt });
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    if (params.idempotencyKey) { idempotencyKeys.add(params.idempotencyKey); idempotencyKeyTimestamps.set(params.idempotencyKey, Date.now()); }
     emit(realtimeOperationalEvents.bookingUpdated, booking); emit(realtimeOperationalEvents.driverAssigned, booking); emit(realtimeOperationalEvents.driverStatusUpdated, driverStates.get(params.driverId)); emit(realtimeOperationalEvents.adminLiveUpdated, { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: booking.updatedAt }); return booking;
   },
   transitionStatus(params: { bookingId: string; nextStatus: BookingLifecycleStatus; actor: BookingActor; idempotencyKey?: string; expectedVersion?: number }): BookingRecord {
@@ -94,7 +107,7 @@ export const realtimeOrchestratorService = {
     const result = bookingOperationalState.transition(booking.status, params.nextStatus);
     if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: params.nextStatus, actor: params.actor, reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
     if (result.outcome === 'applied') { const fromStatus = booking.status; booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: result.status, actor: params.actor, at: booking.updatedAt }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: fromStatus, to: result.status, actor: params.actor, at: booking.updatedAt }); }
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    if (params.idempotencyKey) { idempotencyKeys.add(params.idempotencyKey); idempotencyKeyTimestamps.set(params.idempotencyKey, Date.now()); }
     emit(realtimeOperationalEvents.bookingUpdated, booking); emit(realtimeOperationalEvents.bookingLifecycleChanged, booking); emit(realtimeOperationalEvents.adminLiveUpdated, { bookingId: booking.id, status: booking.status, at: booking.updatedAt }); return booking;
   },
 
@@ -117,7 +130,7 @@ export const realtimeOrchestratorService = {
         }
       }
     }
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    if (params.idempotencyKey) { idempotencyKeys.add(params.idempotencyKey); idempotencyKeyTimestamps.set(params.idempotencyKey, Date.now()); }
     operationalObservabilityService.log({ level: 'info', domain: 'driver', action: 'driver.state.updated', actor: 'driver', bookingId: params.bookingId, state: params.state, details: { driverId: params.driverId } });
     emit(realtimeOperationalEvents.driverStatusUpdated, next); emit(realtimeOperationalEvents.adminLiveUpdated, { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
     return next;
