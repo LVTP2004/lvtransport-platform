@@ -29,17 +29,6 @@ export class PaymentArchitectureService {
         mode: 'test_only',
         checkoutUrl: this.buildCheckoutUrl(dto.provider, id),
       },
-import { CreateCheckoutSessionDto, RetryPaymentDto } from '../dto/payment.dto';
-import { PaymentRetryStrategy, PaymentSessionStatus } from '../enums/payment.enums';
-
-export class PaymentArchitectureService {
-  createCheckoutSession(dto: CreateCheckoutSessionDto) {
-    return {
-      implementation: 'placeholder',
-      provider: dto.provider,
-      nextStep: 'wire provider adapters for Stripe/Payconiq and secure checkout redirect flow',
-      status: PaymentSessionStatus.CREATED,
-      lifecycle: ['created', 'checkout_pending', 'authorized', 'capture_pending', 'captured'],
     };
 
     this.sessions.set(id, session);
@@ -99,16 +88,6 @@ export class PaymentArchitectureService {
     return provider === PaymentProvider.STRIPE
       ? `https://checkout.stripe.com/test/session/${sessionId}`
       : `https://payconiq.test/checkout/${sessionId}`;
-  scheduleRetry(_dto: RetryPaymentDto) {
-    return {
-      implementation: 'placeholder',
-      strategy: [
-        PaymentRetryStrategy.EXPONENTIAL_BACKOFF,
-        PaymentRetryStrategy.FIXED_INTERVAL,
-        PaymentRetryStrategy.MANUAL_RECOVERY,
-      ],
-      retryQueue: 'payment-retry-jobs',
-    };
   }
 }
 

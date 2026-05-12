@@ -118,7 +118,7 @@ export const realtimeOrchestratorService = {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
     const result = bookingOperationalState.transition(booking.status, 'assigned');
-    if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: params.nextStatus, actor: params.actor, reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
+    if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: 'assigned', actor: 'admin', reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
     if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: 'assigned', actor: 'admin', at: booking.updatedAt, note: `Driver ${params.driverName} assigned` }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: 'pending', to: result.status, actor: 'admin', note: `Driver ${params.driverName} assigned`, at: booking.updatedAt }); }
     booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName;
     driverStates.set(params.driverId, { driverId: params.driverId, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: booking.updatedAt });
@@ -218,6 +218,7 @@ export const realtimeOrchestratorService = {
       indexedBookings: bookingTelemetryIndex.size,
       sessions: Array.from(telemetrySessions.values())
     };
+  },
   shareDriverLocation(params: { driverId: string; bookingId: string; location: { lat: number; lng: number; heading?: number; accuracyMeters?: number }; source?: 'gps' | 'fallback' }): { accepted: boolean; reason?: string; driver?: DriverRealtimeState } {
     const booking = bookings.get(params.bookingId);
     if (!booking) return { accepted: false, reason: 'BOOKING_NOT_FOUND' };
