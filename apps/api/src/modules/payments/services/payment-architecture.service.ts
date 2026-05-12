@@ -1,22 +1,35 @@
+import { createHash, randomUUID } from 'node:crypto';
 import {
   BookingPaymentState,
   PaymentProvider,
+  PaymentRetryStrategy,
   PaymentSessionStatus,
   RefundState,
-} from '../enums/payment.enums';
-import { CreateCheckoutSessionDto, CreateRefundRequestDto, RetryPaymentDto } from '../dto/payment.dto';
-import { PaymentSession, BookingPaymentSnapshot, RefundRecord, MoneyAmount } from '../interfaces/payment.interfaces';
-import { InvoiceDraft, TransactionHistoryEntry } from '../models/payment.models';
+} from '../enums/payment.enums.js';
+import { CreateCheckoutSessionDto, CreateRefundRequestDto, RetryPaymentDto } from '../dto/payment.dto.js';
+import { BookingPaymentSnapshot, MoneyAmount, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
+import { InvoiceDraft, TransactionHistoryEntry } from '../models/payment.models.js';
+
+interface ReconnectSnapshot {
+  sessions: PaymentSession[];
+  bookingStates: BookingPaymentSnapshot[];
+  transactions: TransactionHistoryEntry[];
+}
 
 const money = (valueMinor: number): MoneyAmount => ({ currency: 'EUR', valueMinor });
+
+const SESSION_TTL_MS = 15 * 60_000;
+const STALE_TXN_THRESHOLD_MS = 20 * 60_000;
 
 export class PaymentArchitectureService {
   private sessions = new Map<string, PaymentSession>();
   private bookingStates = new Map<string, BookingPaymentSnapshot>();
   private transactions: TransactionHistoryEntry[] = [];
 
-  createCheckoutSession(dto: CreateCheckoutSessionDto) {
-    const id = `test_${dto.provider}_${Date.now()}`;
+  createCheckoutSession(dto: CreateCheckoutSessionDto): PaymentSession {
+    const id = `pay_${dto.provider}_${Date.now()}`;
+    const idempotencyKey = this.createIdempotencyKey(dto.bookingId, dto.customerId, dto.provider);
+
     const session: PaymentSession = {
       id,
       bookingId: dto.bookingId,
@@ -24,91 +37,195 @@ export class PaymentArchitectureService {
       provider: dto.provider,
       status: PaymentSessionStatus.CHECKOUT_PENDING,
       amount: money(5500),
-      expiresAt: new Date(Date.now() + 15 * 60_000).toISOString(),
+      retryStrategy: PaymentRetryStrategy.EXPONENTIAL_BACKOFF,
+      retryCount: 0,
+      maxRetryCount: 4,
+      idempotencyKey,
+      expiresAt: new Date(Date.now() + SESSION_TTL_MS).toISOString(),
       metadata: {
-        mode: 'test_only',
         checkoutUrl: this.buildCheckoutUrl(dto.provider, id),
       },
-import { CreateCheckoutSessionDto, RetryPaymentDto } from '../dto/payment.dto';
-import { PaymentRetryStrategy, PaymentSessionStatus } from '../enums/payment.enums';
-
-export class PaymentArchitectureService {
-  createCheckoutSession(dto: CreateCheckoutSessionDto) {
-    return {
-      implementation: 'placeholder',
-      provider: dto.provider,
-      nextStep: 'wire provider adapters for Stripe/Payconiq and secure checkout redirect flow',
-      status: PaymentSessionStatus.CREATED,
-      lifecycle: ['created', 'checkout_pending', 'authorized', 'capture_pending', 'captured'],
     };
 
     this.sessions.set(id, session);
-    this.bookingStates.set(dto.bookingId, { bookingId: dto.bookingId, state: BookingPaymentState.REQUIRES_ACTION, lastTransactionId: id });
+    this.syncBookingPaymentState(dto.bookingId, {
+      state: BookingPaymentState.CHECKOUT_IN_PROGRESS,
+      activePaymentSessionId: id,
+      lastTransactionId: `txn_${id}`,
+    });
 
-    this.transactions.unshift({
-      id: `txn_${id}`,
+    this.recordTransaction({
       paymentSessionId: id,
       bookingId: dto.bookingId,
+      customerId: dto.customerId,
       type: 'authorization',
-      status: PaymentSessionStatus.CHECKOUT_PENDING,
+      status: session.status,
       amount: session.amount,
-      createdAt: new Date().toISOString(),
     });
 
     return session;
   }
 
-  confirmSession(sessionId: string) {
-    const session = this.sessions.get(sessionId);
-    if (!session) return undefined;
-    session.status = PaymentSessionStatus.CAPTURED;
-    this.bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.PAID, lastTransactionId: sessionId });
-    return session;
+  confirmSession(sessionId: string): PaymentSession | undefined {
+    return this.transitionPayment(sessionId, PaymentSessionStatus.CAPTURED);
   }
 
   scheduleRetry(dto: RetryPaymentDto) {
     const session = this.sessions.get(dto.sessionId);
-    if (!session) return { scheduled: false };
-    session.status = PaymentSessionStatus.CHECKOUT_PENDING;
-    this.bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.REQUIRES_ACTION, lastTransactionId: dto.sessionId });
-    return { scheduled: true, nextRetryAt: new Date(Date.now() + 5 * 60_000).toISOString(), reason: dto.reason };
+    if (!session) return { scheduled: false, reason: 'session_not_found' };
+
+    session.retryCount += 1;
+    session.status = PaymentSessionStatus.RETRY_SCHEDULED;
+    this.syncBookingPaymentState(session.bookingId, {
+      state: BookingPaymentState.REQUIRES_ACTION,
+      activePaymentSessionId: session.id,
+      lastTransactionId: `txn_retry_${session.id}_${session.retryCount}`,
+    });
+
+    this.recordTransaction({
+      paymentSessionId: session.id,
+      bookingId: session.bookingId,
+      customerId: session.customerId,
+      type: 'retry',
+      status: session.status,
+      amount: session.amount,
+      metadata: { reason: dto.reason ?? 'not_specified' },
+    });
+
+    return {
+      scheduled: session.retryCount <= session.maxRetryCount,
+      nextRetryAt: new Date(Date.now() + 5 * 60_000 * session.retryCount).toISOString(),
+      strategy: session.retryStrategy,
+      retryCount: session.retryCount,
+      reason: dto.reason,
+    };
   }
 
   prepareRefund(dto: CreateRefundRequestDto): RefundRecord {
-    return { id: `refund_${Date.now()}`, transactionId: dto.transactionId, reason: dto.reasonCode, state: RefundState.REQUESTED, amount: money(2500) };
+    return {
+      id: `refund_${Date.now()}`,
+      transactionId: dto.transactionId,
+      reason: dto.reasonCode,
+      state: RefundState.REQUESTED,
+      amount: money(2500),
+      requestedBy: dto.requestedBy,
+    };
   }
 
   handleWebhookEvent(eventType: string, sessionId?: string) {
-    if (eventType === 'payment.succeeded' && sessionId) this.confirmSession(sessionId);
-    return { accepted: true, replayDetected: false, reason: 'test-placeholder-handler' };
+    if (!sessionId) return { accepted: false, replayDetected: false, reason: 'missing_session' };
+    if (eventType === 'payment.succeeded') this.transitionPayment(sessionId, PaymentSessionStatus.CAPTURED);
+    if (eventType === 'payment.failed') this.transitionPayment(sessionId, PaymentSessionStatus.FAILED);
+    if (eventType === 'payment.cancelled') this.transitionPayment(sessionId, PaymentSessionStatus.CANCELLED);
+    return { accepted: true, replayDetected: false };
   }
 
   prepareInvoice(bookingId: string, customerId: string): InvoiceDraft {
-    return { invoiceId: `draft_${bookingId}`, bookingId, customerId, subtotal: money(4500), vatAmount: money(1000), total: money(5500) };
+    const bookingPayment = this.getBookingPaymentState(bookingId);
+    const session = bookingPayment.activePaymentSessionId
+      ? this.sessions.get(bookingPayment.activePaymentSessionId)
+      : undefined;
+    const subtotal = session?.amount ?? money(5500);
+    const vatAmount = money(Math.round(subtotal.valueMinor * 0.21));
+    return {
+      invoiceId: `draft_${bookingId}`,
+      bookingId,
+      customerId,
+      subtotal,
+      vatAmount,
+      total: money(subtotal.valueMinor + vatAmount.valueMinor),
+      issuedAt: new Date().toISOString(),
+    };
   }
 
   getTransactionHistory(bookingId?: string) {
-    return bookingId ? this.transactions.filter((t) => t.bookingId === bookingId) : this.transactions;
+    return bookingId ? this.transactions.filter((txn) => txn.bookingId === bookingId) : this.transactions;
   }
 
-  getBookingPaymentState(bookingId: string) {
+  getBookingPaymentState(bookingId: string): BookingPaymentSnapshot {
     return this.bookingStates.get(bookingId) ?? { bookingId, state: BookingPaymentState.UNPAID };
+  }
+
+  getPaymentDiagnostics(bookingId?: string) {
+    const list = this.getTransactionHistory(bookingId);
+    const now = Date.now();
+    const staleTransactions = list.filter((txn) => now - Date.parse(txn.createdAt) > STALE_TXN_THRESHOLD_MS);
+    return {
+      totalSessions: this.sessions.size,
+      staleTransactionCount: staleTransactions.length,
+      staleTransactions,
+      orphanedBookingStates: [...this.bookingStates.values()].filter(
+        (state) => state.activePaymentSessionId && !this.sessions.has(state.activePaymentSessionId),
+      ),
+    };
+  }
+
+  snapshotForReconnect(): ReconnectSnapshot {
+    return {
+      sessions: [...this.sessions.values()],
+      bookingStates: [...this.bookingStates.values()],
+      transactions: [...this.transactions],
+    };
+  }
+
+  restoreAfterReconnect(snapshot: ReconnectSnapshot) {
+    this.sessions = new Map(snapshot.sessions.map((s) => [s.id, s]));
+    this.bookingStates = new Map(snapshot.bookingStates.map((s) => [s.bookingId, s]));
+    this.transactions = [...snapshot.transactions];
+    return { restored: true, sessions: this.sessions.size, bookings: this.bookingStates.size };
+  }
+
+  private transitionPayment(sessionId: string, status: PaymentSessionStatus): PaymentSession | undefined {
+    const session = this.sessions.get(sessionId);
+    if (!session) return undefined;
+    session.status = status;
+    this.syncBookingPaymentState(session.bookingId, {
+      state: this.mapBookingState(status),
+      activePaymentSessionId: session.id,
+      lastTransactionId: `txn_${session.id}_${status}`,
+    });
+
+    this.recordTransaction({
+      paymentSessionId: session.id,
+      bookingId: session.bookingId,
+      customerId: session.customerId,
+      type: status === PaymentSessionStatus.CAPTURED ? 'capture' : 'authorization',
+      status,
+      amount: session.amount,
+    });
+
+    return session;
+  }
+
+  private mapBookingState(status: PaymentSessionStatus): BookingPaymentState {
+    if (status === PaymentSessionStatus.CAPTURED) return BookingPaymentState.PAID;
+    if (status === PaymentSessionStatus.FAILED) return BookingPaymentState.PAYMENT_FAILED;
+    if (status === PaymentSessionStatus.CANCELLED) return BookingPaymentState.UNPAID;
+    if (status === PaymentSessionStatus.RETRY_SCHEDULED) return BookingPaymentState.REQUIRES_ACTION;
+    return BookingPaymentState.CHECKOUT_IN_PROGRESS;
+  }
+
+  private syncBookingPaymentState(bookingId: string, patch: Omit<BookingPaymentSnapshot, 'bookingId'>) {
+    this.bookingStates.set(bookingId, { bookingId, ...patch });
+  }
+
+  private recordTransaction(input: Omit<TransactionHistoryEntry, 'id' | 'createdAt' | 'providerTransactionRef'>) {
+    this.transactions.unshift({
+      ...input,
+      id: randomUUID(),
+      providerTransactionRef: `provider_${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    });
+  }
+
+  private createIdempotencyKey(bookingId: string, customerId: string, provider: PaymentProvider) {
+    return createHash('sha256').update(`${bookingId}:${customerId}:${provider}`).digest('hex');
   }
 
   private buildCheckoutUrl(provider: PaymentProvider, sessionId: string) {
     return provider === PaymentProvider.STRIPE
-      ? `https://checkout.stripe.com/test/session/${sessionId}`
-      : `https://payconiq.test/checkout/${sessionId}`;
-  scheduleRetry(_dto: RetryPaymentDto) {
-    return {
-      implementation: 'placeholder',
-      strategy: [
-        PaymentRetryStrategy.EXPONENTIAL_BACKOFF,
-        PaymentRetryStrategy.FIXED_INTERVAL,
-        PaymentRetryStrategy.MANUAL_RECOVERY,
-      ],
-      retryQueue: 'payment-retry-jobs',
-    };
+      ? `https://checkout.stripe.com/pay/${sessionId}`
+      : `https://payconiq.com/checkout/${sessionId}`;
   }
 }
 

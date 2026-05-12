@@ -19,6 +19,9 @@ router.post('/refund/prepare', (req, res) => res.status(201).json(paymentArchite
 router.post('/webhooks/:provider', (req, res) => res.json(paymentArchitectureService.handleWebhookEvent(req.body.eventType, req.body.sessionId)));
 router.get('/bookings/:bookingId/status', (req, res) => res.json(paymentArchitectureService.getBookingPaymentState(req.params.bookingId)));
 router.get('/transactions', (req, res) => res.json(paymentArchitectureService.getTransactionHistory(req.query.bookingId as string | undefined)));
+router.get('/diagnostics', (req, res) => res.json(paymentArchitectureService.getPaymentDiagnostics(req.query.bookingId as string | undefined)));
+router.post('/reconnect/restore', (req, res) => res.json(paymentArchitectureService.restoreAfterReconnect(req.body)));
+router.get('/reconnect/snapshot', (_req, res) => res.json(paymentArchitectureService.snapshotForReconnect()));
 router.get('/invoice/prepare/:bookingId/:customerId', (req, res) => res.json(paymentArchitectureService.prepareInvoice(req.params.bookingId, req.params.customerId)));
 
 export default router;
