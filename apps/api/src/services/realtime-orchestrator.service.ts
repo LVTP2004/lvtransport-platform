@@ -18,6 +18,17 @@ export type BookingRecord = { id: string; code: string; customerName: string; pi
 export const DRIVER_STATES = ['available', 'assigned', 'onderweg', 'arrived', 'in_progress', 'completed'] as const;
 export type DriverState = (typeof DRIVER_STATES)[number];
 export type DriverRealtimeState = { driverId: string; state: DriverState; activeBookingId?: string; lastUpdatedAt: string; location?: { lat: number; lng: number }; rating?: number };
+export type DriverTelemetryPoint = { lat: number; lng: number; heading?: number; speedKph?: number; accuracyMeters?: number; sourceTimestamp: string; serverTimestamp: string };
+export type DriverTelemetrySession = {
+  driverId: string;
+  bookingId?: string;
+  active: boolean;
+  lastEventAt: string;
+  lastSequence: number;
+  reconnectToken: string;
+  stale: boolean;
+  points: DriverTelemetryPoint[];
+};
 
 type RealtimeSocket = WebSocket & { isAlive?: boolean };
 const bookingEvents = new EventEmitter();
@@ -28,10 +39,14 @@ const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const driverLocationTimestamps = new Map<string, number>();
 const eventReplayBuffer: string[] = [];
+const telemetrySessions = new Map<string, DriverTelemetrySession>();
+const bookingTelemetryIndex = new Map<string, string>();
 let eventSequence = 0;
 let heartbeatInterval: NodeJS.Timeout | undefined;
 let staleCleanupInterval: NodeJS.Timeout | undefined;
 const IDEMPOTENCY_TTL_MS = 10 * 60 * 1000;
+const TELEMETRY_STALE_MS = 45 * 1000;
+const MAX_TELEMETRY_POINTS = 60;
 const DRIVER_LOCATION_MIN_INTERVAL_MS = 5000;
 const TERMINAL_BOOKING_STATUSES = new Set<BookingLifecycleStatus>(['completed', 'cancelled', 'failed']);
 
@@ -67,6 +82,13 @@ export const realtimeOrchestratorService = {
         if (createdAt < cutoff) {
           idempotencyKeyTimestamps.delete(key);
           idempotencyKeys.delete(key);
+        }
+      }
+      for (const session of telemetrySessions.values()) {
+        const stale = Date.now() - new Date(session.lastEventAt).getTime() > TELEMETRY_STALE_MS;
+        if (stale !== session.stale) {
+          session.stale = stale;
+          emit('driver.telemetry.stale_changed', { driverId: session.driverId, stale, lastEventAt: session.lastEventAt });
         }
       }
       operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'recovery.cleanup', details: { activeSockets: websocketClients.size, replayBufferSize: eventReplayBuffer.length, idempotencyCacheSize: idempotencyKeys.size } });
@@ -135,9 +157,67 @@ export const realtimeOrchestratorService = {
     }
     if (params.idempotencyKey) { idempotencyKeys.add(params.idempotencyKey); idempotencyKeyTimestamps.set(params.idempotencyKey, Date.now()); }
     operationalObservabilityService.log({ level: 'info', domain: 'driver', action: 'driver.state.updated', actor: 'driver', bookingId: params.bookingId, state: params.state, details: { driverId: params.driverId } });
+    if (params.state === 'completed' || params.state === 'available') this.stopDriverTelemetry(params.driverId, params.bookingId);
     emit(realtimeOperationalEvents.driverStatusUpdated, next); emit(realtimeOperationalEvents.adminLiveUpdated, { driverId: params.driverId, state: params.state, bookingId: params.bookingId, at: now });
     return next;
   },
+  updateDriverTelemetry(params: { driverId: string; bookingId?: string; location: { lat: number; lng: number; heading?: number; speedKph?: number; accuracyMeters?: number }; sourceTimestamp: string; sequence?: number; reconnectToken?: string; idempotencyKey?: string }): DriverTelemetrySession {
+    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+      const existing = telemetrySessions.get(params.driverId);
+      if (existing) return existing;
+    }
+    if (!Number.isFinite(params.location.lat) || !Number.isFinite(params.location.lng)) throw new Error('INVALID_LOCATION');
+    if (params.location.lat < -90 || params.location.lat > 90 || params.location.lng < -180 || params.location.lng > 180) throw new Error('INVALID_LOCATION');
+    const sourceMs = Date.parse(params.sourceTimestamp);
+    if (Number.isNaN(sourceMs)) throw new Error('INVALID_SOURCE_TIMESTAMP');
+    if (Math.abs(Date.now() - sourceMs) > 10 * 60 * 1000) throw new Error('OUT_OF_SYNC_TIMESTAMP');
+    const now = new Date().toISOString();
+    const existing = telemetrySessions.get(params.driverId);
+    const reconnectToken = params.reconnectToken ?? existing?.reconnectToken ?? randomUUID();
+    const sequence = Math.max(existing?.lastSequence ?? 0, params.sequence ?? 0);
+    const point: DriverTelemetryPoint = { ...params.location, sourceTimestamp: params.sourceTimestamp, serverTimestamp: now };
+    const next: DriverTelemetrySession = { driverId: params.driverId, bookingId: params.bookingId ?? existing?.bookingId, active: true, lastEventAt: now, lastSequence: sequence, reconnectToken, stale: false, points: [...(existing?.points ?? []), point].slice(-MAX_TELEMETRY_POINTS) };
+    telemetrySessions.set(params.driverId, next);
+    if (next.bookingId) bookingTelemetryIndex.set(next.bookingId, next.driverId);
+    const state = driverStates.get(params.driverId);
+    driverStates.set(params.driverId, { driverId: params.driverId, state: state?.state ?? 'assigned', activeBookingId: next.bookingId ?? state?.activeBookingId, lastUpdatedAt: now, location: { lat: params.location.lat, lng: params.location.lng }, rating: state?.rating });
+    if (next.bookingId) {
+      const booking = bookings.get(next.bookingId);
+      if (booking) {
+        booking.tracking.lastKnownLocation = { lat: params.location.lat, lng: params.location.lng, heading: params.location.heading };
+        booking.tracking.updatedAt = now;
+      }
+    }
+    if (params.idempotencyKey) { idempotencyKeys.add(params.idempotencyKey); idempotencyKeyTimestamps.set(params.idempotencyKey, Date.now()); }
+    emit('driver.telemetry.updated', next);
+    emit(realtimeOperationalEvents.adminLiveUpdated, { driverId: params.driverId, bookingId: next.bookingId, at: now, telemetry: { stale: next.stale, sourceTimestamp: params.sourceTimestamp } });
+    return next;
+  },
+  restoreDriverTelemetry(params: { driverId: string; reconnectToken: string; lastSequence?: number }): DriverTelemetrySession {
+    const session = telemetrySessions.get(params.driverId);
+    if (!session || !session.active) throw new Error('TELEMETRY_NOT_ACTIVE');
+    if (session.reconnectToken !== params.reconnectToken) throw new Error('RECONNECT_TOKEN_MISMATCH');
+    if (typeof params.lastSequence === 'number' && params.lastSequence > session.lastSequence) throw new Error('SEQUENCE_AHEAD');
+    session.stale = Date.now() - Date.parse(session.lastEventAt) > TELEMETRY_STALE_MS;
+    emit('driver.telemetry.restored', { driverId: params.driverId, bookingId: session.bookingId, at: new Date().toISOString() });
+    return session;
+  },
+  stopDriverTelemetry(driverId: string, bookingId?: string): void {
+    const session = telemetrySessions.get(driverId);
+    if (!session) return;
+    if (bookingId && session.bookingId && session.bookingId !== bookingId) return;
+    session.active = false;
+    session.stale = true;
+    if (session.bookingId) bookingTelemetryIndex.delete(session.bookingId);
+    emit('driver.telemetry.stopped', { driverId, bookingId: session.bookingId, at: new Date().toISOString() });
+  },
+  getTelemetryDiagnostics() {
+    return {
+      activeSessions: Array.from(telemetrySessions.values()).filter((s) => s.active).length,
+      staleSessions: Array.from(telemetrySessions.values()).filter((s) => s.stale).length,
+      indexedBookings: bookingTelemetryIndex.size,
+      sessions: Array.from(telemetrySessions.values())
+    };
   shareDriverLocation(params: { driverId: string; bookingId: string; location: { lat: number; lng: number; heading?: number; accuracyMeters?: number }; source?: 'gps' | 'fallback' }): { accepted: boolean; reason?: string; driver?: DriverRealtimeState } {
     const booking = bookings.get(params.bookingId);
     if (!booking) return { accepted: false, reason: 'BOOKING_NOT_FOUND' };

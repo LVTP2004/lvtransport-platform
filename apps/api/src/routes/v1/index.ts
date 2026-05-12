@@ -74,6 +74,10 @@ router.post('/drivers/:driverId/status', (req, res, next) => {
   }
 });
 
+router.post('/drivers/:driverId/telemetry', (req, res, next) => {
+  try {
+    const telemetry = realtimeOrchestratorService.updateDriverTelemetry({ driverId: req.params.driverId, ...req.body });
+    res.json({ telemetry });
 router.post('/drivers/:driverId/location', (req, res, next) => {
   try {
     const result = realtimeOrchestratorService.shareDriverLocation({
@@ -92,6 +96,19 @@ router.post('/drivers/:driverId/location', (req, res, next) => {
   } catch (error) {
     next(error);
   }
+});
+
+router.post('/drivers/:driverId/telemetry/restore', (req, res, next) => {
+  try {
+    const telemetry = realtimeOrchestratorService.restoreDriverTelemetry({ driverId: req.params.driverId, ...req.body });
+    res.json({ telemetry });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.get('/operations/telemetry/diagnostics', (_req, res) => {
+  res.json({ telemetry: realtimeOrchestratorService.getTelemetryDiagnostics() });
 });
 
 export default router;
