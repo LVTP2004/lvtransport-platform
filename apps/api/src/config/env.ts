@@ -32,6 +32,10 @@ export const env = {
   mapsDefaultSpeedKph: process.env.MAPS_DEFAULT_SPEED_KPH ?? '38',
   mapsRoadFactor: process.env.MAPS_ROAD_FACTOR ?? '1.25',
   trustProxy: (process.env.TRUST_PROXY ?? 'false').toLowerCase() === 'true',
+  stripeSecretKey: process.env.STRIPE_SECRET_KEY,
+  payconiqApiKey: process.env.PAYCONIQ_API_KEY,
+  mailProviderApiKey: process.env.MAIL_PROVIDER_API_KEY,
+  mailFromAddress: process.env.MAIL_FROM_ADDRESS,
 };
 
 if (env.isProduction && env.corsOrigin === '*') {
