@@ -11,9 +11,7 @@ export const createApp = () => {
   app.use(corsMiddleware);
   app.use(express.json());
   app.use(requestLoggerMiddleware);
-
   app.use(API_PREFIX, apiRoutes);
-
   app.use(errorHandlerMiddleware);
 
   return app;
