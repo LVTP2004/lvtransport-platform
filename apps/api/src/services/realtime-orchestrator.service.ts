@@ -384,6 +384,8 @@ export const realtimeOrchestratorService = {
       released.push(booking.id);
       operationalAnalyticsService.trackBookingTransition(booking, 'assigned');
       emit('booking.updated', booking);
+      emit('booking.lifecycle.changed', booking);
+      emit('admin.live.updated', { bookingId: booking.id, status: booking.status, at: booking.updatedAt });
     }
     return { releasedAssignments: released };
   },
