@@ -9,6 +9,7 @@ import {
   realtimeOperationalEvents
 } from './booking-operational-state.service.js';
 import { operationalObservabilityService } from './operational-observability.service.js';
+import { incidentManagementService } from './incident-management.service.js';
 
 export { BOOKING_LIFECYCLE };
 
@@ -89,6 +90,7 @@ export const realtimeOrchestratorService = {
         if (stale !== session.stale) {
           session.stale = stale;
           emit('driver.telemetry.stale_changed', { driverId: session.driverId, stale, lastEventAt: session.lastEventAt });
+          if (stale) incidentManagementService.openIncident({ title: 'Stale driver telemetry session', severity: 'medium', category: 'realtime', owner: 'dispatch', actor: 'system', driverId: session.driverId, bookingId: session.bookingId, recoveryTimeoutMs: 5 * 60 * 1000, note: 'No telemetry received inside stale threshold.' });
         }
       }
       operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'recovery.cleanup', details: { activeSockets: websocketClients.size, replayBufferSize: eventReplayBuffer.length, idempotencyCacheSize: idempotencyKeys.size } });
@@ -99,7 +101,10 @@ export const realtimeOrchestratorService = {
     socket.on('pong', () => { client.isAlive = true; operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.pong' }); }); socket.on('close', () => { websocketClients.delete(socket); operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.disconnected' }); });
     const last = parseLastSequenceFromUrl((socket as unknown as { url?: string }).url);
     operationalObservabilityService.log({ level: 'info', domain: 'realtime', action: 'socket.connected', details: { lastSequence: last, activeClients: websocketClients.size } });
-    if (last) for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent).sequence ?? 0) > last) socket.send(replayEvent);
+    if (last) {
+      for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent).sequence ?? 0) > last) socket.send(replayEvent);
+      incidentManagementService.openIncident({ title: 'WebSocket reconnect recovery executed', severity: 'info', category: 'realtime', owner: 'realtime-ops', actor: 'system', recoveryTimeoutMs: 60_000, note: `Replayed events after sequence ${last}` });
+    }
     socket.send(JSON.stringify({ event: realtimeOperationalEvents.bookingSnapshot, payload: Array.from(bookings.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: realtimeOperationalEvents.driverSnapshot, payload: Array.from(driverStates.values()), sequence: eventSequence }));
     socket.send(JSON.stringify({ event: realtimeOperationalEvents.operationalLogSnapshot, payload: operationalObservabilityService.getOperationalLogs(), sequence: eventSequence }));
@@ -117,6 +122,7 @@ export const realtimeOrchestratorService = {
   assignDriver(params: { bookingId: string; driverId: string; driverName: string; idempotencyKey?: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
+    if (booking.assignedDriverId && booking.assignedDriverId !== params.driverId) incidentManagementService.openIncident({ title: 'Duplicated assignment attempt prevented', severity: 'high', category: 'dispatch', owner: 'dispatch', actor: 'system', bookingId: booking.id, driverId: params.driverId, note: `Booking already assigned to ${booking.assignedDriverId}` });
     const result = bookingOperationalState.transition(booking.status, 'assigned');
     if (result.outcome === 'rejected_invalid_transition') { operationalObservabilityService.warnInvalidTransition({ bookingId: booking.id, from: booking.status, to: 'assigned', actor: 'admin', reason: 'status-transition-rejected' }); throw new Error('INVALID_TRANSITION'); }
     if (result.outcome === 'applied') { booking.status = result.status; booking.version += 1; booking.updatedAt = new Date().toISOString(); booking.timeline.push({ status: 'assigned', actor: 'admin', at: booking.updatedAt, note: `Driver ${params.driverName} assigned` }); operationalObservabilityService.logTransition({ bookingId: booking.id, from: 'pending', to: result.status, actor: 'admin', note: `Driver ${params.driverName} assigned`, at: booking.updatedAt }); }
@@ -222,7 +228,7 @@ export const realtimeOrchestratorService = {
   shareDriverLocation(params: { driverId: string; bookingId: string; location: { lat: number; lng: number; heading?: number; accuracyMeters?: number }; source?: 'gps' | 'fallback' }): { accepted: boolean; reason?: string; driver?: DriverRealtimeState } {
     const booking = bookings.get(params.bookingId);
     if (!booking) return { accepted: false, reason: 'BOOKING_NOT_FOUND' };
-    if (booking.assignedDriverId !== params.driverId) return { accepted: false, reason: 'DRIVER_NOT_ASSIGNED' };
+    if (booking.assignedDriverId !== params.driverId) { incidentManagementService.openIncident({ title: 'Orphaned booking location update detected', severity: 'high', category: 'realtime', owner: 'dispatch', actor: 'system', bookingId: params.bookingId, driverId: params.driverId, note: 'Incoming location update from non-assigned driver.' }); return { accepted: false, reason: 'DRIVER_NOT_ASSIGNED' }; }
     if (TERMINAL_BOOKING_STATUSES.has(booking.status)) return { accepted: false, reason: 'BOOKING_TERMINAL' };
     const now = Date.now();
     const lastAt = driverLocationTimestamps.get(params.driverId) ?? 0;
