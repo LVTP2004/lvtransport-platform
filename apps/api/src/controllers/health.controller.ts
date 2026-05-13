@@ -3,6 +3,7 @@ import { HTTP_STATUS } from '../constants/app.constants.js';
 import { env } from '../config/env.js';
 import { realtimeOrchestratorService } from '../services/realtime-orchestrator.service.js';
 import { operationalObservabilityService } from '../services/operational-observability.service.js';
+import { startupValidationService } from '../services/startup-validation.service.js';
 
 export const healthController = (_req: Request, res: Response): void => {
   res.status(HTTP_STATUS.OK).json({
@@ -35,5 +36,16 @@ export const readinessController = (_req: Request, res: Response): void => {
       },
       observability,
     },
+  });
+};
+
+
+export const startupValidationController = (_req: Request, res: Response): void => {
+  const result = startupValidationService.runOperationalStartupValidation();
+  const blocked = result.status === 'blocked';
+  res.status(blocked ? HTTP_STATUS.INTERNAL_SERVER_ERROR : HTTP_STATUS.OK).json({
+    success: !blocked,
+    service: env.appName,
+    ...result,
   });
 };
