@@ -6,6 +6,7 @@ import { PricingTier } from '../../pricing/enums/fare-rule.enum.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
 import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
 import { logger } from '../../utils/logger.js';
+import { DomainError } from '../../errors/domain-error.js';
 
 const pricingEngine = new PricingEngineService();
 
@@ -94,15 +95,15 @@ export const bookingFlowService = {
   ): Promise<BookingRecord> {
     const bookings = await bookingRepository.list();
     const booking = bookings.find((item) => item.id === bookingId);
-    if (!booking) throw new Error('Booking not found');
+    if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
     const currentState = booking.lifecycle.state;
     if (TERMINAL_BOOKING_STATUSES.has(currentState)) {
       if (currentState === nextState) return booking;
-      throw new Error(`Booking is immutable in terminal state: ${currentState}`);
+      throw new DomainError('TERMINAL_STATE_IMMUTABLE', 'Deze rit is voltooid en kan niet meer worden aangepast.', 409, { bookingId, currentState, attemptedState: nextState });
     }
 
     if (!CANONICAL_ALLOWED_TRANSITIONS[currentState].has(nextState) && currentState !== nextState) {
-      throw new Error(`Invalid lifecycle transition: ${currentState} -> ${nextState}`);
+      throw new DomainError('INVALID_TRANSITION', 'Ongeldige statusovergang voor deze rit.', 409, { bookingId, currentState, attemptedState: nextState });
     }
 
     if (currentState === nextState) return booking;
