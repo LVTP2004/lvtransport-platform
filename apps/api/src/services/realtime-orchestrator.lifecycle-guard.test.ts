@@ -38,3 +38,20 @@ test('restoreDriverAssignments recovers accepted rides after restart', () => {
   assert.equal(recovery.driverState?.activeBookingId, booking.id);
   assert.equal(recovery.driverState?.state, 'en_route');
 });
+
+test('transition status rejects stale version updates', () => {
+  const booking = realtimeOrchestratorService.createBooking({ pickup: 'P4', destination: 'D4' });
+  assert.throws(
+    () => realtimeOrchestratorService.transitionStatus({ bookingId: booking.id, status: 'assigned', actor: 'admin', expectedVersion: booking.version + 10 }),
+    /STALE_EVENT_REJECTED/
+  );
+});
+
+test('transition status rejects out-of-order realtime events', () => {
+  const booking = realtimeOrchestratorService.createBooking({ pickup: 'P5', destination: 'D5' });
+  const staleTimestamp = new Date(Date.now() - 60_000).toISOString();
+  assert.throws(
+    () => realtimeOrchestratorService.transitionStatus({ bookingId: booking.id, status: 'assigned', actor: 'admin', eventAt: staleTimestamp }),
+    /STALE_EVENT_REJECTED/
+  );
+});
