@@ -3,6 +3,7 @@ import type { BookingRecord, CreateBookingDto } from './dto.js';
 import { bookingRepository } from './repository.js';
 import { PricingEngineService } from '../../pricing/services/pricing-engine.service.js';
 import { PricingTier } from '../../pricing/enums/fare-rule.enum.js';
+import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
 
 const pricingEngine = new PricingEngineService();
 
@@ -14,11 +15,24 @@ const createReferenceCode = (): string => {
 
 export const bookingFlowService = {
   async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
+    const hydrateRealtimeLifecycle = (booking: BookingRecord) => {
+      realtimeOrchestratorService.upsertExternalBooking({
+        id: booking.id,
+        referenceCode: booking.referenceCode,
+        pickup: booking.pickup,
+        destination: booking.destination,
+        serviceType: booking.serviceType,
+        scheduledAt: booking.scheduleAt,
+        status: booking.lifecycle.state,
+      });
+      return booking;
+    };
+
     const existing = await bookingRepository.findByIdempotencyKey(idempotencyKey);
-    if (existing) return existing;
+    if (existing) return hydrateRealtimeLifecycle(existing);
     const duplicateFingerprint = `${input.pickup.trim().toLowerCase()}|${input.destination.trim().toLowerCase()}|${input.scheduleAt}|${input.serviceType}`;
     const recentDuplicate = await bookingRepository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
-    if (recentDuplicate) return recentDuplicate;
+    if (recentDuplicate) return hydrateRealtimeLifecycle(recentDuplicate);
 
     const quote = pricingEngine.createQuote({
       estimatedDistanceKm: input.estimatedDistanceKm ?? 5,
@@ -60,7 +74,7 @@ export const bookingFlowService = {
       },
     };
 
-    return bookingRepository.create(booking);
+    return hydrateRealtimeLifecycle(await bookingRepository.create(booking));
   },
 
   async listBookings(): Promise<BookingRecord[]> {
