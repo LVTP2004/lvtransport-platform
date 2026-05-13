@@ -2,57 +2,50 @@
 @tailwind components;
 @tailwind utilities;
 
+.premium-shell {
+  background: radial-gradient(circle at top right, rgba(193, 154, 73, 0.08), transparent 40%), #050506;
+}
+
 @layer components {
   .glass-panel {
     @apply border border-lv-gold/20 bg-gradient-to-b from-white/10 to-white/5 shadow-gold-sm backdrop-blur-xl;
   }
 
-  .field-wrap {
-    @apply block rounded-2xl border border-lv-gold/20 bg-black/30 p-3;
+  .logo-mark {
+    @apply text-base font-semibold tracking-[0.32em] text-lv-champagne;
   }
 
-  .field-wrap span {
-    @apply text-xs uppercase tracking-[0.18em] text-lv-champagne;
+  .status-pill {
+    @apply rounded-2xl border border-white/10 bg-black/40 px-3 py-2 text-xs text-lv-mist;
   }
 
-  .field-wrap input {
-    @apply mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm outline-none transition focus:border-lv-gold/50;
+  .network-dot-grid {
+    width: 140px;
+    height: 56px;
+    background-image: radial-gradient(circle, rgba(205, 169, 95, 0.7) 1px, transparent 1px);
+    background-size: 14px 14px;
+    opacity: 0.45;
   }
 
-  .control-btn {
-    @apply h-8 w-8 rounded-lg border border-lv-gold/30 bg-black/50 text-lg text-lv-champagne transition hover:bg-lv-gold/20;
+  .network-panel {
+    background-image: linear-gradient(rgba(205, 169, 95, 0.09) 1px, transparent 1px), linear-gradient(90deg, rgba(205, 169, 95, 0.09) 1px, transparent 1px);
+    background-size: 22px 22px;
   }
 
-  .vehicle-card {
-    @apply flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition hover:border-lv-gold/40;
-  }
-
-  .vehicle-card--active {
-    @apply border-lv-gold/70 bg-lv-gold/10;
-  }
-
-  .toggle-card {
-    @apply flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition hover:border-lv-gold/40;
-  }
-
-  .toggle-card--active {
-    @apply border-lv-gold/70 bg-lv-gold/10;
-  }
-
-  .booking-step-fade {
-    animation: bookingFade 260ms ease;
-  }
+  .field-wrap { @apply block rounded-2xl border border-lv-gold/20 bg-black/30 p-3; }
+  .field-wrap span { @apply text-xs uppercase tracking-[0.18em] text-lv-champagne; }
+  .field-wrap input { @apply mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm outline-none transition focus:border-lv-gold/50; }
+  .control-btn { @apply h-8 w-8 rounded-lg border border-lv-gold/30 bg-black/50 text-lg text-lv-champagne transition hover:bg-lv-gold/20; }
+  .vehicle-card { @apply flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition hover:border-lv-gold/40; }
+  .vehicle-card--active { @apply border-lv-gold/70 bg-lv-gold/10; }
+  .toggle-card { @apply flex w-full items-center justify-between rounded-2xl border border-white/10 bg-black/30 p-4 text-left transition hover:border-lv-gold/40; }
+  .toggle-card--active { @apply border-lv-gold/70 bg-lv-gold/10; }
+  .booking-step-fade { animation: bookingFade 260ms ease; }
 }
 
 @keyframes bookingFade {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 @layer components {
