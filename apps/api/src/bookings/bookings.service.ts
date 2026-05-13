@@ -1,3 +1,4 @@
+import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, toCanonicalBookingStatus } from '../types/lifecycle.js';
 import { emitBookingEvent, type BookingEventPayload } from './booking.events.js';
 
 type BookingStatus = NonNullable<BookingEventPayload['status']>;
@@ -11,25 +12,13 @@ type BookingRecord = {
   history: BookingEventPayload[];
 };
 
-const terminalStatuses: ReadonlySet<BookingStatus> = new Set(['completed', 'cancelled']);
-
-const allowedTransitions: Record<BookingStatus, ReadonlySet<BookingStatus>> = {
-  pending: new Set(['assigned', 'cancelled']),
-  assigned: new Set(['accepted', 'cancelled']),
-  accepted: new Set(['in_progress', 'cancelled']),
-  in_progress: new Set(['completed', 'cancelled']),
-  completed: new Set(),
-  cancelled: new Set(),
-  onderweg: new Set(['arrived', 'cancelled']),
-  arrived: new Set(['in_progress', 'cancelled']),
-};
 
 const bookingStore = new Map<string, BookingRecord>();
 const processedEventIds = new Set<string>();
 
 export const bookingsService = {
   publishBookingState(payload: BookingEventPayload): BookingRecord {
-    const status: BookingStatus = payload.status ?? 'pending';
+    const status = toCanonicalBookingStatus(payload.status) as BookingStatus;
     const eventId = payload.eventId ?? `${payload.bookingId}:${status}:${payload.occurredAt ?? ''}`;
 
     if (processedEventIds.has(eventId)) {
@@ -41,11 +30,11 @@ export const bookingsService = {
     const existing = bookingStore.get(payload.bookingId);
 
     if (existing) {
-      if (terminalStatuses.has(existing.status)) {
+      if (TERMINAL_BOOKING_STATUSES.has(existing.status as any)) {
         return existing;
       }
 
-      if (!allowedTransitions[existing.status].has(status)) {
+      if (!CANONICAL_ALLOWED_TRANSITIONS[existing.status].has(status as any)) {
         return existing;
       }
     }

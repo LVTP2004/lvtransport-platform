@@ -1,11 +1,11 @@
 export enum BookingLifecycle {
   PENDING = 'pending',
-  QUOTED = 'quoted',
-  CONFIRMED = 'confirmed',
+  ACCEPTED = 'accepted',
+  EN_ROUTE = 'en_route',
+  ARRIVED = 'arrived',
+  IN_PROGRESS = 'in_progress',
   ASSIGNED = 'assigned',
-  DRIVER_ARRIVING = 'driver_arriving',
-  PASSENGER_ONBOARD = 'passenger_onboard',
-  COMPLETED = 'completed',
+    COMPLETED = 'completed',
   CANCELLED = 'cancelled',
   FAILED = 'failed'
 }
