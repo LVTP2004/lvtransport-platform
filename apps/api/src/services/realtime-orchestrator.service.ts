@@ -247,6 +247,49 @@ export const realtimeOrchestratorService = {
     bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); this.runAutomationSweep(); emitAdminAnalytics(); return booking;
   },
 
+
+
+  upsertExternalBooking(input: { id: string; referenceCode: string; pickup: string; destination: string; serviceType: 'standard' | 'airport' | 'vip'; scheduledAt: string; customerName?: string; status?: BookingLifecycleStatus }): BookingRecord {
+    const now = new Date().toISOString();
+    const existing = bookings.get(input.id);
+    if (existing) {
+      existing.code = input.referenceCode;
+      existing.pickup = input.pickup;
+      existing.destination = input.destination;
+      existing.serviceType = input.serviceType;
+      existing.scheduledAt = input.scheduledAt;
+      existing.customerName = input.customerName?.trim() || existing.customerName;
+      existing.updatedAt = now;
+      return existing;
+    }
+
+    const booking: BookingRecord = {
+      id: input.id,
+      code: input.referenceCode,
+      customerName: input.customerName?.trim() || 'Guest rider',
+      pickup: input.pickup,
+      destination: input.destination,
+      serviceType: input.serviceType,
+      scheduledAt: input.scheduledAt,
+      paymentStatus: 'pending',
+      status: input.status ?? 'pending',
+      assignedDriverId: undefined,
+      assignedDriverName: undefined,
+      assignmentOfferedAt: undefined,
+      assignmentExpiresAt: undefined,
+      version: 1,
+      timeline: [{ status: input.status ?? 'pending', actor: 'system', at: now, note: 'Hydrated from booking flow service' }],
+      createdAt: now,
+      updatedAt: now,
+      tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
+    };
+
+    bookings.set(booking.id, booking);
+    operationalAnalyticsService.trackBookingCreated(booking);
+    emit('booking.created', booking);
+    emitAdminAnalytics();
+    return booking;
+  },
   listBookings: () => Array.from(bookings.values()),
   listDriverStates: () => Array.from(driverStates.values()),
 
