@@ -97,10 +97,6 @@ const MAX_REPLAY_EVENTS = 250;
 const MAX_EVENT_PAYLOAD_BYTES = 96_000;
 const TELEMETRY_MIN_INTERVAL_MS = 2_000;
 const ADMIN_ANALYTICS_PUSH_THROTTLE_MS = 1_000;
-const AUTO_ACCEPT_AFTER_MS = 10_000;
-const AUTO_QUOTE_AFTER_MS = 20_000;
-const AUTO_CONFIRM_AFTER_MS = 30_000;
-const AUTO_AVAILABLE_AFTER_MS = 40_000;
 const IN_PROGRESS_TIMEOUT_MS = 2 * 60 * 60_000;
 
 const bookingEvents = new EventEmitter();
@@ -184,8 +180,27 @@ const releaseDriver = (driverId?: string) => {
   emit('driver.status.updated', driverStates.get(driverId));
 };
 
+const reconcileDriverLifecycleState = (booking: BookingRecord) => {
+  if (!booking.assignedDriverId) return;
+  const driver = driverStates.get(booking.assignedDriverId);
+  if (!driver) return;
+  const now = new Date().toISOString();
+  const stateByBookingStatus: Partial<Record<BookingLifecycleStatus, DriverState>> = {
+    assigned: 'assigned',
+    accepted: 'en_route',
+    en_route: 'en_route',
+    arrived: 'arrived',
+    in_progress: 'in_progress'
+  };
+  const nextState = stateByBookingStatus[booking.status];
+  if (!nextState) return;
+  if (driver.state === nextState && driver.activeBookingId === booking.id) return;
+  const nextDriverState: DriverRealtimeState = { ...driver, state: nextState, activeBookingId: booking.id, lastUpdatedAt: now };
+  driverStates.set(booking.assignedDriverId, nextDriverState);
+  operationalAnalyticsService.trackDriverState(nextDriverState);
+  emit('driver.status.updated', nextDriverState);
+};
 
-const getBookingAgeMs = (booking: BookingRecord, nowMs: number) => nowMs - new Date(booking.createdAt).getTime();
 
 const transitionBySystemRule = (booking: BookingRecord, nextStatus: BookingLifecycleStatus, note: string) => {
   const now = new Date().toISOString();
@@ -364,6 +379,7 @@ export const realtimeOrchestratorService = {
     const previousStatus = booking.status;
     booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: nextStatus, actor, at: now });
     if (TERMINAL_BOOKING_STATUSES.has(nextStatus)) releaseDriver(booking.assignedDriverId);
+    else reconcileDriverLifecycleState(booking);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, status: booking.status, at: now });
     emitAdminAnalytics();
@@ -484,9 +500,6 @@ export const realtimeOrchestratorService = {
     const transitioned: string[] = [];
     const recovered: string[] = [];
     for (const booking of Array.from(bookings.values()).sort((a, b) => a.createdAt.localeCompare(b.createdAt))) {
-      const age = getBookingAgeMs(booking, nowMs);
-      if (booking.status === 'pending' && age >= AUTO_ACCEPT_AFTER_MS && transitionBySystemRule(booking, 'assigned', 'Auto-assigned by dispatch workflow')) transitioned.push(booking.id);
-      if (booking.status === 'assigned' && age >= AUTO_QUOTE_AFTER_MS && transitionBySystemRule(booking, 'accepted', 'Auto-accepted by workflow trigger')) transitioned.push(booking.id);
       if (booking.status === 'in_progress') {
         const inProgressAt = [...booking.timeline].reverse().find((entry) => entry.status === 'in_progress')?.at;
         if (inProgressAt && nowMs - new Date(inProgressAt).getTime() >= IN_PROGRESS_TIMEOUT_MS) {
