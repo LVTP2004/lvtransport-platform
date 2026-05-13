@@ -4,6 +4,7 @@ import type { BookingRecord } from './dto.js';
 
 export interface BookingRepository {
   create(record: BookingRecord): Promise<BookingRecord>;
+  update(record: BookingRecord): Promise<BookingRecord>;
   findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
   findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null>;
   list(): Promise<BookingRecord[]>;
@@ -56,6 +57,15 @@ class FileBookingRepository implements BookingRepository {
     const fingerprint = `${record.pickup.trim().toLowerCase()}|${record.destination.trim().toLowerCase()}|${record.scheduleAt}|${record.serviceType}`;
     store.fingerprintIndex ??= {};
     store.fingerprintIndex[fingerprint] = { bookingId: record.id, createdAt: record.createdAt };
+    this.writeStore(store);
+    return record;
+  }
+
+  async update(record: BookingRecord): Promise<BookingRecord> {
+    const store = this.readStore();
+    const index = store.bookings.findIndex((booking) => booking.id === record.id);
+    if (index === -1) throw new Error('Booking not found');
+    store.bookings[index] = record;
     this.writeStore(store);
     return record;
   }
