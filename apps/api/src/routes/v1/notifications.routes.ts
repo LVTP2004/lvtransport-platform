@@ -9,7 +9,7 @@ const demoContext = (bookingId: string) => ({
   customerId: 'customer-demo',
   customerEmail: 'customer@demo.local',
   adminId: 'admin-demo',
-  status: 'confirmed' as const,
+  status: 'pending' as const,
 });
 
 notificationRoutes.post('/bookings/:bookingId/confirm', (req, res) => {
@@ -22,7 +22,7 @@ notificationRoutes.post('/bookings/:bookingId/status/:status', (req, res) => {
 });
 
 notificationRoutes.post('/bookings/:bookingId/assign/:driverId', (req, res) => {
-  const context = { ...demoContext(req.params.bookingId), status: 'driver_assigned' as const, driverId: req.params.driverId };
+  const context = { ...demoContext(req.params.bookingId), status: 'assigned' as const, driverId: req.params.driverId };
   return res.json(bookingNotificationFlowService.onDriverAssigned(context));
 });
 

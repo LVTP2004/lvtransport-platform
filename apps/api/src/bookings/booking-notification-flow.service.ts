@@ -1,6 +1,6 @@
 import { notificationService } from '../notifications/notification.service.js';
 
-export type BookingStatus = 'pending' | 'confirmed' | 'driver_assigned' | 'en_route' | 'completed' | 'cancelled';
+export type BookingStatus = 'pending' | 'assigned' | 'accepted' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
 
 export interface BookingNotificationContext {
   bookingId: string;
@@ -23,7 +23,7 @@ export const bookingNotificationFlowService = {
       channels: ['email', 'in_app', 'push'],
       title: 'Booking confirmed',
       body: `Your ride is confirmed for booking ${context.bookingId}.`,
-      data: { bookingStatus: 'confirmed' },
+      data: { bookingStatus: 'assigned' },
     });
   },
 
