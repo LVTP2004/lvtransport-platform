@@ -343,14 +343,17 @@ export const realtimeOrchestratorService = {
     return booking;
   },
 
-  transitionStatus(params: { bookingId: string; nextStatus: BookingLifecycleStatus; actor: BookingActor }): BookingRecord {
+  transitionStatus(params: { bookingId: string; status: string; actor: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
-    if (booking.status === params.nextStatus) return booking;
-    if (!allowedTransitions[booking.status].has(params.nextStatus)) throw new Error('INVALID_TRANSITION');
+    const nextStatus = toCanonicalBookingStatus(params.status);
+    const actor = params.actor as BookingActor;
+    if (!['customer', 'admin', 'driver', 'system'].includes(actor)) throw new Error('INVALID_ACTOR');
+    if (booking.status === nextStatus) return booking;
+    if (!allowedTransitions[booking.status].has(nextStatus)) throw new Error('INVALID_TRANSITION');
     const now = new Date().toISOString();
     const previousStatus = booking.status;
-    booking.status = params.nextStatus; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: params.nextStatus, actor: params.actor, at: now });
-    if (TERMINAL_BOOKING_STATUSES.has(params.nextStatus)) releaseDriver(booking.assignedDriverId);
+    booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: nextStatus, actor, at: now });
+    if (TERMINAL_BOOKING_STATUSES.has(nextStatus)) releaseDriver(booking.assignedDriverId);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, status: booking.status, at: now });
     emitAdminAnalytics();
