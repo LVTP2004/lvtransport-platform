@@ -1,18 +1,25 @@
 import { realtimeEvents } from "../events/names.js";
 
-export const trackingStates = [
+export const trackingUiStates = [
   "searching_driver",
-  "driver_assigned",
+  "driver_assigned"
+] as const;
+
+export const trackingLifecycleStates = [
+  "pending",
+  "assigned",
   "accepted",
   "en_route",
   "arrived",
   "in_progress",
   "completed",
-  "cancelled"
+  "cancelled",
+  "failed"
 ] as const;
 
 export const customerTrackingStateArchitecture = {
-  stateEnum: trackingStates,
+  lifecycleStateEnum: trackingLifecycleStates,
+  uiStateEnum: trackingUiStates,
   events: [realtimeEvents.TRACKING_STATE_CHANGED, realtimeEvents.ETA_UPDATED],
   livePath: "tracking/live/{bookingId}"
 } as const;

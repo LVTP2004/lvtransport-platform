@@ -8,7 +8,7 @@ export const notificationArchitecture = {
     providers: ['firebase-fcm-ready', 'apns-ready', 'web-push-ready', 'email-provider-placeholder', 'sms-provider-placeholder'],
     deliveryLogging: 'delivery-log-service',
   },
-  operationalCommunicationLifecycle: ['booking_created', 'driver_assigned', 'driver_en_route', 'ride_in_progress', 'ride_completed', 'booking_cancelled'],
+  operationalCommunicationLifecycle: ['booking_created', 'booking_assigned', 'booking_en_route', 'ride_in_progress', 'ride_completed', 'booking_cancelled'],
   queues: {
     main: 'notification.queue.main',
     retry: 'notification.queue.retry',
