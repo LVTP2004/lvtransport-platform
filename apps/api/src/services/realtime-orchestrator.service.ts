@@ -386,10 +386,26 @@ export const realtimeOrchestratorService = {
     }
   },
 
-  driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject' }): BookingRecord {
+  driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject'; expectedVersion?: number; idempotencyKey?: string; eventAt?: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (booking.assignedDriverId !== params.driverId) throw new Error('DRIVER_MISMATCH');
     if (TERMINAL_BOOKING_STATUSES.has(booking.status)) throw new Error('TERMINAL_STATE_IMMUTABLE');
+    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+      appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor: 'driver', at: new Date().toISOString(), note: 'Duplicate driver assignment response suppressed by idempotency key', metadata: { idempotencyKey: params.idempotencyKey, action: params.action } });
+      return booking;
+    }
+    if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) {
+      appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor: 'driver', at: new Date().toISOString(), note: 'Driver assignment response rejected due to version mismatch', metadata: { expectedVersion: params.expectedVersion, currentVersion: booking.version, action: params.action } });
+      throw new Error('STALE_EVENT_REJECTED');
+    }
+    if (params.eventAt) {
+      const eventAtMs = new Date(params.eventAt).getTime();
+      const bookingUpdatedAtMs = new Date(booking.updatedAt).getTime();
+      if (Number.isFinite(eventAtMs) && eventAtMs < bookingUpdatedAtMs) {
+        appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor: 'driver', at: new Date().toISOString(), note: 'Out-of-order driver assignment response rejected', metadata: { eventAt: params.eventAt, bookingUpdatedAt: booking.updatedAt, action: params.action } });
+        throw new Error('STALE_EVENT_REJECTED');
+      }
+    }
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     if (params.action === 'reject') {
@@ -410,6 +426,7 @@ export const realtimeOrchestratorService = {
       if (driver) driverStates.set(params.driverId, { ...driver, state: 'en_route', activeBookingId: booking.id, lastUpdatedAt: now });
     }
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
+    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
     const trackedDriver = driverStates.get(params.driverId);
     if (trackedDriver) operationalAnalyticsService.trackDriverState(trackedDriver);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
