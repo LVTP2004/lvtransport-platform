@@ -1,4 +1,5 @@
 import type { TripCostBreakdown } from '../../pricing/models/pricing.types.js';
+import type { CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
 
 export type ServiceType = 'standard' | 'airport' | 'vip';
 export type CustomerAccountTier = 'retail' | 'business' | 'vip';
@@ -46,7 +47,7 @@ export interface CreateBookingDto {
 export interface BookingRecord extends CreateBookingDto {
   id: string;
   referenceCode: string;
-  status: 'pending' | 'completed';
+  status: CanonicalBookingLifecycleStatus;
   createdAt: string;
   fareQuote: {
     fareTotal: number;
@@ -67,7 +68,16 @@ export interface BookingRecord extends CreateBookingDto {
   };
   lifecycle: {
     initializedAt: string;
-    state: 'pending';
+    state: CanonicalBookingLifecycleStatus;
     initIdempotencyKey: string;
+    version: number;
+    transitions: Array<{
+      from: CanonicalBookingLifecycleStatus | null;
+      to: CanonicalBookingLifecycleStatus;
+      occurredAt: string;
+      actor: 'system' | 'admin' | 'driver' | 'customer';
+      reason?: string;
+      metadata?: Record<string, unknown>;
+    }>;
   };
 }
