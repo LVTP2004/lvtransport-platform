@@ -1,7 +1,8 @@
+import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, toCanonicalBookingStatus, type CanonicalBookingLifecycleStatus } from '../types/lifecycle.js';
 import { eventBus } from '../events/event-bus.js';
 import { BOOKING_EVENTS, WS_EVENTS } from '../constants/index.js';
 
-export type BookingLifecycleStatus = 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+export type BookingLifecycleStatus = CanonicalBookingLifecycleStatus;
 
 export interface BookingLifecycleEvent {
   bookingId: string;
@@ -23,11 +24,9 @@ interface BookingLifecycleSnapshot {
   lastEventFingerprint: string;
 }
 
-const statusOrder: BookingLifecycleStatus[] = ['pending', 'accepted', 'in_progress', 'completed', 'cancelled'];
-const terminalStatuses = new Set<BookingLifecycleStatus>(['completed', 'cancelled']);
+
 const dedupeWindowMs = 30_000;
 
-const statusRank = (status: BookingLifecycleStatus): number => statusOrder.indexOf(status);
 const fingerprint = (event: BookingLifecycleEvent): string => [event.bookingId, event.status, event.occurredAt, event.driverId ?? 'none'].join(':');
 
 export class BookingLifecycleRealtimeService {
@@ -92,10 +91,7 @@ export class BookingLifecycleRealtimeService {
       return null;
     }
 
-    const status = payload.status ?? 'pending';
-    if (!statusOrder.includes(status)) {
-      return null;
-    }
+    const status = toCanonicalBookingStatus(payload.status);
 
     return {
       bookingId: payload.bookingId,
@@ -109,20 +105,16 @@ export class BookingLifecycleRealtimeService {
   }
 
   private isProgressionAllowed(current: BookingLifecycleSnapshot, incoming: BookingLifecycleEvent): boolean {
-    if (terminalStatuses.has(current.status) && current.status !== incoming.status) {
+    if (TERMINAL_BOOKING_STATUSES.has(current.status) && current.status !== incoming.status) {
       return false;
     }
 
-    const incomingRank = statusRank(incoming.status);
-    const currentRank = statusRank(current.status);
-
+    
     if (incoming.version && incoming.version <= current.version) {
       return false;
     }
 
-    if (incomingRank < currentRank) {
-      return false;
-    }
+    if (!CANONICAL_ALLOWED_TRANSITIONS[current.status].has(incoming.status) && incoming.status !== current.status) return false;
 
     if (incoming.status === 'accepted' && !incoming.driverId && !current.driverId) {
       return false;

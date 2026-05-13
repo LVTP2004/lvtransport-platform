@@ -3,7 +3,7 @@ import { createDriverGpsService, type GpsSnapshot } from '../modules/tracking/se
 
 type Booking = { id: string; code: string; status: string; assignedDriverName?: string; version: number; assignedDriverId?: string };
 
-const statusFlow = ['assigned', 'driver_arriving', 'passenger_onboard', 'completed'] as const;
+const statusFlow = ['pending', 'assigned', 'accepted', 'en_route', 'arrived', 'in_progress', 'completed'] as const;
 const DRIVER_ID = 'drv-101';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
@@ -71,7 +71,7 @@ export function App() {
         <p className="font-semibold">{booking.code}</p>
         <p className="text-sm text-zinc-300">Status: {booking.status}</p>
         {booking.status === 'assigned' && <div className="mt-2 flex gap-2"><button className="rounded bg-amber-500 px-3 py-1 text-black" onClick={() => updateStatus(booking)}>Accept Ride</button><button className="rounded border border-zinc-600 px-3 py-1">Reject</button></div>}
-        {booking.status !== 'assigned' && booking.status !== 'completed' && <button className="mt-2 rounded border border-zinc-600 px-3 py-1" onClick={() => updateStatus(booking)}>Next status</button>}
+        {!['completed', 'cancelled', 'failed'].includes(booking.status) && <button className="mt-2 rounded border border-zinc-600 px-3 py-1" onClick={() => updateStatus(booking)}>Next status</button>}
       </article>)}
     </div>
   </main>;

@@ -54,7 +54,7 @@ type BookingAnalyticsRecord = {
   assignedAt?: string;
 };
 
-const lifecycleStatuses: BookingLifecycleStatus[] = ['pending','accepted','quoted','confirmed','available','assigned','onderweg','arrived','in_progress','completed','cancelled','failed'];
+const lifecycleStatuses: BookingLifecycleStatus[] = ['pending','assigned','accepted','en_route','arrived','in_progress','completed','cancelled','failed'];
 
 class OperationalAnalyticsService {
   private bookings = new Map<string, BookingAnalyticsRecord>();
@@ -90,10 +90,10 @@ class OperationalAnalyticsService {
       createdAt: booking.createdAt
     };
     if (!current.assignedAt && booking.status === 'assigned') current.assignedAt = booking.updatedAt;
-    if (current.assignedAt && (booking.status === 'onderweg' || booking.status === 'available') && previousStatus === 'assigned') {
+    if (current.assignedAt && (booking.status === 'en_route' || booking.status === 'cancelled') && previousStatus === 'assigned') {
       this.assignmentResponses.push(Math.max(0, (new Date(booking.updatedAt).getTime() - new Date(current.assignedAt).getTime()) / 1000));
-      if (booking.status === 'onderweg') this.assignmentAccepts += 1;
-      if (booking.status === 'available') this.assignmentRejects += 1;
+      if (booking.status === 'en_route') this.assignmentAccepts += 1;
+      if (booking.status === 'cancelled') this.assignmentRejects += 1;
     }
     current.status = booking.status;
     if (booking.status === 'completed') {
@@ -155,12 +155,12 @@ class OperationalAnalyticsService {
     }
 
     const driverOnline = Array.from(this.drivers.values()).filter((d) => d.state !== 'offline').length;
-    const driverBusy = Array.from(this.drivers.values()).filter((d) => ['assigned','onderweg','arrived','in_progress'].includes(d.state)).length;
+    const driverBusy = Array.from(this.drivers.values()).filter((d) => ['assigned','en_route','arrived','in_progress'].includes(d.state)).length;
     const avgResponse = this.assignmentResponses.length ? this.assignmentResponses.reduce((a, b) => a + b, 0) / this.assignmentResponses.length : 0;
 
     this.cachedSnapshot = {
       generatedAt: new Date().toISOString(),
-      realtime: { activeBookings: byStatus.assigned + byStatus.onderweg + byStatus.arrived + byStatus.in_progress, completedBookings: byStatus.completed, driverOnline, driverBusy },
+      realtime: { activeBookings: byStatus.assigned + byStatus.accepted + byStatus.en_route + byStatus.arrived + byStatus.in_progress, completedBookings: byStatus.completed, driverOnline, driverBusy },
       bookingAnalytics: {
         total: this.bookings.size,
         byStatus,

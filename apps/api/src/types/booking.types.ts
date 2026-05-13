@@ -2,7 +2,7 @@ export type BookingStatus =
   | 'pending'
   | 'accepted'
   | 'assigned'
-  | 'onderweg'
+  | 'en_route'
   | 'arrived'
   | 'in_progress'
   | 'completed'
