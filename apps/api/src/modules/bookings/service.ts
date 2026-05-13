@@ -4,6 +4,8 @@ import { bookingRepository } from './repository.js';
 import { PricingEngineService } from '../../pricing/services/pricing-engine.service.js';
 import { PricingTier } from '../../pricing/enums/fare-rule.enum.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
+import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
+import { logger } from '../../utils/logger.js';
 
 const pricingEngine = new PricingEngineService();
 
@@ -71,6 +73,8 @@ export const bookingFlowService = {
         initializedAt: now,
         state: 'pending',
         initIdempotencyKey: idempotencyKey,
+        version: 1,
+        transitions: [{ from: null, to: 'pending', occurredAt: now, actor: 'system', reason: 'booking_created' }],
       },
     };
 
@@ -79,5 +83,45 @@ export const bookingFlowService = {
 
   async listBookings(): Promise<BookingRecord[]> {
     return bookingRepository.list();
+  },
+
+  async updateBookingLifecycle(
+    bookingId: string,
+    nextState: CanonicalBookingLifecycleStatus,
+    actor: 'system' | 'admin' | 'driver' | 'customer',
+    reason?: string,
+    metadata?: Record<string, unknown>
+  ): Promise<BookingRecord> {
+    const bookings = await bookingRepository.list();
+    const booking = bookings.find((item) => item.id === bookingId);
+    if (!booking) throw new Error('Booking not found');
+    const currentState = booking.lifecycle.state;
+    if (TERMINAL_BOOKING_STATUSES.has(currentState)) {
+      if (currentState === nextState) return booking;
+      throw new Error(`Booking is immutable in terminal state: ${currentState}`);
+    }
+
+    if (!CANONICAL_ALLOWED_TRANSITIONS[currentState].has(nextState) && currentState !== nextState) {
+      throw new Error(`Invalid lifecycle transition: ${currentState} -> ${nextState}`);
+    }
+
+    if (currentState === nextState) return booking;
+    const now = new Date().toISOString();
+    booking.status = nextState;
+    booking.lifecycle.state = nextState;
+    booking.lifecycle.version += 1;
+    booking.lifecycle.transitions.push({ from: currentState, to: nextState, occurredAt: now, actor, reason, metadata });
+    logger.info('booking.lifecycle.transition', { bookingId, from: currentState, to: nextState, actor, version: booking.lifecycle.version });
+    return bookingRepository.update(booking);
+  },
+
+  async getOperationalMetrics(): Promise<{ total: number; completed: number; cancelled: number; active: number; completionRate: number }> {
+    const bookings = await bookingRepository.list();
+    const total = bookings.length;
+    const completed = bookings.filter((booking) => booking.lifecycle.state === 'completed').length;
+    const cancelled = bookings.filter((booking) => booking.lifecycle.state === 'cancelled').length;
+    const active = bookings.filter((booking) => !TERMINAL_BOOKING_STATUSES.has(booking.lifecycle.state)).length;
+    const completionRate = total === 0 ? 0 : Number((completed / total).toFixed(4));
+    return { total, completed, cancelled, active, completionRate };
   }
 };

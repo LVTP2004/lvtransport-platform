@@ -11,6 +11,22 @@ import { realtimeOrchestratorService } from '../services/realtime-orchestrator.s
 export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   const server = createServer(app);
   const wss = new WebSocketServer({ server, path: '/ws' });
+  const clientHeartbeats = new WeakMap<object, number>();
+
+  const heartbeatInterval = setInterval(() => {
+    const threshold = Date.now() - 45_000;
+    for (const client of wss.clients) {
+      const lastBeat = clientHeartbeats.get(client) ?? 0;
+      if (lastBeat < threshold) {
+        logger.warn('WebSocket stale client terminated', { staleMs: Date.now() - lastBeat });
+        client.terminate();
+        continue;
+      }
+      if (client.readyState === client.OPEN) {
+        client.ping();
+      }
+    }
+  }, 15_000);
 
   const broadcast = (payload: Record<string, unknown>): void => {
     const encoded = JSON.stringify(payload);
@@ -27,6 +43,7 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
 
   wss.on('connection', (socket) => {
     logger.info('WebSocket client connected');
+    clientHeartbeats.set(socket, Date.now());
     socket.send(JSON.stringify({
       type: 'connection.ack',
       message: 'WebSocket realtime channel ready',
@@ -39,6 +56,11 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
 
       try {
         const payload = JSON.parse(raw) as { type?: string; bookingId?: string };
+        clientHeartbeats.set(socket, Date.now());
+        if (payload.type === 'ping') {
+          socket.send(JSON.stringify({ type: 'pong', serverTime: new Date().toISOString() }));
+          return;
+        }
         if (payload.type === 'booking.lifecycle.recover' && payload.bookingId) {
           const snapshot = bookingLifecycleRealtimeService.getSnapshot(payload.bookingId);
           socket.send(JSON.stringify({
@@ -52,6 +74,7 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
     });
 
     realtimeOrchestratorService.registerClient(socket);
+    socket.on('pong', () => clientHeartbeats.set(socket, Date.now()));
     socket.on('close', () => logger.info('WebSocket client disconnected'));
   });
 
@@ -62,6 +85,7 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
   const stop = async (): Promise<void> => {
     await new Promise<void>((resolve) => {
       wss.close(() => {
+        clearInterval(heartbeatInterval);
         server.close(() => resolve());
       });
     });

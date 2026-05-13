@@ -31,3 +31,23 @@ export const listBookingsController = async (_req: Request, res: Response) => {
   const bookings = await bookingFlowService.listBookings();
   return res.status(200).json({ success: true, bookings });
 };
+
+export const updateBookingLifecycleController = async (req: Request, res: Response) => {
+  try {
+    const booking = await bookingFlowService.updateBookingLifecycle(
+      req.params.bookingId,
+      req.body.nextState,
+      req.body.actor ?? 'admin',
+      req.body.reason,
+      req.body.metadata
+    );
+    return res.status(200).json({ success: true, booking });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error instanceof Error ? error.message : 'Lifecycle update failed' });
+  }
+};
+
+export const bookingMetricsController = async (_req: Request, res: Response) => {
+  const metrics = await bookingFlowService.getOperationalMetrics();
+  return res.status(200).json({ success: true, metrics });
+};
