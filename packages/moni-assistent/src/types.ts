@@ -4,7 +4,7 @@ export type BookingStatus =
   | "priced"
   | "assigned"
   | "accepted"
-  | "on_route"
+  | "en_route"
   | "arrived"
   | "in_progress"
   | "completed"
@@ -53,7 +53,7 @@ export interface DriverStatusUpdate {
   driverId: string;
   status:
     | "accepted"
-    | "on_route"
+    | "en_route"
     | "arrived"
     | "in_progress"
     | "completed"

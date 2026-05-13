@@ -122,7 +122,7 @@ export class NotificationService {
         channels: ['in_app', 'push'],
         title: 'Driver assigned',
         body: `Driver assignment confirmed for booking ${input.bookingId}.`,
-        data: { bookingStatus: 'driver_assigned' },
+        data: { bookingStatus: 'assigned' },
       }),
       driver: this.queue({
         bookingId: input.bookingId,
@@ -132,7 +132,7 @@ export class NotificationService {
         channels: ['push', 'in_app'],
         title: 'New dispatch assignment',
         body: `Dispatch assigned booking ${input.bookingId}.`,
-        data: { bookingStatus: 'driver_assigned' },
+        data: { bookingStatus: 'assigned' },
       }),
       admin: this.queue({
         bookingId: input.bookingId,
@@ -142,7 +142,7 @@ export class NotificationService {
         channels: ['in_app', 'push'],
         title: 'Dispatch assignment sent',
         body: `Driver assignment push has been issued for booking ${input.bookingId}.`,
-        data: { bookingStatus: 'driver_assigned' },
+        data: { bookingStatus: 'assigned' },
       }),
     };
   }
