@@ -69,7 +69,16 @@ router.post('/drivers/:driverId/restore-assignments', (req, res) => {
 
 router.post('/bookings/:bookingId/status', (req, res, next) => {
   try {
-    const booking = realtimeOrchestratorService.transitionStatus({ bookingId: req.params.bookingId, ...req.body });
+    const requestedStatus = typeof req.body?.status === 'string' ? req.body.status : req.body?.nextStatus;
+    const actor = typeof req.body?.actor === 'string' ? req.body.actor : undefined;
+    if (!requestedStatus || !actor) {
+      return res.status(400).json({ message: 'status and actor are required' });
+    }
+    const booking = realtimeOrchestratorService.transitionStatus({
+      bookingId: req.params.bookingId,
+      status: requestedStatus,
+      actor
+    });
     res.json({ booking });
   } catch (error) {
     next(error);
