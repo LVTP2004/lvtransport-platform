@@ -9,8 +9,24 @@ import bookingRoutes from './booking.routes.js';
 import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
 import { listOperationalIncidents } from '../../utils/operational-monitoring.js';
 import { integrationReadinessService } from '../../services/integration-readiness.service.js';
+import { HttpError } from '../../utils/http-error.js';
 
 const router = Router();
+const ASSIGNMENT_ERROR_STATUS: Record<string, { statusCode: number; message: string }> = {
+  BOOKING_NOT_FOUND: { statusCode: 404, message: 'Booking not found' },
+  BOOKING_ALREADY_ASSIGNED: { statusCode: 409, message: 'Booking already assigned to another driver' },
+  DRIVER_NOT_AVAILABLE: { statusCode: 409, message: 'Driver is not available for assignment' },
+  INVALID_ASSIGNMENT_STATE: { statusCode: 409, message: 'Booking assignment state is invalid' },
+  INVALID_TRANSITION: { statusCode: 409, message: 'Invalid assignment transition' },
+  DUPLICATE_ASSIGNMENT_ATTEMPT: { statusCode: 409, message: 'Duplicate assignment attempt' },
+};
+
+const normalizeAssignmentError = (error: unknown): Error => {
+  if (!(error instanceof Error)) return new HttpError(500, 'An unexpected error occurred', 'INTERNAL_SERVER_ERROR');
+  const mapped = ASSIGNMENT_ERROR_STATUS[error.message];
+  if (!mapped) return error;
+  return new HttpError(mapped.statusCode, mapped.message, error.message);
+};
 router.use(healthRoutes);
 router.use('/payments', paymentRoutes);
 router.use(trackingRoutes);
@@ -23,7 +39,7 @@ router.post('/bookings/:bookingId/assign-driver', (req, res, next) => {
     const booking = realtimeOrchestratorService.assignDriver({ bookingId: req.params.bookingId, ...req.body });
     res.json({ booking });
   } catch (error) {
-    next(error);
+    next(normalizeAssignmentError(error));
   }
 });
 
