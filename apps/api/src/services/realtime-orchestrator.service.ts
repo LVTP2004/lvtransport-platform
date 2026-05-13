@@ -410,13 +410,30 @@ export const realtimeOrchestratorService = {
     return booking;
   },
 
-  transitionStatus(params: { bookingId: string; status: string; actor: string }): BookingRecord {
+  transitionStatus(params: { bookingId: string; status: string; actor: string; expectedVersion?: number; idempotencyKey?: string; eventAt?: string }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     const nextStatus = toCanonicalBookingStatus(params.status);
     const actor = params.actor as BookingActor;
     if (!['customer', 'admin', 'driver', 'system'].includes(actor)) throw new Error('INVALID_ACTOR');
+    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+      appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'Duplicate transition suppressed by idempotency key', metadata: { idempotencyKey: params.idempotencyKey, requestedStatus: nextStatus } });
+      return booking;
+    }
+    if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) {
+      appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor, at: new Date().toISOString(), note: 'Version mismatch transition rejected', metadata: { expectedVersion: params.expectedVersion, currentVersion: booking.version, requestedStatus: nextStatus } });
+      throw new Error('STALE_EVENT_REJECTED');
+    }
+    if (params.eventAt) {
+      const eventAtMs = new Date(params.eventAt).getTime();
+      const bookingUpdatedAtMs = new Date(booking.updatedAt).getTime();
+      if (Number.isFinite(eventAtMs) && eventAtMs < bookingUpdatedAtMs) {
+        appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor, at: new Date().toISOString(), note: 'Out-of-order lifecycle event rejected', metadata: { eventAt: params.eventAt, bookingUpdatedAt: booking.updatedAt, requestedStatus: nextStatus } });
+        throw new Error('STALE_EVENT_REJECTED');
+      }
+    }
     if (booking.status === nextStatus) {
       appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'No-op transition ignored', metadata: { requestedStatus: nextStatus } });
+      if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
       return booking;
     }
     if (!allowedTransitions[booking.status].has(nextStatus)) {
@@ -426,6 +443,7 @@ export const realtimeOrchestratorService = {
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: nextStatus, previousStatus, actor, at: now, metadata: { requestedStatus: params.status } });
+    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
     if (TERMINAL_BOOKING_STATUSES.has(nextStatus)) releaseDriver(booking.assignedDriverId);
     else reconcileDriverLifecycleState(booking);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
