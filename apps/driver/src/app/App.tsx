@@ -61,7 +61,7 @@ export function App() {
   };
 
   return <main className="min-h-screen bg-zinc-950 p-6 text-white">
-    <h1 className="text-2xl font-bold text-amber-300">Driver Dispatch Realtime</h1>
+    <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-12 w-auto rounded-lg border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-2xl font-bold text-amber-300">Driver Dispatch Realtime</h1></div>
     <div className="mt-3 rounded-xl border border-zinc-700 bg-zinc-900 p-4">
       <button className="rounded bg-amber-500 px-3 py-1 text-black" onClick={() => setLiveLocation((v) => !v)}>{liveLocation ? 'Disable live location' : 'Enable live location'}</button>
       <p className="mt-2 text-sm text-zinc-300">{gpsMessage}</p>
