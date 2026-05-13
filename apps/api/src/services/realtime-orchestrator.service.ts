@@ -3,6 +3,7 @@ import { EventEmitter } from 'node:events';
 import type { WebSocket } from 'ws';
 import { operationalAnalyticsService } from './operational-analytics.service.js';
 import { recordOperationalIncident, summarizeOperationalIncidents } from '../utils/operational-monitoring.js';
+import { operationalObservabilityService } from './operational-observability.service.js';
 
 import { CANONICAL_BOOKING_LIFECYCLE, CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, toCanonicalBookingStatus, type CanonicalBookingLifecycleStatus } from '../types/lifecycle.js';
 
@@ -245,6 +246,7 @@ export const realtimeOrchestratorService = {
       for (const socket of websocketClients) {
         const client = socket as RealtimeSocket;
         if (client.isAlive === false) {
+          operationalObservabilityService.trackRealtimeEvent({ type: 'heartbeat_timeout', socketId: String((socket as unknown as { _socket?: { remoteAddress?: string; remotePort?: number } })._socket?.remoteAddress ?? 'unknown') });
           socket.terminate();
           websocketClients.delete(socket);
           continue;
@@ -260,10 +262,15 @@ export const realtimeOrchestratorService = {
     client.isAlive = true;
     websocketClients.add(socket);
     socket.on('pong', () => { client.isAlive = true; });
-    socket.on('close', () => websocketClients.delete(socket));
+    socket.on('close', () => {
+      operationalObservabilityService.trackRealtimeEvent({ type: 'disconnect', socketId: String((socket as unknown as { _socket?: { remoteAddress?: string; remotePort?: number } })._socket?.remoteAddress ?? 'unknown') });
+      websocketClients.delete(socket);
+    });
     const lastSequence = parseLastSequenceFromUrl((socket as unknown as { url?: string }).url);
+    operationalObservabilityService.trackRealtimeEvent({ type: lastSequence ? 'reconnect' : 'connect', socketId: String((socket as unknown as { _socket?: { remoteAddress?: string; remotePort?: number } })._socket?.remoteAddress ?? 'unknown'), lastSequence });
     if (lastSequence) {
       recordOperationalIncident({ code: 'REALTIME_RECONNECT_REPLAY', domain: 'reconnect', severity: 'info', message: 'Client requested realtime replay after reconnect', context: { lastSequence } });
+      operationalObservabilityService.trackRealtimeEvent({ type: 'replay_requested', socketId: String((socket as unknown as { _socket?: { remoteAddress?: string; remotePort?: number } })._socket?.remoteAddress ?? 'unknown'), lastSequence });
       for (const replayEvent of eventReplayBuffer) if ((JSON.parse(replayEvent) as { sequence?: number }).sequence! > lastSequence) socket.send(replayEvent);
     }
     socket.send(JSON.stringify({ event: 'booking.snapshot', payload: Array.from(bookings.values()), sequence: eventSequence }));
@@ -417,10 +424,12 @@ export const realtimeOrchestratorService = {
     if (!['customer', 'admin', 'driver', 'system'].includes(actor)) throw new Error('INVALID_ACTOR');
     if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
       appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'Duplicate transition suppressed by idempotency key', metadata: { idempotencyKey: params.idempotencyKey, requestedStatus: nextStatus } });
+      operationalObservabilityService.trackLifecycleMutation({ bookingId: booking.id, actor, from: booking.status, to: nextStatus, version: booking.version, result: 'duplicate', reason: 'idempotency_key' });
       return booking;
     }
     if (typeof params.expectedVersion === 'number' && params.expectedVersion !== booking.version) {
       appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor, at: new Date().toISOString(), note: 'Version mismatch transition rejected', metadata: { expectedVersion: params.expectedVersion, currentVersion: booking.version, requestedStatus: nextStatus } });
+      operationalObservabilityService.trackLifecycleMutation({ bookingId: booking.id, actor, from: booking.status, to: nextStatus, version: booking.version, result: 'stale', reason: 'version_mismatch' });
       throw new Error('STALE_EVENT_REJECTED');
     }
     if (params.eventAt) {
@@ -438,6 +447,7 @@ export const realtimeOrchestratorService = {
     }
     if (!allowedTransitions[booking.status].has(nextStatus)) {
       appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor, at: new Date().toISOString(), note: 'Invalid lifecycle transition blocked', metadata: { requestedStatus: nextStatus } });
+      operationalObservabilityService.trackLifecycleMutation({ bookingId: booking.id, actor, from: booking.status, to: nextStatus, version: booking.version, result: 'rejected', reason: 'invalid_transition' });
       throw new Error('INVALID_TRANSITION');
     }
     const now = new Date().toISOString();
