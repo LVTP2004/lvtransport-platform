@@ -55,3 +55,39 @@ test('transition status rejects out-of-order realtime events', () => {
     /STALE_EVENT_REJECTED/
   );
 });
+
+test('driver assignment response rejects stale version updates', () => {
+  const booking = realtimeOrchestratorService.createBooking({ pickup: 'P6', destination: 'D6' });
+  realtimeOrchestratorService.updateDriverState({ driverId: 'driver-stale-version', state: 'available' });
+  realtimeOrchestratorService.assignDriver({ bookingId: booking.id, driverId: 'driver-stale-version', driverName: 'Driver Stale Version' });
+
+  assert.throws(
+    () => realtimeOrchestratorService.driverRespondToAssignment({ bookingId: booking.id, driverId: 'driver-stale-version', action: 'accept', expectedVersion: booking.version - 1 }),
+    /STALE_EVENT_REJECTED/
+  );
+});
+
+test('driver assignment response suppresses duplicate idempotency replay', () => {
+  const booking = realtimeOrchestratorService.createBooking({ pickup: 'P7', destination: 'D7' });
+  realtimeOrchestratorService.updateDriverState({ driverId: 'driver-idempotent-response', state: 'available' });
+  const assigned = realtimeOrchestratorService.assignDriver({ bookingId: booking.id, driverId: 'driver-idempotent-response', driverName: 'Driver Idempotent Response' });
+
+  const accepted = realtimeOrchestratorService.driverRespondToAssignment({
+    bookingId: booking.id,
+    driverId: 'driver-idempotent-response',
+    action: 'accept',
+    expectedVersion: assigned.version,
+    idempotencyKey: `driver-response-${booking.id}`
+  });
+  const replay = realtimeOrchestratorService.driverRespondToAssignment({
+    bookingId: booking.id,
+    driverId: 'driver-idempotent-response',
+    action: 'accept',
+    expectedVersion: accepted.version,
+    idempotencyKey: `driver-response-${booking.id}`
+  });
+
+  assert.equal(accepted.status, 'accepted');
+  assert.equal(replay.version, accepted.version);
+  assert.equal(replay.status, 'accepted');
+});
