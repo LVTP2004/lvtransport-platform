@@ -382,12 +382,21 @@ export const realtimeOrchestratorService = {
   driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject' }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (booking.assignedDriverId !== params.driverId) throw new Error('DRIVER_MISMATCH');
+    if (TERMINAL_BOOKING_STATUSES.has(booking.status)) throw new Error('BOOKING_IMMUTABLE');
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     if (params.action === 'reject') {
+      if (!allowedTransitions[previousStatus].has('cancelled')) {
+        appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor: 'driver', at: now, note: 'Driver rejection blocked due to immutable lifecycle state', metadata: { requestedStatus: 'cancelled' } });
+        throw new Error('INVALID_TRANSITION');
+      }
       booking.status = 'cancelled'; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: 'cancelled', previousStatus, actor: 'driver', at: now, note: 'Driver rejected assignment' });
       releaseDriver(params.driverId);
     } else {
+      if (!allowedTransitions[previousStatus].has('accepted')) {
+        appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor: 'driver', at: now, note: 'Driver acceptance blocked due to invalid lifecycle state', metadata: { requestedStatus: 'accepted' } });
+        throw new Error('INVALID_TRANSITION');
+      }
       if (booking.assignmentExpiresAt && new Date(booking.assignmentExpiresAt).getTime() < Date.now()) throw new Error('ASSIGNMENT_EXPIRED');
       booking.status = 'accepted'; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: 'accepted', previousStatus, actor: 'driver', at: now, note: 'Driver accepted assignment' });
       const driver = driverStates.get(params.driverId);
@@ -498,7 +507,7 @@ export const realtimeOrchestratorService = {
   },
 
   restoreDriverAssignments(driverId: string): { recoveredBookings: BookingRecord[]; driverState: DriverRealtimeState | null } {
-    const recovered = Array.from(bookings.values()).filter((booking) => booking.assignedDriverId === driverId && ['assigned', 'en_route', 'arrived', 'in_progress'].includes(toCanonicalBookingStatus(booking.status)));
+    const recovered = Array.from(bookings.values()).filter((booking) => booking.assignedDriverId === driverId && ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(toCanonicalBookingStatus(booking.status)));
     const latest = recovered[recovered.length - 1];
     if (latest) this.updateDriverState({ driverId, state: latest.status === 'accepted' ? 'en_route' : (latest.status === 'assigned' ? 'assigned' : (latest.status as DriverState)), bookingId: latest.id });
     operationalAnalyticsService.rebuildFromSnapshots(Array.from(bookings.values()), Array.from(driverStates.values()));
