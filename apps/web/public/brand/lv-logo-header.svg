@@ -1,0 +1,11 @@
+<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 960 320' role='img' aria-labelledby='title desc'>
+  <title id='title'>LV Transport official logo</title><desc id='desc'>Gold car silhouette with LV Transport wordmark on black background.</desc>
+  <rect width='960' height='320' fill='#050505'/>
+  <g fill='none' stroke='#d4af37' stroke-linecap='round'>
+    <path d='M140 160 C260 95 520 85 780 145' stroke-width='9'/>
+    <path d='M275 157 C355 98 520 94 690 146' stroke-width='5' opacity='0.95'/>
+    <path d='M120 198 L815 188' stroke-width='6'/>
+    <path d='M126 198 C152 172 186 172 214 198' stroke-width='6'/>
+  </g>
+  <text x='480' y='260' text-anchor='middle' fill='#d4af37' font-size='84' font-family='Montserrat, Arial, sans-serif' letter-spacing='10' font-weight='700'>LV TRANSPORT</text>
+</svg>
