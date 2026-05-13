@@ -47,7 +47,7 @@ export function App() {
         setBookings(optimistic);
         const response = await fetch(`${API_BASE}/bookings/${booking.id}/status`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: `driver-${booking.id}-${booking.version}` })
+            body: JSON.stringify({ status: nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: `driver-${booking.id}-${booking.version}` })
         });
         if (!response.ok)
             refresh();
