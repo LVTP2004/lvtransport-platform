@@ -12,6 +12,16 @@ export type BookingLifecycleStatus = CanonicalBookingLifecycleStatus;
 export type BookingActor = 'customer' | 'admin' | 'driver' | 'system';
 
 export type BookingTimelineEntry = { status: BookingLifecycleStatus; actor: BookingActor; at: string; note?: string };
+export type LifecycleEventEntry = {
+  id: string;
+  type: 'transition' | 'duplicate_event' | 'invalid_transition' | 'sync_diagnostic' | 'assignment_attempt' | 'snapshot';
+  status: BookingLifecycleStatus;
+  previousStatus?: BookingLifecycleStatus;
+  actor: BookingActor;
+  at: string;
+  note?: string;
+  metadata?: Record<string, unknown>;
+};
 
 export type BookingRecord = {
   id: string;
@@ -29,6 +39,7 @@ export type BookingRecord = {
   assignmentExpiresAt?: string;
   version: number;
   timeline: BookingTimelineEntry[];
+  lifecycleEventLog: LifecycleEventEntry[];
   createdAt: string;
   updatedAt: string;
   tracking: {
@@ -128,6 +139,14 @@ const calculateDistanceKm = (from: { lat: number; lng: number }, to: { lat: numb
   return 2 * earthRadiusKm * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 };
 const estimateEtaMinutes = (distanceKm: number | null) => distanceKm === null ? null : Math.max(1, Math.round((distanceKm / 32) * 60));
+const appendLifecycleEvent = (
+  booking: BookingRecord,
+  event: Omit<LifecycleEventEntry, 'id'>
+) => {
+  const entry: LifecycleEventEntry = { id: randomUUID(), ...event, metadata: event.metadata ? JSON.parse(JSON.stringify(event.metadata)) as Record<string, unknown> : undefined };
+  booking.lifecycleEventLog.push(entry);
+  if (entry.type === 'transition') booking.timeline.push({ status: entry.status, actor: entry.actor, at: entry.at, note: entry.note });
+};
 
 const emit = (event: string, payload: unknown) => {
   const serializedPayload = JSON.stringify(payload);
@@ -209,7 +228,7 @@ const transitionBySystemRule = (booking: BookingRecord, nextStatus: BookingLifec
   booking.status = nextStatus;
   booking.version += 1;
   booking.updatedAt = now;
-  booking.timeline.push({ status: nextStatus, actor: 'system', at: now, note });
+  appendLifecycleEvent(booking, { type: 'transition', status: nextStatus, previousStatus, actor: 'system', at: now, note, metadata: { source: 'automation_rule' } });
   operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
   emit('booking.updated', booking);
   emit('booking.lifecycle.changed', booking);
@@ -257,9 +276,10 @@ export const realtimeOrchestratorService = {
     const scheduledAt = input.scheduledAt && !Number.isNaN(new Date(input.scheduledAt).getTime()) ? input.scheduledAt : now;
     const booking: BookingRecord = {
       id: randomUUID(), code: createBookingCode(), customerName: input.customerName?.trim() || 'Guest rider', pickup: input.pickup, destination: input.destination, serviceType: input.serviceType ?? 'standard', scheduledAt, paymentStatus: input.paymentStatus ?? 'pending',
-      status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], createdAt: now, updatedAt: now,
+      status: 'pending', version: 1, timeline: [{ status: 'pending', actor: 'customer', at: now, note: 'Booking created' }], lifecycleEventLog: [], createdAt: now, updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
+    appendLifecycleEvent(booking, { type: 'snapshot', status: 'pending', actor: 'customer', at: now, note: 'Booking created', metadata: { version: 1 } });
     bookings.set(booking.id, booking); operationalAnalyticsService.trackBookingCreated(booking); emit('booking.created', booking); this.runAutomationSweep(); emitAdminAnalytics(); return booking;
   },
 
@@ -295,11 +315,13 @@ export const realtimeOrchestratorService = {
       assignmentExpiresAt: undefined,
       version: 1,
       timeline: [{ status: input.status ?? 'pending', actor: 'system', at: now, note: 'Hydrated from booking flow service' }],
+      lifecycleEventLog: [],
       createdAt: now,
       updatedAt: now,
       tracking: { etaMinutes: null, lastKnownLocation: null, routePolyline: null, gpsProvider: 'future', updatedAt: now }
     };
 
+    appendLifecycleEvent(booking, { type: 'snapshot', status: booking.status, actor: 'system', at: now, note: 'Hydrated from booking flow service', metadata: { source: 'booking_flow_hydration' } });
     bookings.set(booking.id, booking);
     operationalAnalyticsService.trackBookingCreated(booking);
     emit('booking.created', booking);
@@ -315,23 +337,34 @@ export const realtimeOrchestratorService = {
     try {
       const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
       const canonicalStatus = toCanonicalBookingStatus(booking.status);
-      if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
-      if (booking.assignedDriverId === params.driverId && canonicalStatus === 'assigned') return booking;
+      if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+        appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor: 'admin', at: new Date().toISOString(), note: 'Duplicate assignment prevented by idempotency key', metadata: { idempotencyKey: params.idempotencyKey } });
+        return booking;
+      }
+      if (booking.assignedDriverId === params.driverId && canonicalStatus === 'assigned') {
+        appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor: 'admin', at: new Date().toISOString(), note: 'Duplicate assignment prevented for same driver', metadata: { driverId: params.driverId } });
+        return booking;
+      }
       if (!booking.assignedDriverId && canonicalStatus === 'assigned') throw new Error('INVALID_ASSIGNMENT_STATE');
       if (booking.assignedDriverId && booking.assignedDriverId !== params.driverId && ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(canonicalStatus)) throw new Error('BOOKING_ALREADY_ASSIGNED');
       const driver = driverStates.get(params.driverId);
       if (!driver || driver.state !== 'available' || driver.activeBookingId) throw new Error('DRIVER_NOT_AVAILABLE');
       const attemptKey = createAssignmentAttemptKey(params.bookingId, params.driverId);
       const lastAttemptAt = assignmentAttemptLedger.get(attemptKey);
-      if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && canonicalStatus === 'assigned') return booking;
+      if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && canonicalStatus === 'assigned') {
+        appendLifecycleEvent(booking, { type: 'assignment_attempt', status: booking.status, actor: 'admin', at: new Date().toISOString(), note: 'Assignment attempt throttled', metadata: { driverId: params.driverId, attemptKey, lastAttemptAt } });
+        return booking;
+      }
       if (!['pending', 'assigned'].includes(canonicalStatus)) {
         reportLifecycleAnomaly(booking, booking.status, 'assigned');
+        appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor: 'admin', at: new Date().toISOString(), note: 'Invalid assignment transition blocked', metadata: { requestedStatus: 'assigned', driverId: params.driverId } });
         throw new Error('INVALID_TRANSITION');
       }
       const now = new Date().toISOString();
       booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName; booking.assignmentOfferedAt = now; booking.assignmentExpiresAt = new Date(Date.now() + ASSIGNMENT_TTL_MS).toISOString();
       booking.status = 'assigned'; booking.version += 1; booking.updatedAt = now;
-      booking.timeline.push({ status: 'assigned', actor: 'admin', at: now, note: `Driver ${params.driverName} assigned` });
+      appendLifecycleEvent(booking, { type: 'transition', status: 'assigned', previousStatus: canonicalStatus, actor: 'admin', at: now, note: `Driver ${params.driverName} assigned`, metadata: { driverId: params.driverId, assignmentExpiresAt: booking.assignmentExpiresAt } });
+      appendLifecycleEvent(booking, { type: 'assignment_attempt', status: 'assigned', actor: 'admin', at: now, note: 'Assignment attempt succeeded', metadata: { driverId: params.driverId, attemptKey } });
       driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
       if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
       assignmentAttemptLedger.set(attemptKey, now);
@@ -352,11 +385,11 @@ export const realtimeOrchestratorService = {
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     if (params.action === 'reject') {
-      booking.status = 'cancelled'; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: 'cancelled', actor: 'driver', at: now, note: 'Driver rejected assignment' });
+      booking.status = 'cancelled'; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: 'cancelled', previousStatus, actor: 'driver', at: now, note: 'Driver rejected assignment' });
       releaseDriver(params.driverId);
     } else {
       if (booking.assignmentExpiresAt && new Date(booking.assignmentExpiresAt).getTime() < Date.now()) throw new Error('ASSIGNMENT_EXPIRED');
-      booking.status = 'accepted'; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: 'accepted', actor: 'driver', at: now, note: 'Driver accepted assignment' });
+      booking.status = 'accepted'; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: 'accepted', previousStatus, actor: 'driver', at: now, note: 'Driver accepted assignment' });
       const driver = driverStates.get(params.driverId);
       if (driver) driverStates.set(params.driverId, { ...driver, state: 'en_route', activeBookingId: booking.id, lastUpdatedAt: now });
     }
@@ -373,11 +406,17 @@ export const realtimeOrchestratorService = {
     const nextStatus = toCanonicalBookingStatus(params.status);
     const actor = params.actor as BookingActor;
     if (!['customer', 'admin', 'driver', 'system'].includes(actor)) throw new Error('INVALID_ACTOR');
-    if (booking.status === nextStatus) return booking;
-    if (!allowedTransitions[booking.status].has(nextStatus)) throw new Error('INVALID_TRANSITION');
+    if (booking.status === nextStatus) {
+      appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'No-op transition ignored', metadata: { requestedStatus: nextStatus } });
+      return booking;
+    }
+    if (!allowedTransitions[booking.status].has(nextStatus)) {
+      appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor, at: new Date().toISOString(), note: 'Invalid lifecycle transition blocked', metadata: { requestedStatus: nextStatus } });
+      throw new Error('INVALID_TRANSITION');
+    }
     const now = new Date().toISOString();
     const previousStatus = booking.status;
-    booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; booking.timeline.push({ status: nextStatus, actor, at: now });
+    booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: nextStatus, previousStatus, actor, at: now, metadata: { requestedStatus: params.status } });
     if (TERMINAL_BOOKING_STATUSES.has(nextStatus)) releaseDriver(booking.assignedDriverId);
     else reconcileDriverLifecycleState(booking);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
@@ -447,7 +486,7 @@ export const realtimeOrchestratorService = {
       if (booking.status !== 'assigned' || !booking.assignmentExpiresAt) continue;
       if (new Date(booking.assignmentExpiresAt).getTime() > now) continue;
       booking.status = 'failed'; booking.version += 1; booking.updatedAt = new Date().toISOString();
-      booking.timeline.push({ status: 'failed', actor: 'system', at: booking.updatedAt, note: 'Assignment timed out and was recycled' });
+      appendLifecycleEvent(booking, { type: 'transition', status: 'failed', previousStatus: 'assigned', actor: 'system', at: booking.updatedAt, note: 'Assignment timed out and was recycled', metadata: { assignmentExpiresAt: booking.assignmentExpiresAt } });
       releaseDriver(booking.assignedDriverId);
       released.push(booking.id);
       operationalAnalyticsService.trackBookingTransition(booking, 'assigned');
@@ -489,6 +528,10 @@ export const realtimeOrchestratorService = {
     const isRapid = ledger && capturedMs - ledger.at < TELEMETRY_MIN_INTERVAL_MS;
     const isDuplicateCoordinate = ledger && Math.abs(ledger.lat - params.lat) < 0.00001 && Math.abs(ledger.lng - params.lng) < 0.00001;
     telemetryIngestLedger.set(params.driverId, { at: capturedMs, lat: params.lat, lng: params.lng });
+    if (isRapid && isDuplicateCoordinate && next.activeBookingId) {
+      const booking = bookings.get(next.activeBookingId);
+      if (booking) appendLifecycleEvent(booking, { type: 'sync_diagnostic', status: booking.status, actor: 'system', at: now, note: 'Suppressed duplicate realtime coordinate', metadata: { driverId: params.driverId, lat: params.lat, lng: params.lng } });
+    }
     if (!isRapid || !isDuplicateCoordinate) {
       emit('driver.location.updated', { driverId: params.driverId, bookingId: next.activeBookingId, location: next.location, at: now });
     }
@@ -512,7 +555,7 @@ export const realtimeOrchestratorService = {
         if (!hasFinalized) {
           booking.version += 1;
           booking.updatedAt = new Date().toISOString();
-          booking.timeline.push({ status: 'completed', actor: 'system', at: booking.updatedAt, note: 'Operational finalization completed' });
+          appendLifecycleEvent(booking, { type: 'snapshot', status: 'completed', actor: 'system', at: booking.updatedAt, note: 'Operational finalization completed', metadata: { immutable: true, version: booking.version } });
           emit('booking.finalized', { bookingId: booking.id, synchronizedAt: booking.updatedAt, paymentState: 'ready_for_capture', pricingState: 'locked' });
           transitioned.push(booking.id);
         }
