@@ -24,6 +24,13 @@ interface BookingLifecycleSnapshot {
   lastEventFingerprint: string;
 }
 
+interface LifecycleGuardDiagnostics {
+  appliedEvents: number;
+  duplicateEventsSuppressed: number;
+  invalidTransitionsRejected: number;
+  staleEventsRejected: number;
+}
+
 
 const dedupeWindowMs = 30_000;
 
@@ -32,6 +39,12 @@ const fingerprint = (event: BookingLifecycleEvent): string => [event.bookingId, 
 export class BookingLifecycleRealtimeService {
   private readonly lifecycleByBooking = new Map<string, BookingLifecycleSnapshot>();
   private readonly dedupeCache = new Map<string, number>();
+  private readonly diagnostics: LifecycleGuardDiagnostics = {
+    appliedEvents: 0,
+    duplicateEventsSuppressed: 0,
+    invalidTransitionsRejected: 0,
+    staleEventsRejected: 0
+  };
 
   initialize(): void {
     eventBus.on(BOOKING_EVENTS.CREATED, (payload) => {
@@ -57,16 +70,26 @@ export class BookingLifecycleRealtimeService {
     return [...this.lifecycleByBooking.values()];
   }
 
+  getDiagnostics(): LifecycleGuardDiagnostics {
+    return { ...this.diagnostics };
+  }
+
   applyLifecycleEvent(event: BookingLifecycleEvent): BookingLifecycleSnapshot | null {
     this.cleanupDedupeCache();
 
     const eventFingerprint = fingerprint(event);
     if (this.dedupeCache.has(eventFingerprint)) {
+      this.diagnostics.duplicateEventsSuppressed += 1;
       return null;
     }
 
     const current = this.lifecycleByBooking.get(event.bookingId);
     if (current && !this.isProgressionAllowed(current, event)) {
+      if (event.version && event.version <= current.version) {
+        this.diagnostics.staleEventsRejected += 1;
+      } else {
+        this.diagnostics.invalidTransitionsRejected += 1;
+      }
       return null;
     }
 
@@ -82,6 +105,7 @@ export class BookingLifecycleRealtimeService {
 
     this.lifecycleByBooking.set(event.bookingId, snapshot);
     this.dedupeCache.set(eventFingerprint, Date.now());
+    this.diagnostics.appliedEvents += 1;
 
     return snapshot;
   }
