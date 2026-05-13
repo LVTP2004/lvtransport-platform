@@ -3,9 +3,10 @@ import { realtimeEvents } from "../events/names.js";
 export const trackingStates = [
   "searching_driver",
   "driver_assigned",
-  "driver_arriving",
-  "driver_waiting",
-  "on_trip",
+  "accepted",
+  "en_route",
+  "arrived",
+  "in_progress",
   "completed",
   "cancelled"
 ] as const;
