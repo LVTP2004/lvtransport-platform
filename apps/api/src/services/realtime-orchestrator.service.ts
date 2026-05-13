@@ -110,6 +110,7 @@ const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const eventReplayBuffer: string[] = [];
 const assignmentAttemptLedger = new Map<string, string>();
+const assignmentInFlight = new Set<string>();
 const telemetryIngestLedger = new Map<string, { at: number; lat: number; lng: number }>();
 const assignmentPreparationCache = new Map<string, { expiresAt: number; payload: { bookingId: string; candidates: AssignmentCandidate[] } }>();
 let eventSequence = 0;
@@ -294,31 +295,40 @@ export const realtimeOrchestratorService = {
   listDriverStates: () => Array.from(driverStates.values()),
 
   assignDriver(params: { bookingId: string; driverId: string; driverName: string; idempotencyKey?: string }): BookingRecord {
-    const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
-    if (booking.assignedDriverId && booking.assignedDriverId !== params.driverId && ['assigned', 'en_route', 'arrived', 'in_progress'].includes(toCanonicalBookingStatus(booking.status))) throw new Error('BOOKING_ALREADY_ASSIGNED');
-    const driver = driverStates.get(params.driverId);
-    if (!driver || !['available', 'completed'].includes(driver.state) || driver.activeBookingId) throw new Error('DRIVER_NOT_ASSIGNABLE');
-    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
-    const attemptKey = createAssignmentAttemptKey(params.bookingId, params.driverId);
-    const lastAttemptAt = assignmentAttemptLedger.get(attemptKey);
-    if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && booking.status === 'assigned') throw new Error('DUPLICATE_ASSIGNMENT_ATTEMPT');
-    if (!['pending', 'assigned'].includes(toCanonicalBookingStatus(booking.status))) {
-      reportLifecycleAnomaly(booking, booking.status, 'assigned');
-      throw new Error('INVALID_TRANSITION');
+    if (assignmentInFlight.has(params.bookingId)) throw new Error('DUPLICATE_ASSIGNMENT_ATTEMPT');
+    assignmentInFlight.add(params.bookingId);
+    try {
+      const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
+      const canonicalStatus = toCanonicalBookingStatus(booking.status);
+      if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) return booking;
+      if (booking.assignedDriverId === params.driverId && canonicalStatus === 'assigned') return booking;
+      if (!booking.assignedDriverId && canonicalStatus === 'assigned') throw new Error('INVALID_ASSIGNMENT_STATE');
+      if (booking.assignedDriverId && booking.assignedDriverId !== params.driverId && ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(canonicalStatus)) throw new Error('BOOKING_ALREADY_ASSIGNED');
+      const driver = driverStates.get(params.driverId);
+      if (!driver || driver.state !== 'available' || driver.activeBookingId) throw new Error('DRIVER_NOT_AVAILABLE');
+      const attemptKey = createAssignmentAttemptKey(params.bookingId, params.driverId);
+      const lastAttemptAt = assignmentAttemptLedger.get(attemptKey);
+      if (lastAttemptAt && Date.now() - new Date(lastAttemptAt).getTime() < ASSIGNMENT_TTL_MS && canonicalStatus === 'assigned') return booking;
+      if (!['pending', 'assigned'].includes(canonicalStatus)) {
+        reportLifecycleAnomaly(booking, booking.status, 'assigned');
+        throw new Error('INVALID_TRANSITION');
+      }
+      const now = new Date().toISOString();
+      booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName; booking.assignmentOfferedAt = now; booking.assignmentExpiresAt = new Date(Date.now() + ASSIGNMENT_TTL_MS).toISOString();
+      booking.status = 'assigned'; booking.version += 1; booking.updatedAt = now;
+      booking.timeline.push({ status: 'assigned', actor: 'admin', at: now, note: `Driver ${params.driverName} assigned` });
+      driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
+      if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+      assignmentAttemptLedger.set(attemptKey, now);
+      operationalAnalyticsService.trackAssignmentIssued();
+      operationalAnalyticsService.trackBookingTransition(booking);
+      operationalAnalyticsService.trackDriverState(driverStates.get(params.driverId)!);
+      emit('booking.updated', booking); emit('driver.assigned', booking); emit('driver.status.updated', driverStates.get(params.driverId)); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
+      emitAdminAnalytics();
+      return booking;
+    } finally {
+      assignmentInFlight.delete(params.bookingId);
     }
-    const now = new Date().toISOString();
-    booking.assignedDriverId = params.driverId; booking.assignedDriverName = params.driverName; booking.assignmentOfferedAt = now; booking.assignmentExpiresAt = new Date(Date.now() + ASSIGNMENT_TTL_MS).toISOString();
-    booking.status = 'assigned'; booking.version += 1; booking.updatedAt = now;
-    booking.timeline.push({ status: 'assigned', actor: 'admin', at: now, note: `Driver ${params.driverName} assigned` });
-    driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
-    assignmentAttemptLedger.set(attemptKey, now);
-    operationalAnalyticsService.trackAssignmentIssued();
-    operationalAnalyticsService.trackBookingTransition(booking);
-    operationalAnalyticsService.trackDriverState(driverStates.get(params.driverId)!);
-    emit('booking.updated', booking); emit('driver.assigned', booking); emit('driver.status.updated', driverStates.get(params.driverId)); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
-    emitAdminAnalytics();
-    return booking;
   },
 
   driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject' }): BookingRecord {
