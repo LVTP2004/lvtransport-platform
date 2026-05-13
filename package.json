@@ -8,7 +8,8 @@
     "dev:admin": "pnpm --filter @lvtransport/admin dev",
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
     "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build",
-    "typecheck": "pnpm -r --filter './apps/*' typecheck"
+    "typecheck": "pnpm -r --filter './apps/*' typecheck",
+    "ops:validate": "pnpm -r typecheck && pnpm -r build"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
