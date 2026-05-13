@@ -7,6 +7,7 @@ import notificationRoutes from './notifications.routes.js';
 import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
 import bookingsRoutes from './bookings.routes.js';
+import { incidentManagementService } from '../../services/incident-management.service.js';
 
 const router = Router();
 router.use(healthRoutes);
@@ -56,6 +57,65 @@ router.post('/bookings/:bookingId/status', (req, res, next) => {
   try {
     const booking = realtimeOrchestratorService.transitionStatus({ bookingId: req.params.bookingId, ...req.body });
     res.json({ booking });
+  } catch (error) {
+    next(error);
+  }
+});
+
+
+router.get('/incidents', (_req, res) => {
+  res.json({ incidents: incidentManagementService.listIncidents(), unresolved: incidentManagementService.listUnresolved(), timeoutRisks: incidentManagementService.detectTimeoutRisks() });
+});
+
+router.post('/incidents', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.openIncident(req.body);
+    res.status(201).json({ incident });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/incidents/:incidentId/acknowledge', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.acknowledgeIncident(req.params.incidentId, req.body.actor, req.body.note);
+    res.json({ incident });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/incidents/:incidentId/escalate', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.escalateIncident(req.params.incidentId, req.body.actor, req.body.target, req.body.note);
+    res.json({ incident });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/incidents/:incidentId/recovery-action', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.logRecoveryAction(req.params.incidentId, req.body.actor, req.body.action, req.body.note, req.body.metadata);
+    res.json({ incident });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/incidents/:incidentId/manual-override', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.applyManualOverride(req.params.incidentId, req.body.actor, req.body.authorityRole, req.body.note);
+    res.json({ incident });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.post('/incidents/:incidentId/resolve', (req, res, next) => {
+  try {
+    const incident = incidentManagementService.resolveIncident(req.params.incidentId, req.body.actor, req.body.outcome, req.body.note);
+    res.json({ incident });
   } catch (error) {
     next(error);
   }
