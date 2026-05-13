@@ -382,7 +382,7 @@ export const realtimeOrchestratorService = {
   driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject' }): BookingRecord {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (booking.assignedDriverId !== params.driverId) throw new Error('DRIVER_MISMATCH');
-    if (TERMINAL_BOOKING_STATUSES.has(booking.status)) throw new Error('BOOKING_IMMUTABLE');
+    if (TERMINAL_BOOKING_STATUSES.has(booking.status)) throw new Error('TERMINAL_STATE_IMMUTABLE');
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     if (params.action === 'reject') {
