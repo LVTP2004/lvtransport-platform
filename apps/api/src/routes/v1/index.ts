@@ -93,7 +93,10 @@ router.post('/bookings/:bookingId/status', (req, res, next) => {
     const booking = realtimeOrchestratorService.transitionStatus({
       bookingId: req.params.bookingId,
       status: requestedStatus,
-      actor
+      actor,
+      expectedVersion: typeof req.body?.expectedVersion === 'number' ? req.body.expectedVersion : undefined,
+      idempotencyKey: typeof req.body?.idempotencyKey === 'string' ? req.body.idempotencyKey : undefined,
+      eventAt: typeof req.body?.eventAt === 'string' ? req.body.eventAt : undefined
     });
     res.json({ booking });
   } catch (error) {
