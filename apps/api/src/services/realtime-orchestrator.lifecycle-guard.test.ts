@@ -10,7 +10,7 @@ test('driver cannot accept when booking already in terminal state', () => {
 
   assert.throws(
     () => realtimeOrchestratorService.driverRespondToAssignment({ bookingId: booking.id, driverId: 'driver-terminal', action: 'accept' }),
-    /BOOKING_IMMUTABLE/
+    /TERMINAL_STATE_IMMUTABLE/
   );
 });
 
