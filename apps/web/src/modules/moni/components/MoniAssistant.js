@@ -5,18 +5,20 @@ import { detectIntent } from '../logic/intents';
 import { nextMissingPrompt } from '../logic/booking-extractor';
 import { createLearningRecord, persistLearningRecord } from '../learning/controlled-learning';
 import { buildIntro, buildIntentReply } from '../templates/responses';
-const quickReplies = ['Rit boeken', 'Prijs vragen', 'Luchthaven', 'Volg mijn taxi', 'Zakelijk/VIP', 'Contact'];
+const quickReplies = ['Reserveer premium rit', 'Volg mijn rit', 'VIP onboarding', 'Business partner', 'Operator support', 'Contact dispatch'];
 export function MoniAssistant() {
     const [open, setOpen] = useState(false);
     const [minimized, setMinimized] = useState(false);
     const [input, setInput] = useState('');
+    const [presenceState, setPresenceState] = useState('idle');
     const [messages, setMessages] = useState([
-        { role: 'assistant', text: 'Moni Assistant • Premium operator\nNatuurlijk, ik help u graag met uw rit.' }
+        { role: 'assistant', text: 'Moni Ride • Premium mobility companion\nWelkom. Ik bewaak uw rit en begeleid u stap voor stap.' }
     ]);
     const [bookingData] = useState({});
     const send = (text) => {
         if (!text.trim())
             return;
+        setPresenceState('thinking');
         const language = detectLanguage(text);
         const intent = detectIntent(text);
         const replies = [buildIntro(language)];
@@ -32,8 +34,10 @@ export function MoniAssistant() {
         const learningRecord = createLearningRecord({ userText: text, replyText: assistantReply, language, intent });
         persistLearningRecord(learningRecord);
         setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: assistantReply }]);
+        setPresenceState(/probleem|issue|klacht|vertraging/i.test(text) ? 'issue' : 'confirmation');
         setInput('');
+        setTimeout(() => setPresenceState('idle'), 1400);
     };
     const panelClass = useMemo(() => `moni-panel ${open && !minimized ? 'moni-panel--open' : ''}`, [open, minimized]);
-    return (_jsxs("div", { className: 'moni-root', "aria-live": 'polite', children: [_jsx("button", { className: 'moni-fab', onClick: () => { setOpen(true); setMinimized(false); }, children: "Moni Assistant" }), _jsxs("section", { className: panelClass, children: [_jsxs("header", { className: 'moni-header', children: [_jsxs("div", { children: [_jsx("strong", { children: "Moni Assistant" }), _jsx("p", { children: "LV Transport Premium Operator" })] }), _jsxs("div", { className: 'moni-actions', children: [_jsx("button", { onClick: () => setMinimized(true), children: "\u2013" }), _jsx("button", { onClick: () => { setOpen(false); setMinimized(false); }, children: "\u00D7" })] })] }), _jsx("div", { className: 'moni-quick', children: quickReplies.map((q) => _jsx("button", { onClick: () => send(q), children: q }, q)) }), _jsx("div", { className: 'moni-messages', children: messages.map((m, i) => _jsx("p", { className: m.role === 'assistant' ? 'assistant' : 'user', children: m.text }, i)) }), _jsxs("form", { className: 'moni-input', onSubmit: (e) => { e.preventDefault(); send(input); }, children: [_jsx("input", { value: input, onChange: (e) => setInput(e.target.value), placeholder: 'Typ uw vraag...' }), _jsx("button", { type: 'submit', children: "Verstuur" })] })] })] }));
+    return (_jsxs("div", { className: 'moni-root', "aria-live": 'polite', children: [_jsx("button", { className: `moni-fab moni-fab--${presenceState}`, "aria-label": 'Open Moni Ride concierge', onClick: () => { setOpen(true); setMinimized(false); setPresenceState('listening'); }, children: _jsx("span", { className: 'moni-avatar', "aria-hidden": 'true', children: _jsxs("span", { className: 'moni-eyes', children: [_jsx("i", {}), _jsx("i", {})] }) }) }), _jsxs("section", { className: panelClass, children: [_jsxs("header", { className: 'moni-header', children: [_jsxs("div", { children: [_jsx("strong", { children: "Moni Ride" }), _jsx("p", { children: "Concierge observer \u2022 founder-operated ecosystem" })] }), _jsxs("div", { className: 'moni-actions', children: [_jsx("button", { onClick: () => { setMinimized(true); setPresenceState('idle'); }, children: "\u2013" }), _jsx("button", { onClick: () => { setOpen(false); setMinimized(false); setPresenceState('idle'); }, children: "\u00D7" })] })] }), _jsx("div", { className: 'moni-quick', children: quickReplies.map((q) => _jsx("button", { onClick: () => send(q), children: q }, q)) }), _jsx("div", { className: 'moni-messages', children: messages.map((m, i) => _jsx("p", { className: m.role === 'assistant' ? 'assistant' : 'user', children: m.text }, i)) }), _jsxs("form", { className: 'moni-input', onSubmit: (e) => { e.preventDefault(); send(input); }, children: [_jsx("input", { value: input, onFocus: () => setPresenceState('listening'), onChange: (e) => setInput(e.target.value), placeholder: 'Beschrijf uw behoefte...' }), _jsx("button", { type: 'submit', children: "Verzenden" })] })] })] }));
 }
