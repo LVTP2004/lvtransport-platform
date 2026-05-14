@@ -4,10 +4,17 @@ import { createDriverGpsService, type GpsSnapshot } from '../modules/tracking/se
 
 type Booking = { id: string; code: string; status: BookingLifecycle; assignedDriverName?: string; version: number; assignedDriverId?: string };
 
-
 const DRIVER_ID = 'drv-101';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const API_ORIGIN = new URL(API_BASE).origin;
+
+const stepLabel: Partial<Record<BookingLifecycle, string>> = {
+  assigned: 'Rit accepteren',
+  accepted: 'Onderweg naar klant',
+  en_route: 'Aangekomen',
+  arrived: 'Rit gestart',
+  in_progress: 'Rit afronden'
+};
 
 export function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -56,22 +63,22 @@ export function App() {
     if (response.ok && isImmutableLifecycleStatus(nextStatus)) setLiveLocation(false);
   };
 
-  return <main className="min-h-screen bg-zinc-950 p-4 text-white sm:p-6">
-    <div className="mx-auto max-w-3xl space-y-4">
-      <header className="rounded-2xl border border-amber-300/25 bg-black/70 p-4">
-        <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-10 w-auto rounded-md border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-xl font-semibold text-amber-300">Driver Panel</h1></div>
-        <p className="mt-2 text-sm text-zinc-300">Duidelijke ritstatus voor veilige en professionele uitvoering.</p>
+  return <main className="min-h-screen bg-lvtp-obsidian p-4 text-white sm:p-6">
+    <div className="lvtp-network absolute inset-0 pointer-events-none opacity-40" />
+    <div className="relative mx-auto max-w-3xl space-y-4">
+      <header className="lvtp-shell rounded-3xl p-5">
+        <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-10 w-auto rounded-md border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-xl font-semibold text-amber-200">Driver Operations</h1></div>
+        <p className="mt-2 text-sm text-zinc-300">Snelle lifecycle-controle voor professionele, veilige rituitvoering.</p>
       </header>
-      <section className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-        <button className="w-full rounded-lg bg-amber-500 px-3 py-2 font-medium text-black" onClick={() => setLiveLocation((v) => !v)}>{liveLocation ? 'Locatiedeling stoppen' : 'Locatiedeling starten'}</button>
+      <section className="lvtp-card rounded-2xl p-4">
+        <button className="lvtp-btn-primary w-full" onClick={() => setLiveLocation((v) => !v)}>{liveLocation ? 'Locatiedeling stoppen' : 'Locatiedeling starten'}</button>
         <p className="mt-2 text-sm text-zinc-300">{gpsMessage}</p>
       </section>
       <section className="grid gap-3">
-        {bookings.map((booking) => <article key={booking.id} className="rounded-2xl border border-zinc-700 bg-zinc-900 p-4">
-          <p className="font-semibold">{booking.code}</p>
+        {bookings.map((booking) => <article key={booking.id} className="lvtp-card rounded-2xl p-4">
+          <p className="font-semibold text-amber-100">{booking.code}</p>
           <p className="text-sm text-zinc-300">Status: {booking.status}</p>
-          {booking.status === 'assigned' && <button className="mt-3 w-full rounded-lg bg-amber-500 px-3 py-2 font-medium text-black" onClick={() => updateStatus(booking)}>Rit accepteren</button>}
-          {!['assigned', 'completed', 'cancelled', 'failed'].includes(booking.status) && <button className="mt-2 w-full rounded-lg border border-zinc-600 px-3 py-2" onClick={() => updateStatus(booking)}>Volgende status</button>}
+          {stepLabel[booking.status] && <button className="lvtp-btn-primary mt-3 w-full" onClick={() => updateStatus(booking)}>{stepLabel[booking.status]}</button>}
           {booking.status === 'completed' && <p className="mt-2 text-sm text-emerald-300">Rit correct afgerond.</p>}
         </article>)}
       </section>
