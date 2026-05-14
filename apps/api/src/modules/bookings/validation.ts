@@ -18,5 +18,13 @@ export const validateCreateBookingPayload = (payload: unknown): CreateBookingDto
     destination: candidate.destination.trim(),
     scheduleAt,
     serviceType: candidate.serviceType,
+    airportIntel: candidate.airportIntel && typeof candidate.airportIntel === 'object'
+      ? {
+          flightNumber: typeof candidate.airportIntel.flightNumber === 'string' ? candidate.airportIntel.flightNumber.trim() : undefined,
+          airline: typeof candidate.airportIntel.airline === 'string' ? candidate.airportIntel.airline.trim() : undefined,
+          terminal: typeof candidate.airportIntel.terminal === 'string' ? candidate.airportIntel.terminal.trim() : undefined,
+          arrivalAirport: typeof candidate.airportIntel.arrivalAirport === 'string' ? candidate.airportIntel.arrivalAirport.trim() : undefined,
+        }
+      : undefined,
   };
 };

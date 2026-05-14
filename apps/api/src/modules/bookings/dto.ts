@@ -42,6 +42,41 @@ export interface CreateBookingDto {
   waitTimeMin?: number;
   isNight?: boolean;
   recurringRideKey?: string;
+  airportIntel?: AirportCoordinationInput;
+}
+
+export interface AirportCoordinationInput {
+  flightNumber?: string;
+  airline?: string;
+  terminal?: string;
+  arrivalAirport?: string;
+}
+
+export type FlightDataProvider = 'flightaware' | 'aviationstack' | 'flightradar' | 'airport_feed' | 'manual';
+export type FlightOperationalStatus = 'scheduled' | 'active' | 'delayed' | 'landed' | 'cancelled' | 'unknown';
+
+export interface AirportIntelligenceState {
+  enabled: boolean;
+  synchronizedAt: string;
+  pickupBufferMin: number;
+  monitoring: {
+    providerPriority: FlightDataProvider[];
+    status: FlightOperationalStatus;
+    delayMin: number;
+    terminal: string | null;
+    gate?: string;
+    notes: string[];
+  };
+}
+
+export interface LVMessage {
+  id: string;
+  at: string;
+  channel: 'customer' | 'driver' | 'admin' | 'moni';
+  messageType: 'flight_delay_detected' | 'pickup_timing_adjusted' | 'driver_update' | 'airport_instruction' | 'lifecycle_update' | 'premium_confirmation';
+  tone: 'calm' | 'operational' | 'reassuring';
+  content: string;
+  metadata?: Record<string, unknown>;
 }
 
 export interface BookingRecord extends CreateBookingDto {
@@ -79,5 +114,11 @@ export interface BookingRecord extends CreateBookingDto {
       reason?: string;
       metadata?: Record<string, unknown>;
     }>;
+  };
+  airportIntelligence?: AirportIntelligenceState;
+  lvMessenger: {
+    threadId: string;
+    messages: LVMessage[];
+    lastMessageAt: string;
   };
 }
