@@ -2,6 +2,43 @@
 @tailwind components;
 @tailwind utilities;
 
+.premium-shell {
+  background: radial-gradient(circle at 18% 8%, rgba(212, 175, 55, 0.15), transparent 30%), radial-gradient(circle at 80% 22%, rgba(212, 175, 55, 0.12), transparent 34%), linear-gradient(180deg, #030304 0%, #070708 100%);
+  position: relative;
+}
+.premium-shell::before { content: ''; position: fixed; inset: 0; pointer-events: none; background-image: url('/brand/world-map-gold.svg'); opacity: .24; background-size: cover; background-position: center; mix-blend-mode: screen; }
+
+@layer components {
+  .glass-panel { @apply border border-lv-gold/30 bg-black/40 shadow-gold-md backdrop-blur-2xl; }
+  .field-wrap { @apply block rounded-2xl border border-lv-gold/25 bg-black/40 p-3; }
+  .field-wrap span { @apply text-xs uppercase tracking-[0.18em] text-lv-champagne; }
+  .field-wrap input { @apply mt-2 w-full rounded-xl border border-white/10 bg-white/5 px-3 py-3 text-sm outline-none transition focus:border-lv-gold/60; }
+  .nav-btn { @apply rounded-lg border border-lv-gold/35 px-3 py-2 text-sm transition hover:bg-lv-gold/20; }
+  .nav-btn-muted { @apply rounded-lg border border-white/25 px-3 py-2 text-xs text-lv-mist transition hover:border-lv-gold/45 hover:text-white; }
+  .mobile-menu { @apply rounded-2xl border border-lv-gold/30 bg-black/70 p-3 backdrop-blur-xl animate-pulse; }
+  .mobile-link { @apply block w-full rounded-lg px-3 py-2 text-left text-sm hover:bg-lv-gold/20; }
+  .service-card { @apply transition duration-300 hover:-translate-y-1 hover:border-lv-gold/60 hover:shadow-gold-md; }
+  .route-carousel { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(220px, 1fr); gap: .75rem; overflow: hidden; animation: glide 30s linear infinite; }
+  .route-card { @apply rounded-2xl border border-lv-gold/25 bg-black/35 p-4; }
+  .hero-panel { box-shadow: inset 0 1px 0 rgba(255,255,255,.1), 0 0 40px rgba(212,175,55,.13); }
+  .moni-root { @apply fixed bottom-4 right-4 z-50; }
+  .moni-fab { @apply rounded-full border border-lv-gold/40 bg-black/80 px-5 py-3 font-semibold text-lv-champagne shadow-gold-md; }
+  .moni-panel { @apply pointer-events-none mt-3 w-[92vw] max-w-md rounded-2xl border border-lv-gold/30 bg-lv-black/95 opacity-0 shadow-gold-md transition-all; }
+  .moni-panel--open { @apply pointer-events-auto opacity-100; }
+  .moni-header { @apply flex items-center justify-between border-b border-lv-gold/20 p-3 text-sm; }
+  .moni-header p { @apply text-xs text-lv-mist; }
+  .moni-actions button { @apply ml-2 rounded bg-white/10 px-2 py-1; }
+  .moni-quick { @apply flex flex-wrap gap-2 p-3; }
+  .moni-quick button { @apply rounded-full border border-lv-gold/40 px-3 py-1 text-xs; }
+  .moni-messages { @apply max-h-64 space-y-2 overflow-y-auto px-3 pb-2 text-sm; }
+  .moni-messages .assistant { @apply rounded-xl bg-white/10 p-2; white-space: pre-line; }
+  .moni-messages .user { @apply ml-10 rounded-xl bg-lv-gold/20 p-2 text-right; }
+  .moni-input { @apply flex gap-2 border-t border-lv-gold/20 p-3; }
+  .moni-input input { @apply min-w-0 flex-1 rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm; }
+  .moni-input button { @apply rounded-xl bg-lv-gold px-3 py-2 text-sm font-medium text-black; }
+}
+
+@keyframes glide { from { transform: translateX(0); } to { transform: translateX(-50%); } }
 .premium-shell { background: #040404; position: relative; overflow-x: hidden; }
 .world-map-bg { position: fixed; inset: 0; z-index: 0; pointer-events: none; background:
 radial-gradient(circle at 20% 25%, rgba(205,169,95,.2), transparent 28%),
