@@ -19,6 +19,28 @@
   background-position: center;
   mix-blend-mode: screen;
 }
+.boot-splash {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(circle at 50% 45%, rgba(212, 175, 55, 0.08), transparent 40%), #020203;
+  animation: bootFadeOut .7s ease 1.4s forwards;
+}
+.boot-splash__glow {
+  position: absolute;
+  width: 260px;
+  height: 260px;
+  border-radius: 9999px;
+  filter: blur(30px);
+  background: radial-gradient(circle, rgba(212,175,55,.25), rgba(212,175,55,0));
+  animation: bootPulse 2s ease-in-out infinite;
+}
+.boot-splash__logo { width: min(40vw, 210px); z-index: 2; animation: bootRise .9s ease both; }
+.boot-splash__caption { margin-top: 20px; letter-spacing: .24em; text-transform: uppercase; font-size: 11px; color: #d8bc72; opacity: .8; z-index: 2; }
 
 @layer components {
   .glass-panel { @apply relative z-10 border border-lv-gold/30 bg-black/45 shadow-gold-md backdrop-blur-2xl; }
@@ -80,6 +102,9 @@
 }
 @keyframes moniBlink { 0%, 44%, 48%, 100% { transform: scaleY(1);} 46% { transform: scaleY(.15);} }
 @keyframes moniPulse { 0%,100% { opacity:.5; transform: scale(.96);} 50% { opacity:1; transform: scale(1.04);} }
+@keyframes bootRise { from { opacity: 0; transform: translateY(16px) scale(.96);} to { opacity: 1; transform: translateY(0) scale(1);} }
+@keyframes bootPulse { 0%,100% {opacity:.65; transform:scale(.92);} 50% {opacity:1; transform:scale(1.08);} }
+@keyframes bootFadeOut { to { opacity: 0; visibility: hidden; } }
 .moni-avatar{position:relative;width:42px;height:42px;border-radius:9999px;background:linear-gradient(180deg,#0f0f10,#050506);border:1px solid rgba(212,175,55,.45);display:flex;align-items:center;justify-content:center;}
 .moni-eyes{display:flex;gap:10px;}
 .moni-eyes i{display:block;width:7px;height:7px;border-radius:9999px;background:#d4af37;animation:moniBlink 5.2s ease-in-out infinite;}
