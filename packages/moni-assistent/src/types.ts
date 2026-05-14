@@ -18,7 +18,9 @@ export type AdminInterventionReason =
   | "pricing_unavailable"
   | "driver_not_found"
   | "driver_stalled"
-  | "booking_issue";
+  | "booking_issue"
+  | "dispatch_anomaly"
+  | "reconnect_instability";
 
 export interface Coordinates {
   lat: number;
@@ -34,6 +36,8 @@ export interface BookingRequest {
   scheduledAt?: string;
   requestedVehicleType?: string;
   notes?: string;
+  priority?: "standard" | "business" | "vip";
+  requestedLanguage?: "nl" | "en" | "es" | "fr";
 }
 
 export interface BookingRecord {
@@ -46,6 +50,7 @@ export interface BookingRecord {
   issueMessage?: string;
   createdAt: string;
   updatedAt: string;
+  operationalIntelligence?: OperationalIntelligenceSnapshot;
 }
 
 export interface DriverStatusUpdate {
@@ -78,6 +83,32 @@ export interface DriverCandidate {
   driverId: string;
   availability: DriverAvailability;
   distanceKm?: number;
+  rating?: number;
+  activeWorkload?: number;
+  airportQueuePosition?: number;
+  operationalZone?: string;
+  reconnectReliability?: number;
+}
+
+export interface DispatchContext {
+  trafficIndex?: number;
+  airportCongestionIndex?: number;
+  weatherSeverityIndex?: number;
+  lifecycleRiskIndex?: number;
+  historicalDemandIndex?: number;
+}
+
+export interface DispatchDecision {
+  candidate: DriverCandidate;
+  score: number;
+  reasons: string[];
+}
+
+export interface OperationalIntelligenceSnapshot {
+  dispatchScore?: number;
+  dispatchRationale?: string[];
+  language: "nl" | "en" | "es" | "fr";
+  etaConfidence?: number;
 }
 
 export interface BookingFlowDependencies {
@@ -85,7 +116,8 @@ export interface BookingFlowDependencies {
   validateBooking: (request: BookingRequest) => Promise<BookingValidationResult>;
   estimatePrice: (request: BookingRequest) => Promise<PriceEstimate>;
   generateTrackingCode: (bookingId: string) => string;
-  requestDriverAssignment: (booking: BookingRecord) => Promise<DriverCandidate | null>;
+  requestDriverAssignment: (booking: BookingRecord) => Promise<DriverCandidate[] | null>;
+  dispatchContext?: (booking: BookingRecord) => Promise<DispatchContext>;
 }
 
 export type NotificationAudience = "customer" | "driver";
