@@ -41,6 +41,7 @@
 }
 .boot-splash__logo { width: min(40vw, 210px); z-index: 2; animation: bootRise .9s ease both; }
 .boot-splash__caption { margin-top: 20px; letter-spacing: .24em; text-transform: uppercase; font-size: 11px; color: #d8bc72; opacity: .8; z-index: 2; }
+.boot-splash__status { margin-top: 8px; font-size: 12px; color: #f5e7be; opacity: .82; z-index: 2; }
 
 @layer components {
   .glass-panel { @apply relative z-10 border border-lv-gold/30 bg-black/45 shadow-gold-md backdrop-blur-2xl; }
@@ -59,6 +60,7 @@
   .estimate-input { @apply w-full rounded-xl border border-lv-gold/30 bg-black/40 px-3 py-3; }
   .status-line { @apply rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-lv-mist; }
   .status-line--active { @apply border-lv-gold/40 bg-lv-gold/10 text-white; }
+  .trust-pill { @apply rounded-full border border-emerald-300/35 bg-emerald-300/10 px-3 py-1 text-[11px] uppercase tracking-[0.12em] text-emerald-100; }
   .service-card { @apply transition duration-300 hover:-translate-y-1 hover:border-lv-gold/70 hover:bg-lv-gold/10; }
   .auth-overlay { @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm; }
   .auth-card { @apply w-full max-w-2xl rounded-3xl p-6; }
@@ -68,7 +70,7 @@
 
   .moni-root {@apply fixed bottom-5 right-5 z-50;}
   .moni-fab {@apply flex h-16 w-16 items-center justify-center rounded-full border border-lv-gold/50 bg-black/90 shadow-gold-md transition;}
-  .moni-fab::before {content:''; position:absolute; inset:-6px; border-radius:9999px; background: radial-gradient(circle, rgba(212,175,55,.22), rgba(212,175,55,0)); z-index:-1; animation: moniPulse 3.4s ease-in-out infinite;}
+  .moni-fab::before {content:''; position:absolute; inset:-6px; border-radius:9999px; background: radial-gradient(circle, rgba(212,175,55,.18), rgba(212,175,55,0)); z-index:-1; animation: moniPulse 4.6s ease-in-out infinite;}
   .moni-fab--listening { box-shadow: 0 0 0 1px rgba(212,175,55,.5), 0 0 22px rgba(212,175,55,.32); }
   .moni-fab--thinking .moni-eyes i { animation-duration: .45s; }
   .moni-fab--confirmation .moni-avatar { transform: translateY(-1px); }
@@ -95,12 +97,12 @@
   .map-pin { @apply absolute z-10 rounded-full border border-lv-gold/40 bg-black/80 px-3 py-1 text-xs text-lv-champagne; }
   .map-pin--pickup { left: 14%; top: 64%; }
   .map-pin--drop { right: 16%; top: 24%; }
-  .map-driver { position:absolute; width: 18px; height: 18px; border-radius:999px; background:#f5bf49; box-shadow: 0 0 0 8px rgba(245,191,73,.12),0 0 14px rgba(245,191,73,.8); transition: all 1.4s ease; z-index: 20; }
+  .map-driver { position:absolute; width: 18px; height: 18px; border-radius:999px; background:#f5bf49; box-shadow: 0 0 0 8px rgba(245,191,73,.12),0 0 14px rgba(245,191,73,.8); transition: all 1.8s cubic-bezier(.22,.61,.36,1); z-index: 20; }
   .map-overlay-top { @apply absolute left-3 right-3 top-3 z-20 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-lv-mist backdrop-blur; }
   .map-overlay-bottom { @apply absolute bottom-3 left-3 right-3 z-20 rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-lv-mist backdrop-blur; }
   .map-state-pill { @apply rounded-full border px-2 py-1 text-[11px] uppercase tracking-[0.12em]; }
 }
-@keyframes moniBlink { 0%, 44%, 48%, 100% { transform: scaleY(1);} 46% { transform: scaleY(.15);} }
+@keyframes moniBlink { 0%, 39%, 43%, 72%, 76%, 100% { transform: scaleY(1);} 41%, 74% { transform: scaleY(.15);} }
 @keyframes moniPulse { 0%,100% { opacity:.5; transform: scale(.96);} 50% { opacity:1; transform: scale(1.04);} }
 @keyframes bootRise { from { opacity: 0; transform: translateY(16px) scale(.96);} to { opacity: 1; transform: translateY(0) scale(1);} }
 @keyframes bootPulse { 0%,100% {opacity:.65; transform:scale(.92);} 50% {opacity:1; transform:scale(1.08);} }
