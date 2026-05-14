@@ -6,19 +6,23 @@ import { createLearningRecord, persistLearningRecord } from '../learning/control
 import { buildIntro, buildIntentReply } from '../templates/responses';
 import type { MoniBookingFields, MoniMessage } from '../types/moni.types';
 
-const quickReplies = ['Rit boeken', 'Prijs vragen', 'Luchthaven', 'Volg mijn taxi', 'Zakelijk/VIP', 'Contact'];
+type MoniPresenceState = 'idle' | 'listening' | 'thinking' | 'confirmation' | 'issue';
+
+const quickReplies = ['Reserveer premium rit', 'Volg mijn rit', 'VIP onboarding', 'Business partner', 'Operator support', 'Contact dispatch'];
 
 export function MoniAssistant() {
   const [open, setOpen] = useState(false);
   const [minimized, setMinimized] = useState(false);
   const [input, setInput] = useState('');
+  const [presenceState, setPresenceState] = useState<MoniPresenceState>('idle');
   const [messages, setMessages] = useState<MoniMessage[]>([
-    { role: 'assistant', text: 'Moni Assistant • Premium operator\nNatuurlijk, ik help u graag met uw rit.' }
+    { role: 'assistant', text: 'Moni Ride • Premium mobility companion\nWelkom. Ik bewaak uw rit en begeleid u stap voor stap.' }
   ]);
   const [bookingData] = useState<MoniBookingFields>({});
 
   const send = (text: string) => {
     if (!text.trim()) return;
+    setPresenceState('thinking');
     const language = detectLanguage(text);
     const intent = detectIntent(text);
     const replies: string[] = [buildIntro(language)];
@@ -32,21 +36,40 @@ export function MoniAssistant() {
     const learningRecord = createLearningRecord({ userText: text, replyText: assistantReply, language, intent });
     persistLearningRecord(learningRecord);
     setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: assistantReply }]);
+    setPresenceState(/probleem|issue|klacht|vertraging/i.test(text) ? 'issue' : 'confirmation');
     setInput('');
+    setTimeout(() => setPresenceState('idle'), 1400);
   };
 
   const panelClass = useMemo(() => `moni-panel ${open && !minimized ? 'moni-panel--open' : ''}`, [open, minimized]);
 
   return (
     <div className='moni-root' aria-live='polite'>
-      <button className='moni-fab' onClick={() => { setOpen(true); setMinimized(false); }}>Moni Assistant</button>
+      <button
+        className={`moni-fab moni-fab--${presenceState}`}
+        aria-label='Open Moni Ride concierge'
+        onClick={() => { setOpen(true); setMinimized(false); setPresenceState('listening'); }}
+      >
+        <span className='moni-avatar' aria-hidden='true'>
+          <span className='moni-eyes'><i /><i /></span>
+        </span>
+      </button>
       <section className={panelClass}>
-        <header className='moni-header'><div><strong>Moni Assistant</strong><p>LV Transport Premium Operator</p></div><div className='moni-actions'><button onClick={() => setMinimized(true)}>–</button><button onClick={() => { setOpen(false); setMinimized(false); }}>×</button></div></header>
+        <header className='moni-header'>
+          <div>
+            <strong>Moni Ride</strong>
+            <p>Concierge observer • founder-operated ecosystem</p>
+          </div>
+          <div className='moni-actions'>
+            <button onClick={() => { setMinimized(true); setPresenceState('idle'); }}>–</button>
+            <button onClick={() => { setOpen(false); setMinimized(false); setPresenceState('idle'); }}>×</button>
+          </div>
+        </header>
         <div className='moni-quick'>{quickReplies.map((q) => <button key={q} onClick={() => send(q)}>{q}</button>)}</div>
         <div className='moni-messages'>{messages.map((m, i) => <p key={i} className={m.role === 'assistant' ? 'assistant' : 'user'}>{m.text}</p>)}</div>
         <form className='moni-input' onSubmit={(e) => { e.preventDefault(); send(input); }}>
-          <input value={input} onChange={(e) => setInput(e.target.value)} placeholder='Typ uw vraag...' />
-          <button type='submit'>Verstuur</button>
+          <input value={input} onFocus={() => setPresenceState('listening')} onChange={(e) => setInput(e.target.value)} placeholder='Beschrijf uw behoefte...' />
+          <button type='submit'>Verzenden</button>
         </form>
       </section>
     </div>
