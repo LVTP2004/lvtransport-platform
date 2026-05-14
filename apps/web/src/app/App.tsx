@@ -1,9 +1,10 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
+import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
 
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
-type BookingStatus = 'draft' | 'submitted' | 'confirmed' | 'assigned' | 'completed' | 'cancelled';
+type BookingStatus = 'draft' | 'submitted' | 'confirmed' | BookingLifecycle;
 
 type BookingRecord = {
   code: string;
@@ -38,6 +39,25 @@ const navItems = [
 
 const createRideCode = () => `LV${Math.floor(10000 + Math.random() * 90000)}`;
 
+const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
+  const map: Record<string, BookingLifecycle> = {
+    draft: BookingLifecycle.PENDING,
+    submitted: BookingLifecycle.PENDING,
+    confirmed: BookingLifecycle.ASSIGNED,
+    assigned: BookingLifecycle.ASSIGNED,
+    accepted: BookingLifecycle.ACCEPTED,
+    en_route: BookingLifecycle.EN_ROUTE,
+    arrived: BookingLifecycle.ARRIVED,
+    in_progress: BookingLifecycle.IN_PROGRESS,
+    completed: BookingLifecycle.COMPLETED,
+    cancelled: BookingLifecycle.CANCELLED,
+    failed: BookingLifecycle.FAILED,
+    pending: BookingLifecycle.PENDING
+  };
+  return map[String(status).toLowerCase()] ?? null;
+};
+
+
 export function App() {
   const [route, setRoute] = useState<RouteKey>(() => routeMap[window.location.pathname] ?? 'home');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -66,8 +86,14 @@ export function App() {
     event.preventDefault();
     const code = createRideCode();
     const payload: BookingRecord = { ...form, code, createdAt: new Date().toISOString(), status: 'submitted' };
+    const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
     const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+    if (sessionStorage.getItem(dedupeKey)) {
+      setConfirm('Dubbele verzending geblokkeerd. Uw eerdere boeking werd al verwerkt.');
+      return;
+    }
     localStorage.setItem('lvtransport_bookings', JSON.stringify([payload, ...existing].slice(0, 50)));
+    sessionStorage.setItem(dedupeKey, payload.code);
 
     let message = `Bedankt ${form.name || 'klant'}, uw rit ${code} is ingediend.`;
     try {
@@ -93,6 +119,10 @@ export function App() {
 
     const immutable = ride.status === 'completed' || ride.status === 'cancelled';
     setTrackingResult(`Rit ${ride.code}: status ${ride.status.toUpperCase()} • ${immutable ? 'afgesloten (immutable)' : 'actieve lifecycle'}.`);
+    const lifecycle = normalizeLifecycle(ride.status);
+    if (!lifecycle) return setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+    const immutable = isImmutableLifecycleStatus(lifecycle);
+    setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
   };
 
   return <div className='premium-shell min-h-screen text-white'>
