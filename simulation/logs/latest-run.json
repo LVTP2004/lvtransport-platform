@@ -1,0 +1,320 @@
+{
+  "generatedAt": "2026-05-14T06:50:07.440Z",
+  "policy": "Moni Ride",
+  "metrics": {
+    "successfulBookingCompletion": "5/7",
+    "avgSatisfaction": 6.9,
+    "fallbackActivationCount": 4,
+    "misunderstandingCount": 11,
+    "multilingualHandlingQuality": 0.46,
+    "operationalContinuityScore": 6.96,
+    "operationalReadinessPercent": 71.73
+  },
+  "run": [
+    {
+      "scenarioId": "scn-standard-webchat",
+      "customerType": "standard",
+      "channel": "website-chat",
+      "stressLevel": "low",
+      "completed": 1,
+      "satisfaction": 9.3,
+      "fallbacks": 0,
+      "misunderstandings": 0,
+      "timeline": [
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap"
+        },
+        {
+          "event": "booking confirmation",
+          "agentAction": "bevestigt status en deelt duidelijke samenvatting"
+        },
+        {
+          "event": "driver assigned",
+          "agentAction": "deelt chauffeurstatus en verwachte aankomsttijd"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-airport-delay-whatsapp",
+      "customerType": "airport",
+      "channel": "whatsapp-like",
+      "stressLevel": "medium",
+      "completed": 1,
+      "satisfaction": 7.1000000000000005,
+      "fallbacks": 0,
+      "misunderstandings": 1,
+      "timeline": [
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap"
+        },
+        {
+          "event": "airport delay",
+          "agentAction": "past ophaaltijd proactief aan op vluchtwijziging"
+        },
+        {
+          "event": "route recalculation",
+          "agentAction": "legt nieuwe route kort uit zonder technisch jargon"
+        },
+        {
+          "event": "tracking request",
+          "agentAction": "deelt trackingstatus en referentiepunt"
+        },
+        {
+          "event": "booking confirmation",
+          "agentAction": "bevestigt status en deelt duidelijke samenvatting"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-vip-recurring-phone",
+      "customerType": "vip",
+      "channel": "phone-call-text",
+      "stressLevel": "medium",
+      "completed": 1,
+      "satisfaction": 9,
+      "fallbacks": 0,
+      "misunderstandings": 0,
+      "timeline": [
+        {
+          "event": "VIP recurring route",
+          "agentAction": "activeert premiumprotocol en terugkerend schema"
+        },
+        {
+          "event": "business client scheduling",
+          "agentAction": "structureert planning en facturatiegegevens"
+        },
+        {
+          "event": "booking confirmation",
+          "agentAction": "bevestigt status en deelt duidelijke samenvatting"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-confused-form",
+      "customerType": "confused",
+      "channel": "booking-form",
+      "stressLevel": "medium",
+      "completed": 1,
+      "satisfaction": 7.7,
+      "fallbacks": 0,
+      "misunderstandings": 2,
+      "timeline": [
+        {
+          "event": "invalid customer input",
+          "agentAction": "herformuleert vraag eenvoudiger en valideert"
+        },
+        {
+          "event": "missing booking code",
+          "agentAction": "verifieert met naam/telefoon en herstelt dossier"
+        },
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap"
+        },
+        {
+          "event": "booking confirmation",
+          "agentAction": "bevestigt status en deelt duidelijke samenvatting"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-difficult-traffic",
+      "customerType": "difficult",
+      "channel": "tracking-inquiry",
+      "stressLevel": "high",
+      "completed": 0,
+      "satisfaction": 5.200000000000001,
+      "fallbacks": 0,
+      "misunderstandings": 3,
+      "timeline": [
+        {
+          "event": "driver assigned",
+          "agentAction": "deelt chauffeurstatus en verwachte aankomsttijd"
+        },
+        {
+          "event": "traffic issue",
+          "agentAction": "biedt realtime update met herberekende timing"
+        },
+        {
+          "event": "delayed driver",
+          "agentAction": "biedt empathie, transparante ETA-update en alternatief"
+        },
+        {
+          "event": "pricing concern",
+          "agentAction": "legt prijsopbouw beknopt en rustig uit"
+        },
+        {
+          "event": "tracking request",
+          "agentAction": "deelt trackingstatus en referentiepunt"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-elderly-interrupted",
+      "customerType": "elderly",
+      "channel": "phone-call-text",
+      "stressLevel": "low",
+      "completed": 1,
+      "satisfaction": 8.700000000000001,
+      "fallbacks": 1,
+      "misunderstandings": 1,
+      "timeline": [
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap in eenvoudige taal"
+        },
+        {
+          "event": "interrupted booking flow",
+          "agentAction": "hervat gesprek vanaf laatste bevestigde stap in eenvoudige taal"
+        },
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap in eenvoudige taal"
+        },
+        {
+          "event": "booking confirmation",
+          "agentAction": "bevestigt status en deelt duidelijke samenvatting in eenvoudige taal"
+        }
+      ]
+    },
+    {
+      "scenarioId": "scn-multilingual-failure",
+      "customerType": "multilingual",
+      "channel": "whatsapp-like",
+      "stressLevel": "high",
+      "completed": 0,
+      "satisfaction": 1.2999999999999994,
+      "fallbacks": 3,
+      "misunderstandings": 4,
+      "timeline": [
+        {
+          "event": "new booking",
+          "agentAction": "verzamelt ritgegevens en bevestigt stap-voor-stap met taaladaptatie (NL/EN/ES)"
+        },
+        {
+          "event": "API unavailable",
+          "agentAction": "schakelt naar handmatige flow met status-updates met taaladaptatie (NL/EN/ES)"
+        },
+        {
+          "event": "missing route data",
+          "agentAction": "vraagt minimale extra data voor herstel met taaladaptatie (NL/EN/ES)"
+        },
+        {
+          "event": "delayed response",
+          "agentAction": "excuseert vertraging en houdt context vast met taaladaptatie (NL/EN/ES)"
+        },
+        {
+          "event": "booking cancellation",
+          "agentAction": "bevestigt annulering en biedt herboeking aan met taaladaptatie (NL/EN/ES)"
+        }
+      ]
+    }
+  ],
+  "memory": {
+    "standard-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-standard-webchat",
+          "satisfaction": 9.3,
+          "completed": 1,
+          "channel": "website-chat"
+        }
+      ]
+    },
+    "airport-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [
+        "check-in +90m"
+      ],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-airport-delay-whatsapp",
+          "satisfaction": 7.1000000000000005,
+          "completed": 1,
+          "channel": "whatsapp-like"
+        }
+      ]
+    },
+    "vip-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [
+        "quiet ride",
+        "invoice by email"
+      ],
+      "history": [
+        {
+          "scenarioId": "scn-vip-recurring-phone",
+          "satisfaction": 9,
+          "completed": 1,
+          "channel": "phone-call-text"
+        }
+      ]
+    },
+    "confused-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-confused-form",
+          "satisfaction": 7.7,
+          "completed": 1,
+          "channel": "booking-form"
+        }
+      ]
+    },
+    "difficult-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-difficult-traffic",
+          "satisfaction": 5.200000000000001,
+          "completed": 0,
+          "channel": "tracking-inquiry"
+        }
+      ]
+    },
+    "elderly-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-elderly-interrupted",
+          "satisfaction": 8.700000000000001,
+          "completed": 1,
+          "channel": "phone-call-text"
+        }
+      ]
+    },
+    "multi-001": {
+      "repeatCount": 1,
+      "languagePreference": "nl",
+      "airportHabits": [],
+      "vipPreferences": [],
+      "history": [
+        {
+          "scenarioId": "scn-multilingual-failure",
+          "satisfaction": 1.2999999999999994,
+          "completed": 0,
+          "channel": "whatsapp-like"
+        }
+      ]
+    }
+  }
+}
