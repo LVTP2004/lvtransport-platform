@@ -9,8 +9,9 @@ export function MoniAssistant() {
     const [open, setOpen] = useState(false);
     const [minimized, setMinimized] = useState(false);
     const [input, setInput] = useState('');
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [messages, setMessages] = useState([{ role: 'assistant', text: 'Moni Assistant • Premium concierge\nWelkom, ik help u direct met boekingen en service.' }]);
+    const [messages, setMessages] = useState([
+        { role: 'assistant', text: 'Moni Assistant • Premium operator\nNatuurlijk, ik help u graag met uw rit.' }
+    ]);
     const [bookingData] = useState({});
     const send = (text) => {
         if (!text.trim())
@@ -29,6 +30,6 @@ export function MoniAssistant() {
         setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: replies.join('\n') }]);
         setInput('');
     };
-    const panelClass = useMemo(() => `moni-panel ${open && !minimized ? 'moni-panel--open' : ''}`, [minimized, open]);
-    return (_jsxs("div", { className: "moni-root", style: { transform: `translate(${offset.x}px, ${offset.y}px)` }, "aria-live": "polite", children: [_jsx("button", { className: "moni-fab", draggable: true, onDragEnd: (e) => setOffset({ x: e.clientX - window.innerWidth + 120, y: e.clientY - window.innerHeight + 120 }), onClick: () => { setOpen(true); setMinimized(false); }, children: "Moni Concierge" }), _jsxs("section", { className: panelClass, children: [_jsxs("header", { className: "moni-header", children: [_jsxs("div", { children: [_jsx("strong", { children: "Moni Assistant" }), _jsx("p", { children: "LV Transport Premium Concierge" })] }), _jsxs("div", { className: "moni-actions", children: [_jsx("button", { onClick: () => setMinimized(true), children: "\u2013" }), _jsx("button", { onClick: () => { setOpen(false); setMinimized(false); }, children: "\u00D7" })] })] }), _jsx("div", { className: "moni-quick", children: quickReplies.map((q) => _jsx("button", { onClick: () => send(q), children: q }, q)) }), _jsx("div", { className: "moni-messages", children: messages.map((m, i) => _jsx("p", { className: m.role === 'assistant' ? 'assistant' : 'user', children: m.text }, i)) }), _jsxs("form", { className: "moni-input", onSubmit: (e) => { e.preventDefault(); send(input); }, children: [_jsx("input", { value: input, onChange: (e) => setInput(e.target.value), placeholder: "Typ uw vraag..." }), _jsx("button", { type: "submit", children: "Verstuur" })] })] })] }));
+    const panelClass = useMemo(() => `moni-panel ${open && !minimized ? 'moni-panel--open' : ''}`, [open, minimized]);
+    return (_jsxs("div", { className: 'moni-root', "aria-live": 'polite', children: [_jsx("button", { className: 'moni-fab', onClick: () => { setOpen(true); setMinimized(false); }, children: "Moni Assistant" }), _jsxs("section", { className: panelClass, children: [_jsxs("header", { className: 'moni-header', children: [_jsxs("div", { children: [_jsx("strong", { children: "Moni Assistant" }), _jsx("p", { children: "LV Transport Premium Operator" })] }), _jsxs("div", { className: 'moni-actions', children: [_jsx("button", { onClick: () => setMinimized(true), children: "\u2013" }), _jsx("button", { onClick: () => { setOpen(false); setMinimized(false); }, children: "\u00D7" })] })] }), _jsx("div", { className: 'moni-quick', children: quickReplies.map((q) => _jsx("button", { onClick: () => send(q), children: q }, q)) }), _jsx("div", { className: 'moni-messages', children: messages.map((m, i) => _jsx("p", { className: m.role === 'assistant' ? 'assistant' : 'user', children: m.text }, i)) }), _jsxs("form", { className: 'moni-input', onSubmit: (e) => { e.preventDefault(); send(input); }, children: [_jsx("input", { value: input, onChange: (e) => setInput(e.target.value), placeholder: 'Typ uw vraag...' }), _jsx("button", { type: 'submit', children: "Verstuur" })] })] })] }));
 }
