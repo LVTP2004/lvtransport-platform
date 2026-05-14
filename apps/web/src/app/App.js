@@ -2,10 +2,10 @@ import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-run
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { TERMINAL_STATES, resolveLifecycleState } from './bookingLifecycle';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const STORAGE_KEY = 'lvtransport.booking.v1';
 const TRACKING_KEY = 'lvtransport.tracking.v1';
-const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
 const vehicles = [
     { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
     { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6, serviceType: 'airport' },
@@ -87,7 +87,7 @@ export function App() {
     const [events, setEvents] = useState(restored?.events ?? []);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [liveStatus, setLiveStatus] = useState(restored?.confirmation?.status ?? null);
+    const [liveStatus, setLiveStatus] = useState(resolveLifecycleState(null, restored?.confirmation?.status));
     const [socketState, setSocketState] = useState('connecting');
     const inFlightKeyRef = useRef(null);
     const lastSequenceRef = useRef(0);
@@ -117,8 +117,9 @@ export function App() {
         const tracked = localStorage.getItem(TRACKING_KEY);
         if (tracked !== confirmation.id)
             localStorage.setItem(TRACKING_KEY, confirmation.id);
-        if (TERMINAL_STATUSES.has(confirmation.status)) {
-            setLiveStatus(confirmation.status);
+        const initialState = resolveLifecycleState(liveStatus, confirmation.status);
+        if (initialState && TERMINAL_STATES.has(initialState)) {
+            setLiveStatus(initialState);
             setSocketState('offline');
             return;
         }
@@ -141,16 +142,19 @@ export function App() {
                     if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
                         const current = payload.payload.find((item) => item.id === confirmation.id);
                         if (current?.status)
-                            setLiveStatus(current.status);
+                            setLiveStatus((prev) => resolveLifecycleState(prev, current.status));
                     }
-                    if (payload.event === 'booking.updated' && !Array.isArray(payload.payload) && payload.payload?.id === confirmation.id && payload.payload.status) {
-                        setLiveStatus(payload.payload.status);
+                    if (payload.event === 'booking.updated' && !Array.isArray(payload.payload)) {
+                        const bookingUpdate = payload.payload;
+                        if (bookingUpdate?.id === confirmation.id && bookingUpdate.status) {
+                            setLiveStatus((prev) => resolveLifecycleState(prev, bookingUpdate.status));
+                        }
                     }
                 }
                 catch { }
             };
             ws.onclose = () => {
-                if (!active || TERMINAL_STATUSES.has(liveStatus ?? ''))
+                if (!active || (liveStatus && TERMINAL_STATES.has(liveStatus)))
                     return;
                 attempts += 1;
                 setSocketState('offline');
@@ -203,7 +207,9 @@ export function App() {
             const payload = await response.json();
             if (!response.ok)
                 throw new Error(payload?.message ?? 'Unable to create booking');
-            setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: payload.booking.status });
+            const nextLifecycleState = resolveLifecycleState(null, payload.booking.status) ?? 'pending';
+            setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: nextLifecycleState });
+            setLiveStatus((prev) => resolveLifecycleState(prev, nextLifecycleState));
             appendEvent('submit_succeeded', { dedupeKey, bookingId: payload.booking.id });
         }
         catch (e) {
