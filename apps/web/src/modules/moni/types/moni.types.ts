@@ -1,6 +1,9 @@
 export type MoniLanguage = 'nl' | 'es' | 'en' | 'fr';
 
 export type MoniAudience = 'customer' | 'admin' | 'driver' | 'business';
+export type MoniBranch = 'core' | 'ride' | 'driver' | 'control' | 'business' | 'airport' | 'experimental';
+
+export type MoniEvolutionLevel = 1 | 2 | 3 | 4 | 5;
 
 export type MoniIntent =
   | 'booking_request'
@@ -59,6 +62,8 @@ export type MoniContextEnvelope = {
 };
 
 export type MoniResponse = {
+  branch: MoniBranch;
+  evolutionLevel: MoniEvolutionLevel;
   language: MoniLanguage;
   audience: MoniAudience;
   intent: MoniIntent;
