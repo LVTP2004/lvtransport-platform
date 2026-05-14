@@ -1,12 +1,19 @@
 const SW_URL = '/service-worker.js';
+let installState = null;
 export const createInstallPromptState = () => {
+    if (installState)
+        return installState;
     let deferredPrompt = null;
     window.addEventListener('beforeinstallprompt', (event) => {
         event.preventDefault();
         deferredPrompt = event;
         window.dispatchEvent(new CustomEvent('lv:pwa-install-available'));
     });
-    return {
+    window.addEventListener('appinstalled', () => {
+        deferredPrompt = null;
+        window.dispatchEvent(new CustomEvent('lv:pwa-installed'));
+    });
+    installState = {
         get available() {
             return Boolean(deferredPrompt);
         },
@@ -19,7 +26,9 @@ export const createInstallPromptState = () => {
             return result.outcome === 'accepted';
         }
     };
+    return installState;
 };
+export const getInstallPromptState = () => createInstallPromptState();
 export const registerServiceWorker = async () => {
     if (!('serviceWorker' in navigator))
         return;

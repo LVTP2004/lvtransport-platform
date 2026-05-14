@@ -5,7 +5,11 @@ export type InstallPromptState = {
   promptInstall: () => Promise<boolean>;
 };
 
+let installState: InstallPromptState | null = null;
+
 export const createInstallPromptState = (): InstallPromptState => {
+  if (installState) return installState;
+
   let deferredPrompt: BeforeInstallPromptEvent | null = null;
 
   window.addEventListener('beforeinstallprompt', (event) => {
@@ -14,7 +18,12 @@ export const createInstallPromptState = (): InstallPromptState => {
     window.dispatchEvent(new CustomEvent('lv:pwa-install-available'));
   });
 
-  return {
+  window.addEventListener('appinstalled', () => {
+    deferredPrompt = null;
+    window.dispatchEvent(new CustomEvent('lv:pwa-installed'));
+  });
+
+  installState = {
     get available() {
       return Boolean(deferredPrompt);
     },
@@ -26,7 +35,11 @@ export const createInstallPromptState = (): InstallPromptState => {
       return result.outcome === 'accepted';
     }
   };
+
+  return installState;
 };
+
+export const getInstallPromptState = (): InstallPromptState => createInstallPromptState();
 
 export const registerServiceWorker = async () => {
   if (!('serviceWorker' in navigator)) return;
