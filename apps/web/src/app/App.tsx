@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { BookingState, TERMINAL_STATES, resolveLifecycleState } from './bookingLifecycle';
 
 type Step = 1 | 2 | 3;
 type ServiceType = 'standard' | 'airport' | 'vip';
@@ -15,6 +16,7 @@ type BookingDraft = { step: Step; pickup: string; destination: string; dateTime:
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const STORAGE_KEY = 'lvtransport.booking.v1';
 const TRACKING_KEY = 'lvtransport.tracking.v1';
+
 const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
 const vehicles: Vehicle[] = [
   { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
@@ -68,6 +70,62 @@ const detectTheme = (): Theme => (window.location.hostname === 'app.lvtransport.
 
 function BookingCore({ theme }: { theme: Theme }) {
   const restored = loadDraft();
+  const [step, setStep] = useState<Step>(restored?.step ?? 1);
+  const [pickup, setPickup] = useState(restored?.pickup ?? '');
+  const [destination, setDestination] = useState(restored?.destination ?? '');
+  const [dateTime, setDateTime] = useState(restored?.dateTime ?? '');
+  const [passengers, setPassengers] = useState(restored?.passengers ?? 1);
+  const [vehicle, setVehicle] = useState<Vehicle>(vehicles.find((v) => v.name === restored?.vehicleName) ?? vehicles[0]);
+  const [airportTransfer, setAirportTransfer] = useState(restored?.airportTransfer ?? false);
+  const [businessVip, setBusinessVip] = useState(restored?.businessVip ?? false);
+  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(restored?.confirmation ?? null);
+  const [requestKey, setRequestKey] = useState<string | null>(restored?.requestKey ?? null);
+  const [events, setEvents] = useState<BookingEvent[]>(restored?.events ?? []);
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [liveStatus, setLiveStatus] = useState<BookingState | null>(resolveLifecycleState(null, restored?.confirmation?.status));
+  const [socketState, setSocketState] = useState<'connecting' | 'connected' | 'reconnecting' | 'offline'>('connecting');
+  const inFlightKeyRef = useRef<string | null>(null);
+  const lastSequenceRef = useRef(0);
+
+  useEffect(() => {
+    if (!presentationMode || restored) return;
+    setPickup('Wynn Las Vegas, South Valet');
+    setDestination('Harry Reid Terminal 3, Private Aviation Gate');
+    const inNinetyMinutes = new Date(Date.now() + 90 * 60 * 1000);
+    setDateTime(inNinetyMinutes.toISOString().slice(0, 16));
+    setPassengers(3);
+    setVehicle(vehicles[1]);
+    setAirportTransfer(true);
+    setBusinessVip(true);
+    setStep(3);
+  }, [presentationMode, restored]);
+
+  useEffect(() => {
+    const draft: BookingDraft = { step, pickup, destination, dateTime, passengers, vehicleName: vehicle.name, airportTransfer, businessVip, confirmation, requestKey, events };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
+  }, [airportTransfer, businessVip, confirmation, dateTime, destination, events, passengers, pickup, requestKey, step, vehicle.name]);
+
+  const appendEvent = (type: BookingEventType, meta?: BookingEvent['meta']) => setEvents((prev) => [...prev.slice(-49), { type, at: nowIso(), meta }]);
+
+  useEffect(() => { if (restored) appendEvent('draft_restored', { hasConfirmation: Boolean(restored.confirmation) }); }, []);
+
+  useEffect(() => {
+    if (!confirmation?.id) return;
+    const tracked = localStorage.getItem(TRACKING_KEY);
+    if (tracked !== confirmation.id) localStorage.setItem(TRACKING_KEY, confirmation.id);
+    const initialState = resolveLifecycleState(liveStatus, confirmation.status);
+    if (initialState && TERMINAL_STATES.has(initialState)) {
+      setLiveStatus(initialState);
+      setSocketState('offline');
+      return;
+    }
+
+    let ws: WebSocket | null = null;
+    let reconnectTimer: number | undefined;
+    let attempts = 0;
+    let active = true;
+
   const [step, setStep] = useState<Step>(restored?.step ?? 1); const [pickup, setPickup] = useState(restored?.pickup ?? ''); const [destination, setDestination] = useState(restored?.destination ?? ''); const [dateTime, setDateTime] = useState(restored?.dateTime ?? '');
   const [passengers, setPassengers] = useState(restored?.passengers ?? 1); const [vehicle, setVehicle] = useState<Vehicle>(vehicles.find((v) => v.name === restored?.vehicleName) ?? vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(restored?.airportTransfer ?? false); const [businessVip, setBusinessVip] = useState(restored?.businessVip ?? false);
@@ -81,6 +139,94 @@ function BookingCore({ theme }: { theme: Theme }) {
     let ws: WebSocket | null = null; let timer: number | undefined;
     const connect = () => {
       const query = lastSequenceRef.current > 0 ? `?lastSequence=${lastSequenceRef.current}` : '';
+      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`);
+      ws.onopen = () => { attempts = 0; setSocketState('connected'); };
+      ws.onmessage = (message) => {
+        try {
+          const payload = JSON.parse(message.data as string) as { event?: string; payload?: { id?: string; status?: string } | Array<{ id?: string; status?: string }>; sequence?: number };
+          if (typeof payload.sequence === 'number' && payload.sequence > lastSequenceRef.current) lastSequenceRef.current = payload.sequence;
+          if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
+            const current = payload.payload.find((item) => item.id === confirmation.id);
+            if (current?.status) setLiveStatus((prev) => resolveLifecycleState(prev, current.status));
+          }
+          if (payload.event === 'booking.updated' && !Array.isArray(payload.payload)) {
+            const bookingUpdate = payload.payload;
+            if (bookingUpdate?.id === confirmation.id && bookingUpdate.status) {
+              setLiveStatus((prev) => resolveLifecycleState(prev, bookingUpdate.status));
+            }
+          }
+        } catch {}
+      };
+      ws.onclose = () => {
+        if (!active || (liveStatus && TERMINAL_STATES.has(liveStatus))) return;
+        attempts += 1;
+        setSocketState('offline');
+        reconnectTimer = window.setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(attempts, 4)));
+      };
+      ws.onerror = () => ws?.close();
+    };
+    connect();
+    return () => {
+      active = false;
+      if (reconnectTimer) window.clearTimeout(reconnectTimer);
+      ws?.close();
+    };
+  }, [confirmation?.id, confirmation?.status, liveStatus]);
+
+  const baseFare = useMemo(() => {
+    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
+    const airportFee = airportTransfer ? 18 : 0;
+    const vipFee = businessVip ? 24 : 0;
+    return Math.round((distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier);
+  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const serviceType: ServiceType = businessVip ? 'vip' : airportTransfer ? 'airport' : vehicle.serviceType;
+  const opsMetrics: DemoOpsMetric[] = useMemo(() => {
+    const expectedArrival = Math.max(8, Math.round(baseFare / 8));
+    return [
+      { label: 'Live chauffeurs', value: '42', detail: '37 en route • 5 standby' },
+      { label: 'On-time performance', value: '98.7%', detail: 'Last 24h completed rides' },
+      { label: 'Dispatch SLA', value: `${expectedArrival} min`, detail: 'Current booking region forecast' }
+    ];
+  }, [baseFare]);
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  const submitBooking = async () => {
+    if (loading) return;
+    const dedupeKey = requestKey ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
+    if (inFlightKeyRef.current === dedupeKey) return;
+    inFlightKeyRef.current = dedupeKey;
+    setRequestKey(dedupeKey);
+    setError('');
+    setLoading(true);
+    appendEvent('submit_started', { dedupeKey, step });
+    try {
+      const response = await fetch(`${API_BASE}/bookings`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': dedupeKey },
+        body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType })
+      });
+      const payload = await response.json();
+      if (!response.ok) throw new Error(payload?.message ?? 'Unable to create booking');
+      const nextLifecycleState = resolveLifecycleState(null, payload.booking.status) ?? 'pending';
+      setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: nextLifecycleState });
+      setLiveStatus((prev) => resolveLifecycleState(prev, nextLifecycleState));
+      appendEvent('submit_succeeded', { dedupeKey, bookingId: payload.booking.id });
+    } catch (e) {
+      appendEvent('submit_failed', { dedupeKey });
+      setError(e instanceof Error ? e.message : 'Unable to create booking');
+    } finally {
+      inFlightKeyRef.current = null;
+      setLoading(false);
+    }
+  };
+
+  const resetDraft = () => {
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(TRACKING_KEY);
+    appendEvent('draft_cleared');
+    window.location.reload();
       ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`); ws.onopen = () => setSocketState('connected');
       ws.onmessage = (m) => { try { const p = JSON.parse(m.data as string); if (typeof p.sequence === 'number' && p.sequence > lastSequenceRef.current) lastSequenceRef.current = p.sequence; if (p.event === 'booking.updated' && p.payload?.id === confirmation.id) setLiveStatus(p.payload.status); } catch {} };
       ws.onclose = () => { setSocketState('offline'); timer = window.setTimeout(connect, 2500); };

@@ -2,10 +2,10 @@ import { jsxs as _jsxs, jsx as _jsx, Fragment as _Fragment } from "react/jsx-run
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { TERMINAL_STATES, resolveLifecycleState } from './bookingLifecycle';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const STORAGE_KEY = 'lvtransport.booking.v1';
 const TRACKING_KEY = 'lvtransport.tracking.v1';
-const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
 const vehicles = [
     { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
     { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6, serviceType: 'airport' },
@@ -79,7 +79,7 @@ function BookingCore({ theme }) {
     const [events, setEvents] = useState(restored?.events ?? []);
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
-    const [liveStatus, setLiveStatus] = useState(restored?.confirmation?.status ?? null);
+    const [liveStatus, setLiveStatus] = useState(resolveLifecycleState(null, restored?.confirmation?.status));
     const [socketState, setSocketState] = useState('connecting');
     const inFlightKeyRef = useRef(null);
     const lastSequenceRef = useRef(0);
@@ -89,6 +89,13 @@ function BookingCore({ theme }) {
     useEffect(() => {
         if (!confirmation?.id)
             return;
+        const tracked = localStorage.getItem(TRACKING_KEY);
+        if (tracked !== confirmation.id)
+            localStorage.setItem(TRACKING_KEY, confirmation.id);
+        const initialState = resolveLifecycleState(liveStatus, confirmation.status);
+        if (initialState && TERMINAL_STATES.has(initialState)) {
+            setLiveStatus(initialState);
+            setSocketState('offline');
         if (TERMINAL_STATUSES.has(confirmation.status)) {
             setLiveStatus(confirmation.status);
             return;
@@ -98,6 +105,34 @@ function BookingCore({ theme }) {
         const connect = () => {
             const query = lastSequenceRef.current > 0 ? `?lastSequence=${lastSequenceRef.current}` : '';
             ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`);
+            ws.onopen = () => { attempts = 0; setSocketState('connected'); };
+            ws.onmessage = (message) => {
+                try {
+                    const payload = JSON.parse(message.data);
+                    if (typeof payload.sequence === 'number' && payload.sequence > lastSequenceRef.current)
+                        lastSequenceRef.current = payload.sequence;
+                    if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
+                        const current = payload.payload.find((item) => item.id === confirmation.id);
+                        if (current?.status)
+                            setLiveStatus((prev) => resolveLifecycleState(prev, current.status));
+                    }
+                    if (payload.event === 'booking.updated' && !Array.isArray(payload.payload)) {
+                        const bookingUpdate = payload.payload;
+                        if (bookingUpdate?.id === confirmation.id && bookingUpdate.status) {
+                            setLiveStatus((prev) => resolveLifecycleState(prev, bookingUpdate.status));
+                        }
+                    }
+                }
+                catch { }
+            };
+            ws.onclose = () => {
+                if (!active || (liveStatus && TERMINAL_STATES.has(liveStatus)))
+                    return;
+                attempts += 1;
+                setSocketState('offline');
+                reconnectTimer = window.setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(attempts, 4)));
+            };
+            ws.onerror = () => ws?.close();
             ws.onopen = () => setSocketState('connected');
             ws.onmessage = (m) => { try {
                 const p = JSON.parse(m.data);
@@ -127,6 +162,17 @@ function BookingCore({ theme }) {
         setRequestKey(key);
         setEvents((v) => [...v.slice(-49), { type: 'submit_started', at: nowIso() }]);
         try {
+            const response = await fetch(`${API_BASE}/bookings`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': dedupeKey },
+                body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType })
+            });
+            const payload = await response.json();
+            if (!response.ok)
+                throw new Error(payload?.message ?? 'Unable to create booking');
+            const nextLifecycleState = resolveLifecycleState(null, payload.booking.status) ?? 'pending';
+            setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: nextLifecycleState });
+            setLiveStatus((prev) => resolveLifecycleState(prev, nextLifecycleState));
+            appendEvent('submit_succeeded', { dedupeKey, bookingId: payload.booking.id });
             const res = await fetch(`${API_BASE}/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': key }, body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType }) });
             const payload = await res.json();
             if (!res.ok)
