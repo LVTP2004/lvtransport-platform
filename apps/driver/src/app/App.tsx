@@ -7,6 +7,7 @@ type Booking = { id: string; code: string; status: BookingLifecycle; assignedDri
 
 const DRIVER_ID = 'drv-101';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const API_ORIGIN = new URL(API_BASE).origin;
 
 export function App() {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -23,14 +24,14 @@ export function App() {
   const activeBookingId = bookings.find((b) => !['completed', 'cancelled', 'failed'].includes(b.status))?.id;
 
   const sendLocation = async (snapshot: GpsSnapshot) => {
-    await fetch(`http://localhost:8080/api/v1/drivers/${DRIVER_ID}/location`, {
+    await fetch(`${API_BASE}/drivers/${DRIVER_ID}/location`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ ...snapshot, bookingId: activeBookingId, idempotencyKey: `gps-${DRIVER_ID}-${snapshot.capturedAt}` })
     });
     setGpsMessage(`Live locatie bijgewerkt om ${new Date(snapshot.capturedAt).toLocaleTimeString('nl-BE')}.`);
   };
 
-  useEffect(() => { refresh(); const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`); ws.onmessage = () => refresh(); return () => ws.close(); }, []);
+  useEffect(() => { refresh(); const wsProtocol = API_ORIGIN.startsWith('https') ? 'wss' : 'ws'; const wsHost = API_ORIGIN.replace(/^https?:\/\//, ''); const ws = new WebSocket(`${wsProtocol}://${wsHost}/ws`); ws.onmessage = () => refresh(); return () => ws.close(); }, []);
   useEffect(() => { if (!liveLocation) { gpsService.stop(); setGpsMessage('Locatiedeling staat uit.'); return; } gpsService.start(sendLocation, setGpsMessage); return () => gpsService.stop(); }, [liveLocation, activeBookingId, gpsService]);
 
   const updateStatus = async (booking: Booking) => {
@@ -70,7 +71,7 @@ export function App() {
           <p className="font-semibold">{booking.code}</p>
           <p className="text-sm text-zinc-300">Status: {booking.status}</p>
           {booking.status === 'assigned' && <button className="mt-3 w-full rounded-lg bg-amber-500 px-3 py-2 font-medium text-black" onClick={() => updateStatus(booking)}>Rit accepteren</button>}
-          {!['completed', 'cancelled', 'failed'].includes(booking.status) && <button className="mt-2 w-full rounded-lg border border-zinc-600 px-3 py-2" onClick={() => updateStatus(booking)}>Volgende status</button>}
+          {!['assigned', 'completed', 'cancelled', 'failed'].includes(booking.status) && <button className="mt-2 w-full rounded-lg border border-zinc-600 px-3 py-2" onClick={() => updateStatus(booking)}>Volgende status</button>}
           {booking.status === 'completed' && <p className="mt-2 text-sm text-emerald-300">Rit correct afgerond.</p>}
         </article>)}
       </section>
