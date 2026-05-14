@@ -1,0 +1,40 @@
+{
+  "version": "1.0",
+  "scenarios": [
+    {
+      "id": "S1-airport-new-booking",
+      "customer_type": "airport_traveler",
+      "language": "nl",
+      "events": ["booking_request", "incomplete_booking", "confirmed", "eta_request"],
+      "expected_focus": ["context_capture", "booking_guidance", "reassurance"]
+    },
+    {
+      "id": "S2-vip-delay-recovery",
+      "customer_type": "vip_client",
+      "language": "en",
+      "events": ["confirmed", "assigned", "delayed_pickup", "driver_on_route"],
+      "expected_focus": ["premium_tone", "continuity", "confidence_preservation"]
+    },
+    {
+      "id": "S3-business-flight-change",
+      "customer_type": "business_client",
+      "language": "nl",
+      "events": ["booking_request", "flight_delay", "route_change", "confirmed"],
+      "expected_focus": ["adaptive_replanning", "state_explanation"]
+    },
+    {
+      "id": "S4-confused-payment",
+      "customer_type": "confused_client",
+      "language": "nl",
+      "events": ["pending", "payment_confusion", "repeated_questions", "confirmed"],
+      "expected_focus": ["clarity", "non_technical_language", "consistency"]
+    },
+    {
+      "id": "S5-difficult-unavailable-route",
+      "customer_type": "difficult_client",
+      "language": "es",
+      "events": ["booking_request", "unavailable_route", "unavailable_pricing", "booking_cancellation"],
+      "expected_focus": ["deescalation", "fallback_options", "polite_boundary"]
+    }
+  ]
+}
