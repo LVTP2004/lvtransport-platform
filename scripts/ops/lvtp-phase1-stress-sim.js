@@ -33,6 +33,32 @@ const idempotencyKeys = new Set();
 
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
+const OUTPUT_FILE = process.env.LVTP_REPORT_FILE || 'docs/runtime-validation/latest-phase1-stress-report.json';
+
+function ensureReportDir() {
+  const dir = OUTPUT_FILE.split('/').slice(0, -1).join('/');
+  if (dir) fs.mkdirSync(dir, { recursive: true });
+}
+
+async function preflight() {
+  const health = await request('/health');
+  if (!health.ok) {
+    const error = {
+      startedAt: NOW,
+      baseUrl: BASE_URL,
+      preflight: 'failed',
+      reason: 'API health endpoint is unavailable. Start apps/api before running endurance validation.',
+      healthStatus: health.status,
+      healthError: health.error || null
+    };
+    ensureReportDir();
+    fs.writeFileSync(OUTPUT_FILE, JSON.stringify(error, null, 2));
+    console.error(JSON.stringify(error, null, 2));
+    process.exit(1);
+  }
+}
+
+
 async function request(path, options = {}) {
   const started = Date.now();
   try {
@@ -172,7 +198,8 @@ async function simulateAction(actorId) {
 }
 
 (async function main() {
-  const report = { startedAt: NOW, baseUrl: BASE_URL, cycles: [] };
+  await preflight();
+  const report = { startedAt: NOW, baseUrl: BASE_URL, preflight: 'passed', cycles: [] };
 
   for (const cycle of CYCLES) {
     const cycleEnd = Date.now() + cycle.ms;
@@ -219,5 +246,7 @@ async function simulateAction(actorId) {
     nginxApiErrorsObserved: 'collect externally via nginx/api logs'
   };
 
+  ensureReportDir();
+  fs.writeFileSync(OUTPUT_FILE, JSON.stringify(report, null, 2));
   console.log(JSON.stringify(report, null, 2));
 })();
