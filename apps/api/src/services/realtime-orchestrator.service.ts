@@ -108,12 +108,13 @@ const DRIVER_STALE_MS = 5 * 60_000;
 const MAX_REPLAY_EVENTS = 250;
 const MAX_EVENT_PAYLOAD_BYTES = 96_000;
 const TELEMETRY_MIN_INTERVAL_MS = 2_000;
+const IDEMPOTENCY_TTL_MS = 30 * 60_000;
 const ADMIN_ANALYTICS_PUSH_THROTTLE_MS = 1_000;
 const IN_PROGRESS_TIMEOUT_MS = 2 * 60 * 60_000;
 
 const bookingEvents = new EventEmitter();
 const bookings = new Map<string, BookingRecord>();
-const idempotencyKeys = new Set<string>();
+const idempotencyKeys = new Map<string, number>();
 const websocketClients = new Set<WebSocket>();
 const driverStates = new Map<string, DriverRealtimeState>();
 const eventReplayBuffer: string[] = [];
@@ -186,6 +187,27 @@ const parseLastSequenceFromUrl = (url?: string): number | null => {
 
 const createBookingCode = () => `LV-${Math.floor(100000 + Math.random() * 900000)}`;
 const createAssignmentAttemptKey = (bookingId: string, driverId: string) => `${bookingId}:${driverId}`;
+
+const hasProcessedIdempotencyKey = (key?: string): boolean => {
+  if (!key) return false;
+  const seenAt = idempotencyKeys.get(key);
+  if (!seenAt) return false;
+  if (Date.now() - seenAt > IDEMPOTENCY_TTL_MS) {
+    idempotencyKeys.delete(key);
+    return false;
+  }
+  return true;
+};
+
+const rememberIdempotencyKey = (key?: string): void => {
+  if (!key) return;
+  idempotencyKeys.set(key, Date.now());
+};
+
+const pruneIdempotencyKeys = () => {
+  const now = Date.now();
+  for (const [key, seenAt] of idempotencyKeys.entries()) if (now - seenAt > IDEMPOTENCY_TTL_MS) idempotencyKeys.delete(key);
+};
 const getAvailabilityPrediction = (driver: DriverRealtimeState, activeRides: number) => {
   if (driver.state === 'available' && activeRides === 0) return { nextAvailabilityMinutes: 0, confidence: 0.95, source: 'realtime_state' as const };
   const stateMinutes: Record<DriverState, number> = { offline: 45, available: 0, assigned: 6, en_route: 12, arrived: 4, in_progress: 18, completed: 2 };
@@ -243,6 +265,7 @@ export const realtimeOrchestratorService = {
     heartbeatInterval = setInterval(() => {
       this.cleanupStaleAssignments();
       this.runAutomationSweep();
+      pruneIdempotencyKeys();
       for (const socket of websocketClients) {
         const client = socket as RealtimeSocket;
         if (client.isAlive === false) {
@@ -344,7 +367,7 @@ export const realtimeOrchestratorService = {
     try {
       const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
       const canonicalStatus = toCanonicalBookingStatus(booking.status);
-      if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+      if (hasProcessedIdempotencyKey(params.idempotencyKey)) {
         appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor: 'admin', at: new Date().toISOString(), note: 'Duplicate assignment prevented by idempotency key', metadata: { idempotencyKey: params.idempotencyKey } });
         return booking;
       }
@@ -373,7 +396,7 @@ export const realtimeOrchestratorService = {
       appendLifecycleEvent(booking, { type: 'transition', status: 'assigned', previousStatus: canonicalStatus, actor: 'admin', at: now, note: `Driver ${params.driverName} assigned`, metadata: { driverId: params.driverId, assignmentExpiresAt: booking.assignmentExpiresAt } });
       appendLifecycleEvent(booking, { type: 'assignment_attempt', status: 'assigned', actor: 'admin', at: now, note: 'Assignment attempt succeeded', metadata: { driverId: params.driverId, attemptKey } });
       driverStates.set(params.driverId, { ...driver, state: 'assigned', activeBookingId: booking.id, lastUpdatedAt: now });
-      if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+      rememberIdempotencyKey(params.idempotencyKey);
       assignmentAttemptLedger.set(attemptKey, now);
       operationalAnalyticsService.trackAssignmentIssued();
       operationalAnalyticsService.trackBookingTransition(booking);
@@ -390,7 +413,7 @@ export const realtimeOrchestratorService = {
     const booking = bookings.get(params.bookingId); if (!booking) throw new Error('BOOKING_NOT_FOUND');
     if (booking.assignedDriverId !== params.driverId) throw new Error('DRIVER_MISMATCH');
     if (TERMINAL_BOOKING_STATUSES.has(booking.status)) throw new Error('TERMINAL_STATE_IMMUTABLE');
-    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+    if (hasProcessedIdempotencyKey(params.idempotencyKey)) {
       appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor: 'driver', at: new Date().toISOString(), note: 'Duplicate driver assignment response suppressed by idempotency key', metadata: { idempotencyKey: params.idempotencyKey, action: params.action } });
       return booking;
     }
@@ -426,7 +449,7 @@ export const realtimeOrchestratorService = {
       if (driver) driverStates.set(params.driverId, { ...driver, state: 'en_route', activeBookingId: booking.id, lastUpdatedAt: now });
     }
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    rememberIdempotencyKey(params.idempotencyKey);
     const trackedDriver = driverStates.get(params.driverId);
     if (trackedDriver) operationalAnalyticsService.trackDriverState(trackedDriver);
     emit('booking.updated', booking); emit('booking.lifecycle.changed', booking); emit('admin.live.updated', { bookingId: booking.id, driverId: params.driverId, status: booking.status, at: now });
@@ -439,7 +462,7 @@ export const realtimeOrchestratorService = {
     const nextStatus = toCanonicalBookingStatus(params.status);
     const actor = params.actor as BookingActor;
     if (!['customer', 'admin', 'driver', 'system'].includes(actor)) throw new Error('INVALID_ACTOR');
-    if (params.idempotencyKey && idempotencyKeys.has(params.idempotencyKey)) {
+    if (hasProcessedIdempotencyKey(params.idempotencyKey)) {
       appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'Duplicate transition suppressed by idempotency key', metadata: { idempotencyKey: params.idempotencyKey, requestedStatus: nextStatus } });
       operationalObservabilityService.trackLifecycleMutation({ bookingId: booking.id, actor, from: booking.status, to: nextStatus, version: booking.version, result: 'duplicate', reason: 'idempotency_key' });
       return booking;
@@ -457,9 +480,14 @@ export const realtimeOrchestratorService = {
         throw new Error('STALE_EVENT_REJECTED');
       }
     }
+    if (TERMINAL_BOOKING_STATUSES.has(booking.status)) {
+      appendLifecycleEvent(booking, { type: 'invalid_transition', status: booking.status, actor, at: new Date().toISOString(), note: 'Mutation against terminal lifecycle state blocked', metadata: { requestedStatus: nextStatus } });
+      operationalObservabilityService.trackLifecycleMutation({ bookingId: booking.id, actor, from: booking.status, to: nextStatus, version: booking.version, result: 'rejected', reason: 'terminal_state_immutable' });
+      throw new Error('TERMINAL_STATE_IMMUTABLE');
+    }
     if (booking.status === nextStatus) {
       appendLifecycleEvent(booking, { type: 'duplicate_event', status: booking.status, actor, at: new Date().toISOString(), note: 'No-op transition ignored', metadata: { requestedStatus: nextStatus } });
-      if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+      rememberIdempotencyKey(params.idempotencyKey);
       return booking;
     }
     if (!allowedTransitions[booking.status].has(nextStatus)) {
@@ -470,7 +498,7 @@ export const realtimeOrchestratorService = {
     const now = new Date().toISOString();
     const previousStatus = booking.status;
     booking.status = nextStatus; booking.version += 1; booking.updatedAt = now; appendLifecycleEvent(booking, { type: 'transition', status: nextStatus, previousStatus, actor, at: now, metadata: { requestedStatus: params.status } });
-    if (params.idempotencyKey) idempotencyKeys.add(params.idempotencyKey);
+    rememberIdempotencyKey(params.idempotencyKey);
     if (TERMINAL_BOOKING_STATUSES.has(nextStatus)) releaseDriver(booking.assignedDriverId);
     else reconcileDriverLifecycleState(booking);
     operationalAnalyticsService.trackBookingTransition(booking, previousStatus);
