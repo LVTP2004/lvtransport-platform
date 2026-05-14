@@ -51,6 +51,7 @@ const navItems = [
 ];
 
 const createRideCode = () => `LV${Math.floor(10000 + Math.random() * 90000)}`;
+const trustSignals = ['Verified Driver', 'Realtime Connected', 'Airport Synchronized', 'Secure Payment', 'LV Certified', 'Premium Operator'] as const;
 const interactionCopy: Record<InteractionIntent, string> = {
   booking: 'Reserveer premium ritten en operational lifecycle updates.',
   tracking: 'Bekijk realtime lifecycle, dispatch updates en ride intelligence.',
@@ -112,6 +113,7 @@ export function App() {
   const [trackingLoading, setTrackingLoading] = useState(false);
   const [customerMapPhase, setCustomerMapPhase] = useState<(typeof customerMapStates)[number]['key']>('searching');
   const [driverProgress, setDriverProgress] = useState(10);
+  const [syncPhase, setSyncPhase] = useState(0);
   const [verifiedReviews, setVerifiedReviews] = useState<string[]>([]);
   const [installReady, setInstallReady] = useState(false);
 
@@ -257,6 +259,10 @@ export function App() {
     return () => clearInterval(timer);
   }, []);
   useEffect(() => {
+    const timer = setInterval(() => setSyncPhase((value) => (value + 1) % 4), 2400);
+    return () => clearInterval(timer);
+  }, []);
+  useEffect(() => {
     const timer = setTimeout(() => setBooting(false), 2000);
     return () => clearTimeout(timer);
   }, []);
@@ -268,6 +274,7 @@ export function App() {
       <div className='boot-splash__glow' />
       <img src='/brand/lv-logo-dark.svg' alt='LV ecosystem symbol' className='boot-splash__logo' />
       <p className='boot-splash__caption'>Premium realtime mobility ecosystem</p>
+      <p className='boot-splash__status'>Operational systems synchronizing {'.'.repeat(syncPhase + 1)}</p>
     </div>}
     <div className='mx-auto max-w-6xl px-4 py-4 sm:px-6'>
       <header className='glass-panel sticky top-3 z-40 rounded-3xl p-3 sm:p-4'>
@@ -290,6 +297,12 @@ export function App() {
       <section id='hero' className='glass-panel hero-panel mt-4 rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Founder-Operated Premium Mobility Ecosystem</h1><p className='mt-4 max-w-3xl text-lv-mist'>Een kalm, realtime en verified ecosysteem voor executive mobiliteit. Publieke verkenning is open; operationele acties verlopen via premium onboarding.</p><div className='mt-6 flex flex-wrap gap-2'><button className='nav-btn' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Volg uw rit</button></div></section>
       <section className='glass-panel mt-4 overflow-hidden rounded-3xl p-0'>
         <img src='/brand/lv-logo-presentation.svg' alt='Luxury mobility silhouette identity' className='h-auto w-full opacity-95' />
+      </section>
+      <section className='glass-panel mt-4 rounded-3xl p-4 sm:p-5'>
+        <p className='text-xs uppercase tracking-[0.2em] text-lv-champagne'>Operational trust signals</p>
+        <div className='mt-3 flex flex-wrap gap-2'>
+          {trustSignals.map((signal) => <span key={signal} className='trust-pill'>{signal}</span>)}
+        </div>
       </section>
       <section id='tracking-map' className='glass-panel mt-4 overflow-hidden rounded-3xl'>
         <div className='map-surface'>
