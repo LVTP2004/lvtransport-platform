@@ -54,6 +54,12 @@ This repository is the central workspace for planning and implementing:
 - **Phase 4:** LV Eats basic structure
 - **Phase 5:** marketplace expansion
 
+## Founder Vision
+
+The founder vision statement is documented in:
+
+- `docs/FOUNDER_VISION_STATEMENT.md`
+
 Detailed planning is documented in:
 
 - `docs/PROJECT-MASTERPLAN.md`
