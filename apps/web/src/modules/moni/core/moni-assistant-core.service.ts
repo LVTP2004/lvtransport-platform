@@ -1,7 +1,7 @@
 import { getMissingBookingFields, explainBookingStatus, explainOnboardingStatus } from '../adapters/booking-context.adapter';
 import { buildDriverSupportGuidance } from '../adapters/driver-context.adapter';
 import { detectLanguage } from '../logic/language';
-import type { MoniAudience, MoniContextEnvelope, MoniEscalationReason, MoniIntent, MoniResponse } from '../types/moni.types';
+import type { MoniAudience, MoniBranch, MoniContextEnvelope, MoniEscalationReason, MoniIntent, MoniResponse } from '../types/moni.types';
 import { MONI_OWNER_ESCALATION_CONTACT, customerResponseRules } from '../rules/response-rules';
 
 const escalationKeywords: Array<{ reason: MoniEscalationReason; pattern: RegExp }> = [
@@ -28,6 +28,17 @@ export const buildMoniResponse = (input: {
   const language = detectLanguage(input.userText);
   const escalation = escalationKeywords.find((x) => x.pattern.test(input.userText));
 
+  const branch: MoniBranch =
+    input.audience === 'driver'
+      ? 'driver'
+      : input.audience === 'admin'
+        ? 'control'
+        : input.audience === 'business'
+          ? 'business'
+          : input.intent === 'airport_transfer'
+            ? 'airport'
+            : 'ride';
+
   const text =
     input.intent === 'booking_status_explanation'
       ? explainBookingStatus(input.context.booking?.status)
@@ -46,6 +57,8 @@ export const buildMoniResponse = (input: {
             : customerResponseRules.safeFallback;
 
   return {
+    branch,
+    evolutionLevel: 2,
     language,
     audience: input.audience,
     intent: input.intent,

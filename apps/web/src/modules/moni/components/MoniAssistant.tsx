@@ -8,7 +8,7 @@ import type { MoniBookingFields, MoniMessage } from '../types/moni.types';
 
 type MoniPresenceState = 'idle' | 'listening' | 'thinking' | 'confirmation' | 'issue';
 
-const quickReplies = ['Reserveer premium rit', 'Volg mijn rit', 'VIP onboarding', 'Business partner', 'Operator support', 'Contact dispatch'];
+const quickReplies = ['Reserveer premium rit', 'Volg mijn rit', 'Moni Airport update', 'Moni Business support', 'Moni Driver assist', 'Contact dispatch'];
 
 export function MoniAssistant() {
   const [open, setOpen] = useState(false);
@@ -16,7 +16,7 @@ export function MoniAssistant() {
   const [input, setInput] = useState('');
   const [presenceState, setPresenceState] = useState<MoniPresenceState>('idle');
   const [messages, setMessages] = useState<MoniMessage[]>([
-    { role: 'assistant', text: 'Moni Ride • Premium mobility companion\nWelkom. Ik bewaak uw rit en begeleid u stap voor stap.' }
+    { role: 'assistant', text: 'Moni Core • Unified intelligence layer\nMoni Ride online. Welkom — ik bewaak uw rit kalm, premium en stap voor stap.' }
   ]);
   const [bookingData] = useState<MoniBookingFields>({});
 
@@ -58,7 +58,7 @@ export function MoniAssistant() {
         <header className='moni-header'>
           <div>
             <strong>Moni Ride</strong>
-            <p>Concierge observer • founder-operated ecosystem</p>
+            <p>Powered by Moni Core • unified ecosystem concierge</p>
           </div>
           <div className='moni-actions'>
             <button onClick={() => { setMinimized(true); setPresenceState('idle'); }}>–</button>
