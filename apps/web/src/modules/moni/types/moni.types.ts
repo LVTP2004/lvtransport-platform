@@ -66,3 +66,44 @@ export type MoniResponse = {
   escalation: { required: boolean; reason?: MoniEscalationReason; owner?: string };
   audit: { safe: boolean; flags: string[]; timestampIso: string };
 };
+
+export type MoniLearningClassification =
+  | 'successful_booking'
+  | 'incomplete_booking'
+  | 'unclear_intent'
+  | 'customer_confusion'
+  | 'price_question'
+  | 'tracking_issue'
+  | 'airport_vip_request'
+  | 'complaint'
+  | 'escalation_needed'
+  | 'potential_improvement';
+
+export type MoniReviewStatus = 'draft' | 'reviewed' | 'approved' | 'rejected' | 'production_enabled';
+
+export type MoniLearningRecord = {
+  interactionId: string;
+  timestamp: string;
+  language: MoniLanguage;
+  intent: MoniIntent;
+  bookingStage: string;
+  success: boolean;
+  failureReason: string;
+  customerEmotion: string;
+  moniResponseQuality: number;
+  operationalRisk: 'low' | 'medium' | 'high';
+  suggestedImprovement: string;
+  reviewStatus: MoniReviewStatus;
+  classification: MoniLearningClassification;
+  scores: {
+    clarityScore: number;
+    customerSatisfactionSignal: number;
+    completionSuccess: number;
+    bookingConversion: number;
+    responseAccuracy: number;
+    operationalRiskScore: number;
+    toneQuality: number;
+    escalationCorrectness: number;
+  };
+  weaknessPatterns: string[];
+};
