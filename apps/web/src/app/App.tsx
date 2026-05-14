@@ -1,4 +1,5 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { getInstallPromptState } from '../pwa';
 import { Button } from '@lvtransport/ui';
 import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
@@ -112,9 +113,31 @@ export function App() {
   const [customerMapPhase, setCustomerMapPhase] = useState<(typeof customerMapStates)[number]['key']>('searching');
   const [driverProgress, setDriverProgress] = useState(10);
   const [verifiedReviews, setVerifiedReviews] = useState<string[]>([]);
+  const [installReady, setInstallReady] = useState(false);
 
   const [calc, setCalc] = useState({ km: 22, isNight: false, airport: true, business: false });
   const price = useMemo(() => Math.round(28 + calc.km * (calc.isNight ? 2.8 : 2.3) + (calc.airport ? 12 : 0) + (calc.business ? 8 : 0)), [calc]);
+
+
+  useEffect(() => {
+    const installState = getInstallPromptState();
+    setInstallReady(installState.available);
+    const onReady = () => setInstallReady(true);
+    const onInstalled = () => setInstallReady(false);
+    window.addEventListener('lv:pwa-install-available', onReady);
+    window.addEventListener('lv:pwa-installed', onInstalled);
+    return () => {
+      window.removeEventListener('lv:pwa-install-available', onReady);
+      window.removeEventListener('lv:pwa-installed', onInstalled);
+    };
+  }, []);
+
+  const installEcosystemApp = async () => {
+    const accepted = await getInstallPromptState().promptInstall();
+    if (!accepted) return;
+    setInstallReady(false);
+    setConfirm('LV app installed. U geniet nu van een native premium experience.');
+  };
 
   useEffect(() => {
     const onPopState = () => setRoute(routeMap[window.location.pathname] ?? 'home');
@@ -255,6 +278,7 @@ export function App() {
             {navItems.map((item) => <button key={item.path} className='nav-btn' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
             <button className='surface-btn' onClick={() => requireIdentity('driver', () => navigate('/driver'))}>Driver portal</button>
             <button className='surface-btn' onClick={() => requireIdentity('admin', () => navigate('/admin'))}>Admin portal</button>
+            {installReady && <button className='surface-btn' onClick={installEcosystemApp}>Install app</button>}
           </nav>
         </div>
         <div className={`mobile-menu ${menuOpen ? 'mobile-menu--open' : ''}`}>

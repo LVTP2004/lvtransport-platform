@@ -1,5 +1,5 @@
-const VERSION = 'lvtransport-v1';
-const APP_SHELL = ['/', '/manifest.webmanifest'];
+const VERSION = 'lvtransport-v2';
+const APP_SHELL = ['/', '/booking', '/driver', '/admin', '/vip', '/manifest.webmanifest', '/icons/icon-192.svg', '/icons/icon-512.svg'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(VERSION).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
