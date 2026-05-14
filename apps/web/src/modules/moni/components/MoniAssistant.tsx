@@ -14,6 +14,7 @@ export function MoniAssistant() {
   const [messages, setMessages] = useState<MoniMessage[]>([
     { role: 'assistant', text: 'Moni Assistant • Premium operator\nNatuurlijk, ik help u graag met uw rit.' }
   ]);
+  const [messages, setMessages] = useState<MoniMessage[]>([{ role: 'assistant', text: 'Moni Assistant • Premium concierge\nWelkom, ik help u direct met boekingen en service.' }]);
   const [bookingData] = useState<MoniBookingFields>({});
 
   const send = (text: string) => {
@@ -38,6 +39,7 @@ export function MoniAssistant() {
       <button className='moni-fab' onClick={() => { setOpen(true); setMinimized(false); }}>Moni Assistant</button>
       <section className={panelClass}>
         <header className='moni-header'><div><strong>Moni Assistant</strong><p>LV Transport Premium Operator</p></div><div className='moni-actions'><button onClick={() => setMinimized(true)}>–</button><button onClick={() => { setOpen(false); setMinimized(false); }}>×</button></div></header>
+        <header className='moni-header'><div><strong>Moni Assistant</strong><p>LV Transport Premium Concierge</p></div><div className='moni-actions'><button onClick={() => setMinimized(true)}>–</button><button onClick={() => { setOpen(false); setMinimized(false); }}>×</button></div></header>
         <div className='moni-quick'>{quickReplies.map((q) => <button key={q} onClick={() => send(q)}>{q}</button>)}</div>
         <div className='moni-messages'>{messages.map((m, i) => <p key={i} className={m.role === 'assistant' ? 'assistant' : 'user'}>{m.text}</p>)}</div>
         <form className='moni-input' onSubmit={(e) => { e.preventDefault(); send(input); }}>
