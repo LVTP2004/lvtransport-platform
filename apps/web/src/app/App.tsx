@@ -43,7 +43,7 @@ const routeMap: Record<string, RouteKey> = {
 const navItems = [
   { label: 'Reserveer nu', path: '/booking', section: 'booking', intent: 'booking' as InteractionIntent },
   { label: 'Prijs berekenen', path: '/prijzen', section: 'prijzen' },
-  { label: 'Track booking', path: '/tracking', section: 'tracking', intent: 'tracking' as InteractionIntent },
+  { label: 'Volg uw rit', path: '/tracking', section: 'tracking', intent: 'tracking' as InteractionIntent },
   { label: 'Diensten', path: '/diensten', section: 'diensten' },
   { label: 'LV VIP', path: '/vip', section: 'vip', intent: 'vip' as InteractionIntent },
   { label: 'Contact', path: '/contact', section: 'contact' }
@@ -89,11 +89,14 @@ export function App() {
 
   const [authForm, setAuthForm] = useState({ name: '', email: '', phone: '', password: '', company: '', roleIntent: 'Customer' });
   const [authStatus, setAuthStatus] = useState('');
+  const [authLoading, setAuthLoading] = useState(false);
 
   const [form, setForm] = useState({ name: '', phone: '', pickup: '', destination: '', date: '', time: '', serviceType: 'Airport transfer', notes: '' });
   const [confirm, setConfirm] = useState('');
+  const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [trackingInput, setTrackingInput] = useState('');
   const [trackingResult, setTrackingResult] = useState('Voer uw ritcode in om realtime lifecycle-status te controleren.');
+  const [trackingLoading, setTrackingLoading] = useState(false);
   const [verifiedReviews, setVerifiedReviews] = useState<string[]>([]);
 
   const [calc, setCalc] = useState({ km: 22, isNight: false, airport: true, business: false });
@@ -120,6 +123,12 @@ export function App() {
   };
 
   const activateIdentity = (method: 'google' | 'email') => {
+    if (authLoading) return;
+    if (!authForm.email.trim() || !authForm.phone.trim()) {
+      setAuthStatus('Email en telefoon zijn verplicht voor verified operational toegang.');
+      return;
+    }
+    setAuthLoading(true);
     const nextIdentity: VerifiedIdentity = {
       name: authForm.name || 'LV Member',
       email: authForm.email,
@@ -132,18 +141,25 @@ export function App() {
     localStorage.setItem('lvtp_verified_identity', JSON.stringify(nextIdentity));
     setIdentity(nextIdentity);
     setAuthStatus('Verified identity geactiveerd. Welkom in het private LV-ecosysteem.');
-    setTimeout(() => setAuthOpen(false), 500);
+    setTimeout(() => {
+      setAuthOpen(false);
+      setAuthLoading(false);
+    }, 500);
   };
 
   const onSubmitBooking = async (event: FormEvent) => {
     event.preventDefault();
+    if (bookingSubmitting) return;
     if (!identity) return startIntent('booking');
+    setBookingSubmitting(true);
+    setConfirm('Boeking wordt veilig verwerkt...');
     const code = createRideCode();
     const payload: BookingRecord = { ...form, name: identity.name, phone: identity.phone || form.phone, code, createdAt: new Date().toISOString(), status: 'submitted' };
     const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
     const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
     if (sessionStorage.getItem(dedupeKey)) {
       setConfirm('Dubbele verzending geblokkeerd. Uw eerdere boeking werd al verwerkt.');
+      setBookingSubmitting(false);
       return;
     }
     localStorage.setItem('lvtransport_bookings', JSON.stringify([payload, ...existing].slice(0, 50)));
@@ -162,6 +178,7 @@ export function App() {
     }
     setConfirmedReviewSeed(payload.code);
     setConfirm(message);
+    setBookingSubmitting(false);
   };
 
   const setConfirmedReviewSeed = (rideCode: string) => {
@@ -169,18 +186,33 @@ export function App() {
   };
 
   const checkTracking = () => {
+    if (trackingLoading) return;
     if (!identity) return startIntent('tracking');
+    setTrackingLoading(true);
     const normalized = trackingInput.trim().toUpperCase();
-    if (!/^LV\d{5}$/.test(normalized)) return setTrackingResult('Ongeldige code. Gebruik formaat LV12345.');
+    if (!/^LV\d{5}$/.test(normalized)) {
+      setTrackingResult('Ongeldige code. Gebruik formaat LV12345.');
+      setTrackingLoading(false);
+      return;
+    }
 
     const records = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
     const ride = records.find((record) => record.code === normalized);
-    if (!ride) return setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
+    if (!ride) {
+      setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
+      setTrackingLoading(false);
+      return;
+    }
 
     const lifecycle = normalizeLifecycle(ride.status);
-    if (!lifecycle) return setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+    if (!lifecycle) {
+      setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+      setTrackingLoading(false);
+      return;
+    }
     const immutable = isImmutableLifecycleStatus(lifecycle);
     setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
+    setTrackingLoading(false);
   };
 
   return <div className='premium-shell min-h-screen text-white'>
@@ -192,26 +224,28 @@ export function App() {
           <nav className='ml-auto hidden items-center gap-2 md:flex'>
             {navItems.map((item) => <button key={item.path} className='nav-btn' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
             <button className='surface-btn' onClick={() => requireIdentity('driver', () => navigate('/driver'))}>Driver portal</button>
-            <button className='surface-btn' onClick={() => requireIdentity('admin', () => navigate('/admin'))}>Business dashboard</button>
+            <button className='surface-btn' onClick={() => requireIdentity('admin', () => navigate('/admin'))}>Admin portal</button>
           </nav>
         </div>
         <div className={`mobile-menu ${menuOpen ? 'mobile-menu--open' : ''}`}>
           {navItems.map((item) => <button key={item.path} className='mobile-nav-btn' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
+          <button className='mobile-nav-btn' onClick={() => requireIdentity('driver', () => navigate('/driver'))}>Driver portal</button>
+          <button className='mobile-nav-btn' onClick={() => requireIdentity('admin', () => navigate('/admin'))}>Admin portal</button>
         </div>
       </header>
-      <section id='hero' className='glass-panel hero-panel mt-4 rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Verified Premium Mobility Ecosystem</h1><p className='mt-4 max-w-3xl text-lv-mist'>Public exploration is open. Operational actions run through verified identity, trusted lifecycle orchestration and premium onboarding.</p><div className='mt-6 flex flex-wrap gap-2'><button className='nav-btn' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Track booking</button></div></section><section id='prijzen' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Prijs berekenen</h3><div className='mt-4 grid gap-3 md:grid-cols-2'><label className='field-wrap'><span>Afstand (km)</span><input type='number' min={1} value={calc.km} onChange={(event) => setCalc({ ...calc, km: Number(event.target.value) || 0 })} /></label><div className='flex flex-col gap-2 rounded-2xl border border-lv-gold/25 bg-black/30 p-4 text-sm'><label><input type='checkbox' checked={calc.airport} onChange={(event) => setCalc({ ...calc, airport: event.target.checked })} /> Airport toeslag</label><label><input type='checkbox' checked={calc.business} onChange={(event) => setCalc({ ...calc, business: event.target.checked })} /> Business service</label><label><input type='checkbox' checked={calc.isNight} onChange={(event) => setCalc({ ...calc, isNight: event.target.checked })} /> Nachtregeling</label></div></div><p className='mt-4 text-lg'>Geschatte prijs: <b className='text-lv-champagne'>€{price}</b></p></section><section id='diensten' className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>{['Airport transfers', 'Private rides', 'Business & VIP', '24/7 dispatch opvolging'].map((service) =><article key={service} className='glass-panel service-card rounded-2xl p-4'>{service}</article>)}</section><section id='vip' className='glass-panel mt-4 rounded-3xl p-6 text-lv-mist'>Prioriteitsservice, facturatie, vaste accountmanager en gecentraliseerde operationele opvolging voor bedrijven en frequente reizigers.</section>
+      <section id='hero' className='glass-panel hero-panel mt-4 rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Verified Premium Mobility Ecosystem</h1><p className='mt-4 max-w-3xl text-lv-mist'>Public exploration is open. Operational actions run through verified identity, trusted lifecycle orchestration and premium onboarding.</p><div className='mt-6 flex flex-wrap gap-2'><button className='nav-btn' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Volg uw rit</button></div></section><section id='prijzen' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Prijs berekenen</h3><div className='mt-4 grid gap-3 md:grid-cols-2'><label className='field-wrap'><span>Afstand (km)</span><input type='number' min={1} value={calc.km} onChange={(event) => setCalc({ ...calc, km: Number(event.target.value) || 0 })} /></label><div className='flex flex-col gap-2 rounded-2xl border border-lv-gold/25 bg-black/30 p-4 text-sm'><label><input type='checkbox' checked={calc.airport} onChange={(event) => setCalc({ ...calc, airport: event.target.checked })} /> Airport toeslag</label><label><input type='checkbox' checked={calc.business} onChange={(event) => setCalc({ ...calc, business: event.target.checked })} /> Business service</label><label><input type='checkbox' checked={calc.isNight} onChange={(event) => setCalc({ ...calc, isNight: event.target.checked })} /> Nachtregeling</label></div></div><p className='mt-4 text-lg'>Geschatte prijs: <b className='text-lv-champagne'>€{price}</b></p></section><section id='diensten' className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>{['Airport transfers', 'Private rides', 'Business & VIP', '24/7 dispatch opvolging'].map((service) =><article key={service} className='glass-panel service-card rounded-2xl p-4'>{service}</article>)}</section><section id='vip' className='glass-panel mt-4 rounded-3xl p-6 text-lv-mist'>Prioriteitsservice, facturatie, vaste accountmanager en gecentraliseerde operationele opvolging voor bedrijven en frequente reizigers.</section>
       <section id='booking' className='glass-panel mt-4 rounded-3xl p-6'>
         <h3 className='text-2xl font-semibold'>Premium Operational Booking</h3><p className='mt-2 text-sm text-lv-mist'>Alle betekenisvolle acties verlopen via verified identity.</p>
         <form className='mt-4 grid gap-3 sm:grid-cols-2' onSubmit={onSubmitBooking}> {['name', 'phone', 'pickup', 'destination', 'date', 'time', 'serviceType', 'notes'].map((key) =>
             <label key={key} className={`field-wrap ${key === 'notes' ? 'sm:col-span-2' : ''}`}><span>{key}</span><input required={key !== 'notes'} value={form[key as keyof typeof form]} onChange={(event) => setForm({ ...form, [key]: event.target.value })} /></label>)}
-          <div className='sm:col-span-2'><Button type='submit'>Reserveer nu</Button></div></form>{confirm && <p className='mt-3 status-line status-line--active'>{confirm}</p>}
+          <div className='sm:col-span-2'><Button type='submit' disabled={bookingSubmitting}>{bookingSubmitting ? 'Verwerken...' : 'Reserveer nu'}</Button></div></form>{confirm && <p className='mt-3 status-line status-line--active'>{confirm}</p>}
       </section>
-      <section id='tracking' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Verified Tracking</h3><div className='mt-3 flex flex-col gap-2 sm:flex-row'><input className='estimate-input' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button variant='secondary' onClick={checkTracking}>Controleer status</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
+      <section id='tracking' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Verified Tracking</h3><div className='mt-3 flex flex-col gap-2 sm:flex-row'><input className='estimate-input' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button variant='secondary' onClick={checkTracking} disabled={trackingLoading}>{trackingLoading ? 'Controleren...' : 'Controleer status'}</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
       <section className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-xl font-semibold'>Verified Ride Reviews</h3><p className='text-sm text-lv-mist'>Alle reviews zijn gekoppeld aan completed rides en verified identities.</p><ul className='mt-3 space-y-2'>{verifiedReviews.length ? verifiedReviews.map((review) => <li key={review} className='status-line status-line--active'>{review}</li>) : <li className='status-line'>Nog geen eligible verified reviews.</li>}</ul><Button variant='secondary' className='mt-3' onClick={() => requireIdentity('reviews', () => setTrackingResult('Verified review flow geactiveerd na completed ride lifecycle.'))}>Open review flow</Button></section>
       <section className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-xl font-semibold'>LV Business Expansion</h3><p className='text-lv-mist text-sm'>LVTP levert dispatch, realtime infrastructuur en premium klantacquisitie. Operators brengen voertuigen en lokale uitvoering.</p><Button className='mt-3' onClick={() => requireIdentity('expansion', () => setTrackingResult('Expansion onboarding geopend voor verified operator intake.'))}>Start Expansion Onboarding</Button></section>
       <footer id='contact' className='glass-panel my-4 rounded-3xl p-6 text-sm'>info@lvtransport.be • +32 466 48 79 36 • Antwerpen • België</footer>
       <MoniAssistant />
-      {authOpen && <div className='auth-overlay'><div className='auth-card glass-panel'><p className='text-xs uppercase tracking-[0.2em] text-lv-champagne'>Premium Operational Onboarding</p><h3 className='mt-2 text-2xl font-semibold'>Aanmelden / Registreren</h3><p className='mt-2 text-sm text-lv-mist'>{interactionCopy[authIntent]}</p><div className='mt-3 flex gap-2'><button className='surface-btn' onClick={() => setAuthMode('signin')}>Aanmelden</button><button className='surface-btn' onClick={() => setAuthMode('register')}>Registreren</button><button className='surface-btn' onClick={() => activateIdentity('google')}>Google Sign-In</button></div><div className='mt-3 grid gap-2'>{['name', 'email', 'phone', 'password', 'company'].map((key) => <input key={key} className='estimate-input' type={key === 'password' ? 'password' : 'text'} placeholder={key} value={authForm[key as keyof typeof authForm]} onChange={(e) => setAuthForm({ ...authForm, [key]: e.target.value })} />)}<input className='estimate-input' placeholder='Operational role intent' value={authForm.roleIntent} onChange={(e) => setAuthForm({ ...authForm, roleIntent: e.target.value })} /></div><div className='mt-3 flex gap-2'><Button onClick={() => activateIdentity('email')}>{authMode === 'signin' ? 'Verifieer en ga verder' : 'Account creëren'}</Button><button className='surface-btn' onClick={() => setAuthOpen(false)}>Sluiten</button></div>{authStatus && <p className='status-line status-line--active mt-3'>{authStatus}</p>}</div></div>}
+      {authOpen && <div className='auth-overlay'><div className='auth-card glass-panel'><p className='text-xs uppercase tracking-[0.2em] text-lv-champagne'>Premium Operational Onboarding</p><h3 className='mt-2 text-2xl font-semibold'>Aanmelden / Registreren</h3><p className='mt-2 text-sm text-lv-mist'>{interactionCopy[authIntent]}</p><div className='mt-3 flex gap-2'><button className='surface-btn' onClick={() => setAuthMode('signin')}>Aanmelden</button><button className='surface-btn' onClick={() => setAuthMode('register')}>Registreren</button><button className='surface-btn' disabled={authLoading} onClick={() => activateIdentity('google')}>{authLoading ? 'Verifiëren...' : 'Google Sign-In'}</button></div><div className='mt-3 grid gap-2'>{['name', 'email', 'phone', 'password', 'company'].map((key) => <input key={key} className='estimate-input' type={key === 'password' ? 'password' : 'text'} placeholder={key} value={authForm[key as keyof typeof authForm]} onChange={(e) => setAuthForm({ ...authForm, [key]: e.target.value })} />)}<input className='estimate-input' placeholder='Operational role intent' value={authForm.roleIntent} onChange={(e) => setAuthForm({ ...authForm, roleIntent: e.target.value })} /></div><div className='mt-3 flex gap-2'><Button disabled={authLoading} onClick={() => activateIdentity('email')}>{authLoading ? 'Verifiëren...' : authMode === 'signin' ? 'Verifieer en ga verder' : 'Account creëren'}</Button><button className='surface-btn' onClick={() => setAuthOpen(false)}>Sluiten</button></div>{authStatus && <p className='status-line status-line--active mt-3'>{authStatus}</p>}</div></div>}
       {identity && <div className='identity-chip glass-panel'>Verified: {identity.name} • {identity.roleIntent} <button onClick={() => { localStorage.removeItem('lvtp_verified_identity'); setIdentity(null); }}>Afmelden</button></div>}
       {(route === 'driver' || route === 'admin') && <div className='fixed bottom-4 left-4 glass-panel rounded-2xl p-4 text-sm'>{route === 'driver' ? <a href={DRIVER_SURFACE_URL}>Open Driver omgeving</a> : <a href={ADMIN_SURFACE_URL}>Open Admin omgeving</a>}</div>}
     </div>
