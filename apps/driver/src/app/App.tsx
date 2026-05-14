@@ -69,9 +69,9 @@ export function App() {
     <div className="lvtp-network absolute inset-0 pointer-events-none opacity-40" />
     <div className="relative mx-auto max-w-3xl space-y-4">
       <header className="lvtp-shell rounded-3xl p-5">
-        <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-10 w-auto rounded-md border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-xl font-semibold text-amber-200">Driver Operations</h1></div>
+        <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-10 w-auto rounded-md border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-xl font-semibold text-amber-200">LV Driver</h1></div>
         <p className="mt-2 text-sm text-zinc-300">Snelle lifecycle-controle voor professionele, veilige rituitvoering.</p>
-      </header>
+      <button className="lvtp-btn-primary mt-3" onClick={() => (window as any).__lvPwa?.promptInstall?.()}>Install app</button></header>
       <section className="lvtp-card rounded-2xl p-4">
         <button className="lvtp-btn-primary w-full" onClick={() => setLiveLocation((v) => !v)}>{liveLocation ? 'Locatiedeling stoppen' : 'Locatiedeling starten'}</button>
         <p className="mt-2 text-sm text-zinc-300">{gpsMessage}</p>
