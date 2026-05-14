@@ -3,6 +3,7 @@ import { useMemo, useState } from 'react';
 import { detectLanguage } from '../logic/language';
 import { detectIntent } from '../logic/intents';
 import { nextMissingPrompt } from '../logic/booking-extractor';
+import { createLearningRecord, persistLearningRecord } from '../learning/controlled-learning';
 import { buildIntro, buildIntentReply } from '../templates/responses';
 const quickReplies = ['Rit boeken', 'Prijs vragen', 'Luchthaven', 'Volg mijn taxi', 'Zakelijk/VIP', 'Contact'];
 export function MoniAssistant() {
@@ -27,7 +28,10 @@ export function MoniAssistant() {
             if (prompt)
                 replies.push(prompt);
         }
-        setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: replies.join('\n') }]);
+        const assistantReply = replies.join('\n');
+        const learningRecord = createLearningRecord({ userText: text, replyText: assistantReply, language, intent });
+        persistLearningRecord(learningRecord);
+        setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: assistantReply }]);
         setInput('');
     };
     const panelClass = useMemo(() => `moni-panel ${open && !minimized ? 'moni-panel--open' : ''}`, [open, minimized]);
