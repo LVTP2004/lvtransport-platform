@@ -1,0 +1,58 @@
+[
+  {
+    "id": "standard-001",
+    "type": "standard",
+    "name": "Sanne",
+    "defaultLanguage": "nl",
+    "traits": ["direct", "price-sensitive"],
+    "goals": ["simple booking", "price estimate", "pickup time clarity"]
+  },
+  {
+    "id": "airport-001",
+    "type": "airport",
+    "name": "Tom",
+    "defaultLanguage": "nl",
+    "traits": ["time-critical", "needs tracking updates"],
+    "goals": ["flight delay handling", "luggage confirmation", "pickup synchronization"]
+  },
+  {
+    "id": "vip-001",
+    "type": "vip",
+    "name": "Mevrouw De Vries",
+    "defaultLanguage": "nl",
+    "traits": ["premium expectations", "high consistency demand"],
+    "goals": ["premium service", "recurring ride setup", "business invoice"]
+  },
+  {
+    "id": "confused-001",
+    "type": "confused",
+    "name": "Jules",
+    "defaultLanguage": "nl",
+    "traits": ["incomplete information", "repetitive"],
+    "goals": ["destination correction", "booking guidance"]
+  },
+  {
+    "id": "difficult-001",
+    "type": "difficult",
+    "name": "Nadia",
+    "defaultLanguage": "nl",
+    "traits": ["impatient", "frustrated by ETA drift"],
+    "goals": ["faster ETA", "price justification"]
+  },
+  {
+    "id": "elderly-001",
+    "type": "elderly",
+    "name": "Meneer Peeters",
+    "defaultLanguage": "nl",
+    "traits": ["slower pace", "needs simple language"],
+    "goals": ["clear step-by-step booking", "confidence"]
+  },
+  {
+    "id": "multi-001",
+    "type": "multilingual",
+    "name": "Lucia",
+    "defaultLanguage": "nl",
+    "traits": ["code-switches languages"],
+    "goals": ["mixed Dutch/Spanish/English support"]
+  }
+]

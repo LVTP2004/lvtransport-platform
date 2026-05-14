@@ -72,3 +72,16 @@
   .moni-input input {@apply min-w-0 flex-1 rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm;}
   .moni-input button {@apply rounded-xl bg-lv-gold px-3 py-2 text-sm font-medium text-black;}
 }
+
+@layer components {
+  .ops-badge {
+    @apply rounded-full border border-lv-gold/35 bg-black/35 px-3 py-1 tracking-[0.08em] text-lv-champagne;
+  }
+
+  .route-card {
+    @apply flex items-center justify-between rounded-2xl border border-white/10 bg-black/25 px-4 py-3;
+  }
+  .premium-theme { @apply bg-lv-black; background-image: radial-gradient(circle at 20% 20%, rgba(212,175,55,.2), transparent 45%), radial-gradient(circle at 80% 10%, rgba(255,255,255,.08), transparent 30%); }
+  .ops-theme { @apply bg-slate-950; }
+  .ops-panel { @apply border border-slate-700 bg-slate-900/80 shadow-xl backdrop-blur-sm; }
+}

@@ -1,0 +1,87 @@
+[
+  {
+    "id": "scn-standard-webchat",
+    "channel": "website-chat",
+    "customerId": "standard-001",
+    "events": [
+      "new booking",
+      "booking confirmation",
+      "driver assigned"
+    ],
+    "stressLevel": "low"
+  },
+  {
+    "id": "scn-airport-delay-whatsapp",
+    "channel": "whatsapp-like",
+    "customerId": "airport-001",
+    "events": [
+      "new booking",
+      "airport delay",
+      "route recalculation",
+      "tracking request",
+      "booking confirmation"
+    ],
+    "stressLevel": "medium"
+  },
+  {
+    "id": "scn-vip-recurring-phone",
+    "channel": "phone-call-text",
+    "customerId": "vip-001",
+    "events": [
+      "VIP recurring route",
+      "business client scheduling",
+      "booking confirmation"
+    ],
+    "stressLevel": "medium"
+  },
+  {
+    "id": "scn-confused-form",
+    "channel": "booking-form",
+    "customerId": "confused-001",
+    "events": [
+      "invalid customer input",
+      "missing booking code",
+      "new booking",
+      "booking confirmation"
+    ],
+    "stressLevel": "medium"
+  },
+  {
+    "id": "scn-difficult-traffic",
+    "channel": "tracking-inquiry",
+    "customerId": "difficult-001",
+    "events": [
+      "driver assigned",
+      "traffic issue",
+      "delayed driver",
+      "pricing concern",
+      "tracking request"
+    ],
+    "stressLevel": "high"
+  },
+  {
+    "id": "scn-elderly-interrupted",
+    "channel": "phone-call-text",
+    "customerId": "elderly-001",
+    "events": [
+      "new booking",
+      "interrupted booking flow",
+      "new booking",
+      "booking confirmation"
+    ],
+    "stressLevel": "low"
+  },
+  {
+    "id": "scn-multilingual-failure",
+    "channel": "whatsapp-like",
+    "customerId": "multi-001",
+    "events": [
+      "new booking",
+      "API unavailable",
+      "missing route data",
+      "delayed response",
+      "booking cancellation"
+    ],
+    "stressLevel": "high"
+  }
+]

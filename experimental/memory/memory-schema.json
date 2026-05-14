@@ -1,0 +1,21 @@
+{
+  "session_id": "string",
+  "customer_id": "string",
+  "language": "nl|en|es",
+  "airport_preference": "string|null",
+  "vip_preference": "string|null",
+  "repeated_destinations": ["string"],
+  "previous_booking_context": {
+    "last_booking_id": "string|null",
+    "last_state": "pending|confirmed|assigned|driver_on_route|pickup|in_progress|completed|cancelled",
+    "last_route": "string|null"
+  },
+  "previous_problems": [
+    "payment_confusion",
+    "missing_booking_code",
+    "route_unavailable",
+    "driver_delay",
+    "duplicate_request"
+  ],
+  "ttl_minutes": 180
+}
