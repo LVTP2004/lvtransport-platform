@@ -20,7 +20,7 @@ type BookingRecord = {
   status: BookingStatus;
 };
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '';
+const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? '/driver';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? '/admin';
 
@@ -117,8 +117,6 @@ export function App() {
     const ride = records.find((record) => record.code === normalized);
     if (!ride) return setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
 
-    const immutable = ride.status === 'completed' || ride.status === 'cancelled';
-    setTrackingResult(`Rit ${ride.code}: status ${ride.status.toUpperCase()} • ${immutable ? 'afgesloten (immutable)' : 'actieve lifecycle'}.`);
     const lifecycle = normalizeLifecycle(ride.status);
     if (!lifecycle) return setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
     const immutable = isImmutableLifecycleStatus(lifecycle);
