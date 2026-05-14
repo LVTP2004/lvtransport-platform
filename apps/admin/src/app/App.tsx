@@ -22,6 +22,7 @@ export function App() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [sync, setSync] = useState<'live' | 'recovering' | 'degraded'>('recovering');
+  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -49,6 +50,7 @@ export function App() {
 
   const active = useMemo(() => bookings.filter((b) => ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(b.status)).length, [bookings]);
   const warnings = useMemo(() => incidents.filter((i) => i.severity !== 'info').length, [incidents]);
+  useEffect(() => { const t = setInterval(() => setTick((v) => v + 1), 1500); return () => clearInterval(t); }, []);
 
   return <main className="min-h-screen bg-lvtp-obsidian p-5 text-zinc-100">
     <div className="lvtp-network absolute inset-0 pointer-events-none opacity-50" />
@@ -63,6 +65,16 @@ export function App() {
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[['Boekingen', bookings.length], ['Actieve ritten', active], ['Beschikbare chauffeurs', drivers.length], ['Waarschuwingen', warnings]].map(([label, value]) => <article key={label} className="lvtp-card rounded-2xl p-4"><p className="text-xs uppercase text-zinc-400">{label}</p><p className="mt-2 text-2xl font-semibold text-amber-100">{value}</p></article>)}
+      </section>
+
+
+      <section className="lvtp-card overflow-hidden rounded-2xl p-0">
+        <div className="relative h-[60vh] min-h-[420px] bg-[#06070a]">
+          <div className="absolute inset-0 opacity-35" style={{ backgroundImage: 'linear-gradient(rgba(245,191,73,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(245,191,73,.08) 1px, transparent 1px)', backgroundSize: '38px 38px' }} />
+          {drivers.slice(0, 12).map((driver, index) => <div key={driver.driverId} className="absolute h-3 w-3 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(245,191,73,.75)] transition-all duration-1000" style={{ left: `${12 + (index * 7 + tick * 1.6) % 76}%`, top: `${16 + (index * 11 + tick) % 66}%` }} />)}
+          <div className="absolute left-3 right-3 top-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-zinc-200"><span>Control Tower realtime command map</span><span>{drivers.length} live drivers · {active} active rides</span></div>
+          <div className="absolute bottom-3 left-3 right-3 rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-zinc-300">Lifecycle synchronized dispatch · congestion and assignment awareness enabled.</div>
+        </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
