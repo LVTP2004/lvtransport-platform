@@ -1,11 +1,11 @@
 {
-  "name": "LV Ride",
-  "short_name": "LV Ride",
-  "description": "Operationally resilient LV Transport mobile dispatch and booking experience.",
+  "name": "LV Driver",
+  "short_name": "LV Driver",
+  "description": "LV Driver operations app for GPS, assignments, and realtime lifecycle control.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#0a0a0a",
+  "background_color": "#06070a",
   "theme_color": "#C8A96B",
   "orientation": "portrait-primary",
   "icons": [

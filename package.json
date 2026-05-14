@@ -7,10 +7,11 @@
     "dev:web": "pnpm --filter @lvtransport/web dev",
     "dev:admin": "pnpm --filter @lvtransport/admin dev",
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
-    "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build",
+    "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build && pnpm --filter @lvtransport/business build",
     "typecheck": "pnpm -r --filter './apps/*' typecheck",
     "ops:validate": "pnpm -r typecheck && pnpm -r build",
-    "ops:endurance": "node scripts/ops/lvtp-phase1-stress-sim.js"
+    "ops:endurance": "node scripts/ops/lvtp-phase1-stress-sim.js",
+    "dev:business": "pnpm --filter @lvtransport/business dev"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
