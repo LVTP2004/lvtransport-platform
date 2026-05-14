@@ -44,8 +44,13 @@
   .identity-chip button { @apply rounded-lg border border-lv-gold/40 px-2 py-1 text-lv-champagne; }
 
 
-  .moni-root {@apply fixed bottom-4 right-4 z-50;}
-  .moni-fab {@apply rounded-full bg-lv-gold px-5 py-3 font-semibold text-black shadow-gold-md;}
+  .moni-root {@apply fixed bottom-5 right-5 z-50;}
+  .moni-fab {@apply flex h-16 w-16 items-center justify-center rounded-full border border-lv-gold/50 bg-black/90 shadow-gold-md transition;}
+  .moni-fab::before {content:''; position:absolute; inset:-6px; border-radius:9999px; background: radial-gradient(circle, rgba(212,175,55,.22), rgba(212,175,55,0)); z-index:-1; animation: moniPulse 3.4s ease-in-out infinite;}
+  .moni-fab--listening { box-shadow: 0 0 0 1px rgba(212,175,55,.5), 0 0 22px rgba(212,175,55,.32); }
+  .moni-fab--thinking .moni-eyes i { animation-duration: .45s; }
+  .moni-fab--confirmation .moni-avatar { transform: translateY(-1px); }
+  .moni-fab--issue { border-color: rgba(248,113,113,.65); box-shadow: 0 0 16px rgba(248,113,113,.25); }
   .moni-panel {@apply pointer-events-none mt-3 w-[92vw] max-w-md translate-y-3 rounded-2xl border border-lv-gold/30 bg-lv-black/95 opacity-0 shadow-gold-md transition-all;}
   .moni-panel--open {@apply pointer-events-auto translate-y-0 opacity-100;}
   .moni-header {@apply flex cursor-move items-center justify-between border-b border-lv-gold/20 p-3 text-sm;}
@@ -60,3 +65,9 @@
   .moni-input input {@apply min-w-0 flex-1 rounded-xl border border-white/20 bg-black/30 px-3 py-2 text-sm;}
   .moni-input button {@apply rounded-xl bg-lv-gold px-3 py-2 text-sm font-medium text-black;}
 }
+
+@keyframes moniBlink { 0%, 44%, 48%, 100% { transform: scaleY(1);} 46% { transform: scaleY(.15);} }
+@keyframes moniPulse { 0%,100% { opacity:.5; transform: scale(.96);} 50% { opacity:1; transform: scale(1.04);} }
+.moni-avatar{position:relative;width:42px;height:42px;border-radius:9999px;background:linear-gradient(180deg,#0f0f10,#050506);border:1px solid rgba(212,175,55,.45);display:flex;align-items:center;justify-content:center;}
+.moni-eyes{display:flex;gap:10px;}
+.moni-eyes i{display:block;width:7px;height:7px;border-radius:9999px;background:#d4af37;animation:moniBlink 5.2s ease-in-out infinite;}
