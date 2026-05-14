@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 import { detectLanguage } from '../logic/language';
 import { detectIntent } from '../logic/intents';
 import { nextMissingPrompt } from '../logic/booking-extractor';
+import { createLearningRecord, persistLearningRecord } from '../learning/controlled-learning';
 import { buildIntro, buildIntentReply } from '../templates/responses';
 import type { MoniBookingFields, MoniMessage } from '../types/moni.types';
 
@@ -27,7 +28,10 @@ export function MoniAssistant() {
       const prompt = nextMissingPrompt(language, bookingData);
       if (prompt) replies.push(prompt);
     }
-    setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: replies.join('\n') }]);
+    const assistantReply = replies.join('\n');
+    const learningRecord = createLearningRecord({ userText: text, replyText: assistantReply, language, intent });
+    persistLearningRecord(learningRecord);
+    setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: assistantReply }]);
     setInput('');
   };
 
