@@ -85,3 +85,19 @@
   .ops-theme { @apply bg-slate-950; }
   .ops-panel { @apply border border-slate-700 bg-slate-900/80 shadow-xl backdrop-blur-sm; }
 }
+
+@layer components {
+  .premium-bg {
+    @apply bg-lv-black;
+    background-image:
+      linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.72)),
+      radial-gradient(circle at 20% 25%, rgba(212, 175, 55, 0.22), transparent 40%),
+      url('/world-map-gold.jpg');
+    background-size: cover;
+    background-attachment: fixed;
+  }
+
+  .service-link {
+    @apply transition duration-300 hover:-translate-y-1 hover:border-lv-gold/60;
+  }
+}

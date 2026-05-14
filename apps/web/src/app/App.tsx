@@ -1,272 +1,96 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
-import { BookingState, TERMINAL_STATES, resolveLifecycleState } from './bookingLifecycle';
 
-type Step = 1 | 2 | 3;
-type ServiceType = 'standard' | 'airport' | 'vip';
-type Theme = 'premium' | 'ops';
-
-type Vehicle = { name: string; eta: string; priceMultiplier: number; seats: number; serviceType: ServiceType };
-type BookingConfirmation = { id: string; referenceCode: string; status: string };
-type BookingEventType = 'draft_restored' | 'submit_started' | 'submit_succeeded' | 'submit_failed' | 'draft_cleared';
-type BookingEvent = { type: BookingEventType; at: string; meta?: Record<string, string | number | boolean> };
-type BookingDraft = { step: Step; pickup: string; destination: string; dateTime: string; passengers: number; vehicleName: string; airportTransfer: boolean; businessVip: boolean; confirmation: BookingConfirmation | null; requestKey: string | null; events: BookingEvent[] };
-
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
-const STORAGE_KEY = 'lvtransport.booking.v1';
-const TRACKING_KEY = 'lvtransport.tracking.v1';
-
-const TERMINAL_STATUSES = new Set(['completed', 'cancelled']);
-const vehicles: Vehicle[] = [
-  { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3, serviceType: 'standard' },
-  { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6, serviceType: 'airport' },
-  { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10, serviceType: 'vip' }
+type Airport = { name: string; code: string; base: number };
+const airports: Airport[] = [
+  { name: 'Brussels Airport', code: 'BRU', base: 145 },
+  { name: 'Charleroi', code: 'CRL', base: 210 },
+  { name: 'Eindhoven', code: 'EIN', base: 190 },
+  { name: 'Schiphol', code: 'AMS', base: 260 },
+  { name: 'Antwerp Airport', code: 'ANR', base: 85 }
 ];
-const nowIso = () => new Date().toISOString();
-const loadDraft = (): BookingDraft | null => {
-  try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) as BookingDraft : null; } catch { return null; }
-};
 
-function TrackingPage({ code }: { code: string }) { return <div className="min-h-screen bg-lv-black px-4 py-8 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><section className="glass-panel rounded-3xl p-6 sm:p-8"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Tracking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Track your chauffeur in real time.</h1><p className="mt-4 text-sm text-lv-mist sm:text-base">Tracking code <span className="font-semibold text-white">{code}</span> is active. Customer-safe location updates stream only while ride is live.</p></section><section className="mt-8 grid gap-6 lg:grid-cols-3"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Transparante workflow</p><ol className="mt-4 space-y-3 text-sm text-lv-mist"><li><span className="font-semibold text-white">1. Reservatie</span> — Uw ritaanvraag wordt direct operationeel gevalideerd.</li><li><span className="font-semibold text-white">2. Dispatch</span> — Chauffeur en voertuig worden toegewezen op serviceklasse.</li><li><span className="font-semibold text-white">3. Live opvolging</span> — U ontvangt ritcode, tracking en statusupdates.</li></ol></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Zakelijk & VIP</p><ul className="mt-4 space-y-3 text-sm"><li>• Facturatie op bedrijfsprofiel en periodieke rapportering</li><li>• Prioritaire airport-operaties met terminal buffers</li><li>• Terugkerende routes voor directie, crew en klanten</li><li>• Service level communicatie voor assistants & travel desks</li></ul></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Realtime gereed</p><div className="mt-4 flex flex-wrap gap-2 text-xs"><span className="ops-badge">Online bevestiging</span><span className="ops-badge">Live tracking</span><span className="ops-badge">Dispatch monitoring</span><span className="ops-badge">Airport-ready</span></div><p className="mt-4 text-sm text-lv-mist">Operationele workflow ontworpen voor betrouwbare uitvoering, niet enkel presentatie.</p></article></section><section className="mt-8 grid gap-6 lg:grid-cols-2"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Luchthaven tarieven</p><div className="mt-4 space-y-3 text-sm"><div className="route-card"><span>Brussel Centrum → BRU</span><strong>Vanaf €95</strong></div><div className="route-card"><span>Antwerpen → BRU</span><strong>Vanaf €145</strong></div><div className="route-card"><span>Gent → BRU</span><strong>Vanaf €175</strong></div></div></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Populaire zakelijke routes</p><div className="mt-4 space-y-3 text-sm"><div className="route-card"><span>EU Quarter ↔ Zaventem</span><strong>Corporate SLA</strong></div><div className="route-card"><span>Antwerp Port ↔ BRU</span><strong>Priority dispatch</strong></div><div className="route-card"><span>Brussels ↔ Luxembourg</span><strong>VIP recurring</strong></div></div></article></section><footer className="mt-8 glass-panel rounded-3xl p-5 text-sm text-lv-mist sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">LV Transport — Premium Mobility Operations</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><p>Telefoon: +32 000 00 00 00</p><p>E-mail: info@lvtransport.be</p><p>Website: https://lvtransport.be</p><p>BTW: BE 0000.000.000</p></div></footer></div><MoniAssistant /></div>; }
+const routes = [
+  ['Antwerpen', 'Brussels Airport', 145],
+  ['Antwerpen', 'Charleroi', 210],
+  ['Antwerpen', 'Gent', 120],
+  ['Antwerpen', 'Rotterdam', 155],
+  ['Antwerpen', 'Schiphol', 260],
+  ['Antwerpen', 'Eindhoven', 190]
+];
 
-
-type LiveLocation = { lat: number; lng: number; heading?: number; updatedAt?: string };
-
-function DriverLocationPanel() {
-  const [driverId, setDriverId] = useState('DRV-001');
-  const [bookingId, setBookingId] = useState('');
-  const [sharing, setSharing] = useState(false);
-  const [status, setStatus] = useState('GPS idle');
-  const watcherRef = useRef<number | null>(null);
-  const stop = () => { if (watcherRef.current !== null) navigator.geolocation.clearWatch(watcherRef.current); watcherRef.current = null; setSharing(false); };
-  const push = async (coords: GeolocationCoordinates) => {
-    await fetch(`${API_BASE}/drivers/${encodeURIComponent(driverId)}/location`, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({ bookingId, lat: coords.latitude, lng: coords.longitude, heading: coords.heading ?? undefined, accuracyMeters: coords.accuracy, source: 'gps' }) });
-  };
-  const start = async () => {
-    if (!bookingId) { setStatus('Add active booking ID first.'); return; }
-    if (!('geolocation' in navigator)) { setStatus('Geolocation unavailable on this device/browser.'); return; }
-    setStatus('Requesting GPS permission...');
-    watcherRef.current = navigator.geolocation.watchPosition(async (position) => { setSharing(true); setStatus(`Live GPS enabled • ±${Math.round(position.coords.accuracy)}m`); await push(position.coords); }, () => { setStatus('GPS denied/unavailable. Sharing stopped safely.'); stop(); }, { enableHighAccuracy: true, maximumAge: 4000, timeout: 12000 });
-  };
-  return <article className="glass-panel rounded-3xl p-5 sm:p-6 space-y-3"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Driver live GPS</p><input className="field-wrap" value={driverId} onChange={(e)=>setDriverId(e.target.value)} placeholder="Driver ID" /><input className="field-wrap" value={bookingId} onChange={(e)=>setBookingId(e.target.value)} placeholder="Assigned Booking ID" /><p className="text-xs text-lv-mist">{status}</p><div className="flex gap-2"><Button onClick={start} className="flex-1" disabled={sharing}>Start sharing</Button><Button onClick={stop} variant="secondary" className="flex-1">Stop sharing</Button></div></article>;
-}
-
-function AdminLivePanel() {
-  const [last, setLast] = useState<{driverId?:string;bookingId?:string;location?:LiveLocation;updatedAt?:string}|null>(null);
-  useEffect(()=>{ const ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws`); ws.onmessage=(m)=>{ try { const data=JSON.parse(m.data as string); if(data.event==='admin.live.updated' && data.payload?.location) setLast(data.payload); } catch {} }; return ()=>ws.close(); },[]);
-  return <article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Admin control tower live map feed</p><p className="mt-2 text-sm text-lv-mist">{last ? `Driver ${last.driverId} • Booking ${last.bookingId}` : 'Waiting for live driver coordinates...'}</p>{last?.location && <p className="mt-2 text-sm">Lat {last.location.lat.toFixed(5)}, Lng {last.location.lng.toFixed(5)}</p>}</article>;
-}
 export function App() {
-  const params = new URLSearchParams(window.location.search);
-  const presentationMode = params.get('mode') === 'demo';
-  const mode = params.get('mode');
-  const trackingMatch = window.location.pathname.match(/^\/tracking\/([A-Za-z0-9-]+)/);
-  if (trackingMatch) return <TrackingPage code={trackingMatch[1]} />;
-  if (mode === 'driver') return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-4xl"><DriverLocationPanel /></div></div>;
-  if (mode === 'admin') return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-4xl"><AdminLivePanel /></div></div>;
-const loadDraft = () => { try { const raw = localStorage.getItem(STORAGE_KEY); return raw ? JSON.parse(raw) as BookingDraft : null; } catch { return null; } };
-const detectTheme = (): Theme => (window.location.hostname === 'app.lvtransport.be' || window.location.search.includes('theme=ops')) ? 'ops' : 'premium';
+  const [from, setFrom] = useState('Antwerpen Centrum');
+  const [to, setTo] = useState('Brussels Airport');
+  const [airport, setAirport] = useState(airports[0]);
+  const [code, setCode] = useState('LV-2026-001');
 
-function BookingCore({ theme }: { theme: Theme }) {
-  const restored = loadDraft();
-  const [step, setStep] = useState<Step>(restored?.step ?? 1);
-  const [pickup, setPickup] = useState(restored?.pickup ?? '');
-  const [destination, setDestination] = useState(restored?.destination ?? '');
-  const [dateTime, setDateTime] = useState(restored?.dateTime ?? '');
-  const [passengers, setPassengers] = useState(restored?.passengers ?? 1);
-  const [vehicle, setVehicle] = useState<Vehicle>(vehicles.find((v) => v.name === restored?.vehicleName) ?? vehicles[0]);
-  const [airportTransfer, setAirportTransfer] = useState(restored?.airportTransfer ?? false);
-  const [businessVip, setBusinessVip] = useState(restored?.businessVip ?? false);
-  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(restored?.confirmation ?? null);
-  const [requestKey, setRequestKey] = useState<string | null>(restored?.requestKey ?? null);
-  const [events, setEvents] = useState<BookingEvent[]>(restored?.events ?? []);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [liveStatus, setLiveStatus] = useState<BookingState | null>(resolveLifecycleState(null, restored?.confirmation?.status));
-  const [socketState, setSocketState] = useState<'connecting' | 'connected' | 'reconnecting' | 'offline'>('connecting');
-  const inFlightKeyRef = useRef<string | null>(null);
-  const lastSequenceRef = useRef(0);
+  const estimate = useMemo(() => {
+    const airportBoost = /airport|bru|crl|ams|ein|anr/i.test(to) ? 20 : 0;
+    const distanceScore = Math.max(14, Math.round((from.length + to.length) * 1.4));
+    return Math.round(distanceScore * 2.2 + airportBoost);
+  }, [from, to]);
 
-  useEffect(() => {
-    if (!presentationMode || restored) return;
-    setPickup('Wynn Las Vegas, South Valet');
-    setDestination('Harry Reid Terminal 3, Private Aviation Gate');
-    const inNinetyMinutes = new Date(Date.now() + 90 * 60 * 1000);
-    setDateTime(inNinetyMinutes.toISOString().slice(0, 16));
-    setPassengers(3);
-    setVehicle(vehicles[1]);
-    setAirportTransfer(true);
-    setBusinessVip(true);
-    setStep(3);
-  }, [presentationMode, restored]);
+  return <div className="premium-bg min-h-screen text-white">
+    <header className="sticky top-0 z-40 border-b border-lv-gold/25 bg-black/55 backdrop-blur-xl">
+      <div className="mx-auto flex max-w-7xl items-center justify-between gap-4 px-4 py-3">
+        <img src="/lv-logo.png" onError={(e) => { e.currentTarget.src = '/lv-logo.svg'; }} className="h-12 w-auto" alt="LV Transport" />
+        <nav className="hidden flex-wrap items-center justify-center gap-2 md:flex">
+          {['Home','Boeken','Prijzen','Volg uw taxi','Diensten','LV VIP','Contact'].map((label) => {
+            const ids: Record<string, string> = { Home:'home', Boeken:'boeken', Prijzen:'prijzen', 'Volg uw taxi':'tracking', Diensten:'diensten', 'LV VIP':'vip', Contact:'contact' };
+            return <a key={label} href={`#${ids[label]}`} className="rounded-full border border-lv-gold/30 bg-black/30 px-3 py-1 text-sm hover:bg-lv-gold/15">{label}</a>;
+          })}
+        </nav>
+        <div className="flex gap-2">
+          <a href="https://driver.lvtransport.be" className="rounded-full border border-lv-gold/30 px-3 py-1 text-sm">Driver</a>
+          <a href="https://admin.lvtransport.be" className="rounded-full border border-lv-gold/30 px-3 py-1 text-sm">Admin</a>
+        </div>
+      </div>
+    </header>
 
-  useEffect(() => {
-    const draft: BookingDraft = { step, pickup, destination, dateTime, passengers, vehicleName: vehicle.name, airportTransfer, businessVip, confirmation, requestKey, events };
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(draft));
-  }, [airportTransfer, businessVip, confirmation, dateTime, destination, events, passengers, pickup, requestKey, step, vehicle.name]);
+    <main className="mx-auto max-w-7xl space-y-8 px-4 py-8">
+      <section id="home" className="glass-panel rounded-3xl p-6 lg:p-10">
+        <h1 className="text-3xl font-semibold lg:text-5xl">Premium vervoer in Antwerpen en heel België</h1>
+        <p className="mt-4 max-w-3xl text-lv-mist">Professioneel luxevervoer voor luchthavenritten, zakelijke verplaatsingen en VIP-mobiliteit met realtime opvolging en discrete service.</p>
+        <div className="mt-6 flex flex-wrap gap-3"><a href="#boeken"><Button>Boek uw rit</Button></a><a href="#prijzen"><Button variant="secondary">Bekijk prijzen</Button></a><a href="#tracking"><Button variant="secondary">Volg uw taxi</Button></a></div>
+        <div className="mt-6 grid gap-4 lg:grid-cols-3">
+          <label className="field-wrap"><span>Van</span><input value={from} onChange={(e) => setFrom(e.target.value)} list="plaatsen" /></label>
+          <label className="field-wrap"><span>Bestemming</span><input value={to} onChange={(e) => setTo(e.target.value)} list="plaatsen" /></label>
+          <article className="field-wrap"><span>Live prijsindicatie</span><p className="mt-2 text-3xl font-semibold text-lv-champagne">€ {estimate}</p><p className="mt-2 text-xs text-lv-mist">Realtime simulatie met luchthavendetectie en afstandsinschatting.</p></article>
+        </div>
+        <datalist id="plaatsen"><option>Antwerpen Centrum</option><option>Brussels Airport</option><option>Gent Sint-Pieters</option><option>Rotterdam Centrum</option><option>Schiphol Airport</option></datalist>
+      </section>
 
-  const appendEvent = (type: BookingEventType, meta?: BookingEvent['meta']) => setEvents((prev) => [...prev.slice(-49), { type, at: nowIso(), meta }]);
+      <section id="boeken" className="glass-panel rounded-3xl p-6">
+        <h2 className="text-2xl font-semibold">Boeken</h2><p className="mt-2 text-lv-mist">Boekingsarchitectuur blijft behouden met premium interface en dark map integratie.</p>
+      </section>
 
-  useEffect(() => { if (restored) appendEvent('draft_restored', { hasConfirmation: Boolean(restored.confirmation) }); }, []);
+      <section id="prijzen" className="glass-panel rounded-3xl p-6 overflow-hidden">
+        <h2 className="text-2xl font-semibold">Prijzen</h2>
+        <div className="mt-4 flex gap-4 overflow-x-auto pb-3">
+          {routes.map(([a,b,p]) => <article key={`${a}${b}`} className="route-card min-w-[240px]"><div><p>{a} → {b}</p><p className="text-xs text-lv-mist">Vaste premium route</p></div><strong>Vanaf €{p}</strong></article>)}
+        </div>
+      </section>
 
-  useEffect(() => {
-    if (!confirmation?.id) return;
-    const tracked = localStorage.getItem(TRACKING_KEY);
-    if (tracked !== confirmation.id) localStorage.setItem(TRACKING_KEY, confirmation.id);
-    const initialState = resolveLifecycleState(liveStatus, confirmation.status);
-    if (initialState && TERMINAL_STATES.has(initialState)) {
-      setLiveStatus(initialState);
-      setSocketState('offline');
-      return;
-    }
+      <section id="tracking" className="glass-panel rounded-3xl p-6">
+        <h2 className="text-2xl font-semibold">Volg uw taxi</h2>
+        <div className="mt-4 grid gap-4 lg:grid-cols-2"><label className="field-wrap"><span>Boekingscode</span><input value={code} onChange={(e)=>setCode(e.target.value)} /></label><article className="field-wrap"><span>Realtime status</span><p className="mt-2">Chauffeur onderweg • ETA 7 min • Code {code}</p></article></div>
+      </section>
 
-    let ws: WebSocket | null = null;
-    let reconnectTimer: number | undefined;
-    let attempts = 0;
-    let active = true;
+      <section id="diensten" className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <a href="#boeken" className="glass-panel rounded-3xl p-5 service-link"><h3>Taxi Antwerpen</h3><p className="text-sm text-lv-mist">Snelle premium ritten in Antwerpen.</p></a>
+        <article className="glass-panel rounded-3xl p-5"><h3>Luchthavenvervoer</h3><select className="mt-3 w-full rounded-xl bg-black/40 p-2" value={airport.code} onChange={(e)=>setAirport(airports.find((a)=>a.code===e.target.value) ?? airports[0])}>{airports.map((a)=><option key={a.code} value={a.code}>{a.name}</option>)}</select><p className="mt-2 text-sm">Vanaf €{airport.base}</p></article>
+        <article className="glass-panel rounded-3xl p-5"><h3>Zakelijk vervoer</h3><p className="text-sm text-lv-mist">Facturatie, maandaccounts, vaste contracten en corporate SLA.</p></article>
+        <a id="vip" href="#contact" className="glass-panel rounded-3xl p-5 service-link"><h3>LV VIP</h3><p className="text-sm text-lv-mist">Prioriteit, loyaliteit, executive service en abonnementsconcept.</p></a>
+      </section>
 
-  const [step, setStep] = useState<Step>(restored?.step ?? 1); const [pickup, setPickup] = useState(restored?.pickup ?? ''); const [destination, setDestination] = useState(restored?.destination ?? ''); const [dateTime, setDateTime] = useState(restored?.dateTime ?? '');
-  const [passengers, setPassengers] = useState(restored?.passengers ?? 1); const [vehicle, setVehicle] = useState<Vehicle>(vehicles.find((v) => v.name === restored?.vehicleName) ?? vehicles[0]);
-  const [airportTransfer, setAirportTransfer] = useState(restored?.airportTransfer ?? false); const [businessVip, setBusinessVip] = useState(restored?.businessVip ?? false);
-  const [confirmation, setConfirmation] = useState<BookingConfirmation | null>(restored?.confirmation ?? null); const [requestKey, setRequestKey] = useState<string | null>(restored?.requestKey ?? null); const [events, setEvents] = useState<BookingEvent[]>(restored?.events ?? []);
-  const [error, setError] = useState(''); const [loading, setLoading] = useState(false); const [liveStatus, setLiveStatus] = useState<string | null>(restored?.confirmation?.status ?? null); const [socketState, setSocketState] = useState<'connecting'|'connected'|'reconnecting'|'offline'>('connecting');
-  const inFlightKeyRef = useRef<string | null>(null); const lastSequenceRef = useRef(0);
-  useEffect(() => { localStorage.setItem(STORAGE_KEY, JSON.stringify({ step, pickup, destination, dateTime, passengers, vehicleName: vehicle.name, airportTransfer, businessVip, confirmation, requestKey, events })); }, [step,pickup,destination,dateTime,passengers,vehicle.name,airportTransfer,businessVip,confirmation,requestKey,events]);
-  useEffect(() => { if (restored) setEvents((prev) => [...prev.slice(-49), { type: 'draft_restored', at: nowIso() }]); }, []);
-  useEffect(() => {
-    if (!confirmation?.id) return; if (TERMINAL_STATUSES.has(confirmation.status)) { setLiveStatus(confirmation.status); return; }
-    let ws: WebSocket | null = null; let timer: number | undefined;
-    const connect = () => {
-      const query = lastSequenceRef.current > 0 ? `?lastSequence=${lastSequenceRef.current}` : '';
-      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`);
-      ws.onopen = () => { attempts = 0; setSocketState('connected'); };
-      ws.onmessage = (message) => {
-        try {
-          const payload = JSON.parse(message.data as string) as { event?: string; payload?: { id?: string; status?: string } | Array<{ id?: string; status?: string }>; sequence?: number };
-          if (typeof payload.sequence === 'number' && payload.sequence > lastSequenceRef.current) lastSequenceRef.current = payload.sequence;
-          if (payload.event === 'booking.snapshot' && Array.isArray(payload.payload)) {
-            const current = payload.payload.find((item) => item.id === confirmation.id);
-            if (current?.status) setLiveStatus((prev) => resolveLifecycleState(prev, current.status));
-          }
-          if (payload.event === 'booking.updated' && !Array.isArray(payload.payload)) {
-            const bookingUpdate = payload.payload;
-            if (bookingUpdate?.id === confirmation.id && bookingUpdate.status) {
-              setLiveStatus((prev) => resolveLifecycleState(prev, bookingUpdate.status));
-            }
-          }
-        } catch {}
-      };
-      ws.onclose = () => {
-        if (!active || (liveStatus && TERMINAL_STATES.has(liveStatus))) return;
-        attempts += 1;
-        setSocketState('offline');
-        reconnectTimer = window.setTimeout(connect, Math.min(15000, 1000 * 2 ** Math.min(attempts, 4)));
-      };
-      ws.onerror = () => ws?.close();
-    };
-    connect();
-    return () => {
-      active = false;
-      if (reconnectTimer) window.clearTimeout(reconnectTimer);
-      ws?.close();
-    };
-  }, [confirmation?.id, confirmation?.status, liveStatus]);
+      <section className="glass-panel rounded-3xl p-6"><h2 className="text-2xl font-semibold">5-sterren ervaringen</h2><div className="mt-4 grid gap-3 md:grid-cols-3"><div className="route-card">“Perfecte luchthavenservice, altijd stipt.” ★★★★★</div><div className="route-card">“Onze directie kiest enkel LV VIP.” ★★★★★</div><div className="route-card">“Strakke opvolging en premium chauffeurs.” ★★★★★</div></div></section>
+    </main>
 
-  const baseFare = useMemo(() => {
-    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
-    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
-    const airportFee = airportTransfer ? 18 : 0;
-    const vipFee = businessVip ? 24 : 0;
-    return Math.round((distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier);
-  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
-
-  const serviceType: ServiceType = businessVip ? 'vip' : airportTransfer ? 'airport' : vehicle.serviceType;
-  const opsMetrics: DemoOpsMetric[] = useMemo(() => {
-    const expectedArrival = Math.max(8, Math.round(baseFare / 8));
-    return [
-      { label: 'Live chauffeurs', value: '42', detail: '37 en route • 5 standby' },
-      { label: 'On-time performance', value: '98.7%', detail: 'Last 24h completed rides' },
-      { label: 'Dispatch SLA', value: `${expectedArrival} min`, detail: 'Current booking region forecast' }
-    ];
-  }, [baseFare]);
-  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
-  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
-
-  const submitBooking = async () => {
-    if (loading) return;
-    const dedupeKey = requestKey ?? (globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random()}`);
-    if (inFlightKeyRef.current === dedupeKey) return;
-    inFlightKeyRef.current = dedupeKey;
-    setRequestKey(dedupeKey);
-    setError('');
-    setLoading(true);
-    appendEvent('submit_started', { dedupeKey, step });
-    try {
-      const response = await fetch(`${API_BASE}/bookings`, {
-        method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Idempotency-Key': dedupeKey },
-        body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType })
-      });
-      const payload = await response.json();
-      if (!response.ok) throw new Error(payload?.message ?? 'Unable to create booking');
-      const nextLifecycleState = resolveLifecycleState(null, payload.booking.status) ?? 'pending';
-      setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: nextLifecycleState });
-      setLiveStatus((prev) => resolveLifecycleState(prev, nextLifecycleState));
-      appendEvent('submit_succeeded', { dedupeKey, bookingId: payload.booking.id });
-    } catch (e) {
-      appendEvent('submit_failed', { dedupeKey });
-      setError(e instanceof Error ? e.message : 'Unable to create booking');
-    } finally {
-      inFlightKeyRef.current = null;
-      setLoading(false);
-    }
-  };
-
-  const resetDraft = () => {
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(TRACKING_KEY);
-    appendEvent('draft_cleared');
-    window.location.reload();
-      ws = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.hostname}:8080/ws${query}`); ws.onopen = () => setSocketState('connected');
-      ws.onmessage = (m) => { try { const p = JSON.parse(m.data as string); if (typeof p.sequence === 'number' && p.sequence > lastSequenceRef.current) lastSequenceRef.current = p.sequence; if (p.event === 'booking.updated' && p.payload?.id === confirmation.id) setLiveStatus(p.payload.status); } catch {} };
-      ws.onclose = () => { setSocketState('offline'); timer = window.setTimeout(connect, 2500); };
-    }; connect(); return () => { if (timer) clearTimeout(timer); ws?.close(); };
-  }, [confirmation?.id, confirmation?.status]);
-  const fare = useMemo(() => Math.round((Math.max(14, (pickup.length + destination.length) * 0.8) + (passengers > 3 ? (passengers - 3) * 6 : 0) + (airportTransfer ? 18 : 0) + (businessVip ? 24 : 0)) * vehicle.priceMultiplier), [pickup,destination,passengers,airportTransfer,businessVip,vehicle.priceMultiplier]);
-  const serviceType: ServiceType = businessVip ? 'vip' : airportTransfer ? 'airport' : vehicle.serviceType;
-  const submitBooking = async () => { if (loading) return; const key = requestKey ?? `${Date.now()}-${Math.random()}`; if (inFlightKeyRef.current === key) return; inFlightKeyRef.current = key; setLoading(true); setError(''); setRequestKey(key); setEvents((v)=>[...v.slice(-49), {type:'submit_started', at:nowIso()}]);
-    try { const res = await fetch(`${API_BASE}/bookings`, { method:'POST', headers:{'Content-Type':'application/json','X-Idempotency-Key':key}, body: JSON.stringify({ pickup, destination, scheduledAt: new Date(dateTime).toISOString(), serviceType })}); const payload = await res.json(); if (!res.ok) throw new Error(payload?.message ?? 'Boeking mislukt'); setConfirmation({ id: payload.booking.id, referenceCode: payload.booking.referenceCode, status: payload.booking.status }); localStorage.setItem(TRACKING_KEY, payload.booking.id); }
-    catch (e) { setError(e instanceof Error ? e.message : 'Boeking mislukt'); } finally { setLoading(false); inFlightKeyRef.current = null; }
-  };
-  const wrap = theme === 'premium' ? 'glass-panel' : 'ops-panel';
-  return <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className={`${wrap} rounded-3xl p-6`}>
-    {confirmation ? <div><h2 className="text-2xl font-semibold">Reference: {confirmation.referenceCode}</h2><p>Status: {liveStatus ?? confirmation.status}</p><p className="text-xs">Realtime: {socketState}</p></div> : <>
-      <label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e)=>setPickup(e.target.value)} /></label>
-      <label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e)=>setDestination(e.target.value)} /></label>
-      <label className="field-wrap"><span>Datum & tijd</span><input type="datetime-local" value={dateTime} onChange={(e)=>setDateTime(e.target.value)} /></label>
-      <div className="my-3 flex gap-2">{vehicles.map((v)=><button key={v.name} className={`vehicle-card ${vehicle.name===v.name?'vehicle-card--active':''}`} onClick={()=>setVehicle(v)}>{v.name}</button>)}</div>
-      <div className="my-3 flex gap-2"><button className={`toggle-card ${airportTransfer?'toggle-card--active':''}`} onClick={()=>setAirportTransfer((v)=>!v)}>Airport</button><button className={`toggle-card ${businessVip?'toggle-card--active':''}`} onClick={()=>setBusinessVip((v)=>!v)}>VIP</button></div>
-      {error && <p className="text-rose-300">{error}</p>}<Button onClick={submitBooking} disabled={loading || !pickup || !destination || !dateTime}>{loading ? 'Submitting...' : 'Confirm booking'}</Button>
-    </>}
-  </div><aside className="space-y-4"><article className={`${wrap} rounded-3xl p-6`}><p>Prijsindicatie</p><p className="text-4xl font-semibold">€{fare}</p></article><article className={`${wrap} rounded-3xl p-6`}><p>Passagiers</p><div className="mt-2 flex gap-3"><Button variant="secondary" onClick={()=>setPassengers((v)=>Math.max(1,v-1))}>-</Button><strong className="text-xl">{passengers}</strong><Button variant="secondary" onClick={()=>setPassengers((v)=>Math.min(12,v+1))}>+</Button></div></article><article className={`${wrap} rounded-3xl p-6`}><p>Lifecycle events: {events.length}</p></article></aside></section>;
+    <footer id="contact" className="mx-4 mb-6 rounded-3xl border border-lv-gold/25 bg-black/55 p-6 backdrop-blur-xl">
+      <div className="mx-auto grid max-w-7xl gap-4 md:grid-cols-3"><div><img src="/lv-logo.png" onError={(e)=>{e.currentTarget.src='/lv-logo.svg';}} className="h-12" /></div><div className="text-sm"><p>Telefoon: +32 000 00 00 00</p><p>E-mail: info@lvtransport.be</p><p>Website: lvtransport.be</p><p>BTW: BE 0000.000.000</p></div><div className="text-sm md:text-right"><p>© 2026 LV Transport. Alle rechten voorbehouden.</p><p>Juridische kennisgeving</p></div></div>
+    </footer>
+    <MoniAssistant />
+  </div>;
 }
-
-  return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl">{presentationMode && <section className="mb-6 rounded-3xl border border-lv-gold/30 bg-gradient-to-r from-lv-gold/20 via-black/40 to-black/20 p-4"><p className="text-xs uppercase tracking-[0.25em] text-lv-champagne">Investor demo mode</p><p className="mt-2 text-sm text-lv-mist">Preloaded premium itinerary, resilient booking draft recovery, and live operational telemetry for realistic service simulation.</p></section>}<section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6">{confirmation ? <div className="space-y-4"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking confirmed</p><h2 className="text-2xl font-semibold">Reference: {confirmation.referenceCode}</h2><p className="text-lv-mist">Status: {liveStatus ?? confirmation.status}</p><p className="text-sm text-lv-mist">Uw reservatie wordt operationeel verwerkt.</p><p className="text-sm text-lv-mist">Ontvang uw ritcode en volg uw chauffeur online.</p><p className="text-xs text-lv-mist">Realtime channel: <span className={socketState === 'connected' ? 'text-emerald-300' : socketState === 'reconnecting' ? 'text-amber-200' : 'text-rose-300'}>{socketState.toUpperCase()}</span></p><Button className="shadow-gold-md" onClick={resetDraft}>Create another booking</Button></div> : <><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p><div className="flex w-32 gap-2">{[1, 2, 3].map((i) => <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />)}</div></div><div className="booking-step-fade space-y-4">{step === 1 && <><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e) => setPickup(e.target.value)} placeholder="Hotel, office, terminal..." /></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e) => setDestination(e.target.value)} placeholder="Airport, venue, client site..." /></label><label className="field-wrap"><span>Date & time</span><input type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} /></label></>}{step === 2 && <><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={() => setPassengers((v) => Math.max(1, v - 1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={() => setPassengers((v) => Math.min(12, v + 1))}>+</button></div></div><div><p className="mb-2 text-sm text-lv-mist">Vehicle</p><div className="grid gap-3">{vehicles.map((item) => <button key={item.name} onClick={() => setVehicle(item)} className={`vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`}><div><p className="font-medium">{item.name}</p><p className="text-xs text-lv-mist">ETA {item.eta} • up to {item.seats} passengers</p></div><p className="text-lv-champagne">x{item.priceMultiplier.toFixed(2)}</p></button>)}</div></div></>}{step === 3 && <><button className={`toggle-card ${airportTransfer ? 'toggle-card--active' : ''}`} onClick={() => setAirportTransfer((v) => !v)}><div><p className="font-medium">Airport transfer</p><p className="text-xs text-lv-mist">Terminal-aware handoff and buffer timing prep.</p></div><span>{airportTransfer ? 'On' : 'Off'}</span></button><button className={`toggle-card ${businessVip ? 'toggle-card--active' : ''}`} onClick={() => setBusinessVip((v) => !v)}><div><p className="font-medium">Business / VIP</p><p className="text-xs text-lv-mist">Priority allocation, premium chauffeur protocol.</p></div><span>{businessVip ? 'On' : 'Off'}</span></button></>}</div>{error && <p className="mt-4 text-sm text-rose-300">{error}</p>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={prevStep}>Back</Button>{step < 3 ? <Button className="flex-1" onClick={nextStep}>Continue</Button> : <Button className="flex-1 shadow-gold-md" onClick={submitBooking} disabled={loading || !pickup || !destination || !dateTime}>{loading ? 'Submitting...' : 'Bevestig reservatie'}</Button>}</div></>}</div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p><ul className="mt-4 space-y-3 text-sm"><li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li><li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li><li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li><li><span className="text-lv-mist">Passengers:</span> {passengers}</li><li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li><li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li></ul></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Operations snapshot</p><div className="mt-4 grid gap-3">{opsMetrics.map((metric) => <div key={metric.label} className="rounded-2xl border border-white/10 bg-black/30 p-3"><p className="text-xs uppercase tracking-[0.14em] text-lv-mist">{metric.label}</p><p className="mt-1 text-2xl font-semibold">{metric.value}</p><p className="text-xs text-lv-mist">{metric.detail}</p></div>)}</div></article></aside></section><section className="mt-8 grid gap-6 lg:grid-cols-3"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Transparante workflow</p><ol className="mt-4 space-y-3 text-sm text-lv-mist"><li><span className="font-semibold text-white">1. Reservatie</span> — Uw ritaanvraag wordt direct operationeel gevalideerd.</li><li><span className="font-semibold text-white">2. Dispatch</span> — Chauffeur en voertuig worden toegewezen op serviceklasse.</li><li><span className="font-semibold text-white">3. Live opvolging</span> — U ontvangt ritcode, tracking en statusupdates.</li></ol></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Zakelijk & VIP</p><ul className="mt-4 space-y-3 text-sm"><li>• Facturatie op bedrijfsprofiel en periodieke rapportering</li><li>• Prioritaire airport-operaties met terminal buffers</li><li>• Terugkerende routes voor directie, crew en klanten</li><li>• Service level communicatie voor assistants & travel desks</li></ul></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Realtime gereed</p><div className="mt-4 flex flex-wrap gap-2 text-xs"><span className="ops-badge">Online bevestiging</span><span className="ops-badge">Live tracking</span><span className="ops-badge">Dispatch monitoring</span><span className="ops-badge">Airport-ready</span></div><p className="mt-4 text-sm text-lv-mist">Operationele workflow ontworpen voor betrouwbare uitvoering, niet enkel presentatie.</p></article></section><section className="mt-8 grid gap-6 lg:grid-cols-2"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Luchthaven tarieven</p><div className="mt-4 space-y-3 text-sm"><div className="route-card"><span>Brussel Centrum → BRU</span><strong>Vanaf €95</strong></div><div className="route-card"><span>Antwerpen → BRU</span><strong>Vanaf €145</strong></div><div className="route-card"><span>Gent → BRU</span><strong>Vanaf €175</strong></div></div></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Populaire zakelijke routes</p><div className="mt-4 space-y-3 text-sm"><div className="route-card"><span>EU Quarter ↔ Zaventem</span><strong>Corporate SLA</strong></div><div className="route-card"><span>Antwerp Port ↔ BRU</span><strong>Priority dispatch</strong></div><div className="route-card"><span>Brussels ↔ Luxembourg</span><strong>VIP recurring</strong></div></div></article></section><footer className="mt-8 glass-panel rounded-3xl p-5 text-sm text-lv-mist sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">LV Transport — Premium Mobility Operations</p><div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><p>Telefoon: +32 000 00 00 00</p><p>E-mail: info@lvtransport.be</p><p>Website: https://lvtransport.be</p><p>BTW: BE 0000.000.000</p></div></footer></div><MoniAssistant /></div>;
-function SiteShell() {
-  const theme = detectTheme();
-  const path = window.location.pathname;
-  const isPremium = theme === 'premium';
-  const links = ['/', '/booking', '/prijzen', '/tracking', '/moni-ride', '/maps', '/diensten', '/contact', '/driver', '/admin'];
-  const titleMap: Record<string,string> = {'/':'LV Transport', '/booking':'Boeking', '/prijzen':'Prijzen', '/tracking':'Tracking', '/moni-ride':'Moni Ride', '/maps':'Maps', '/diensten':'Diensten', '/contact':'Contact', '/driver':'Driver', '/admin':'Admin'};
-  const page = titleMap[path] ?? 'LV Transport';
-  return <div className={`min-h-screen ${isPremium ? 'premium-theme' : 'ops-theme'} px-4 py-6 text-white`}>
-    <div className="mx-auto w-full max-w-6xl space-y-6"><header className={`${isPremium ? 'glass-panel' : 'ops-panel'} rounded-3xl p-6`}><div className="flex items-center justify-between"><div><p className="text-xs uppercase tracking-[0.25em]">{isPremium ? 'LV Transport Premium' : 'LVTP Operational SaaS'}</p><h1 className="text-3xl font-semibold">{page}</h1></div><img src="/lv-logo.svg" className="h-10" onError={(e)=>((e.currentTarget.style.display='none'))} /></div><nav className="mt-4 flex flex-wrap gap-2">{links.map((href)=><a key={href} href={href} className={`rounded-full px-3 py-1 text-sm ${href===path?'bg-lv-gold text-black':'bg-white/10'}`}>{href}</a>)}</nav></header>
-      {(path === '/booking' || path === '/') && <BookingCore theme={theme} />}
-      {path === '/prijzen' && <section className={`${isPremium ? 'glass-panel' : 'ops-panel'} rounded-3xl p-6`}><h2 className="text-2xl">Prijsmodule</h2><p>Zelfde pricing engine en fallback logica in beide tracks.</p></section>}
-      {path === '/tracking' && <section className={`${isPremium ? 'glass-panel' : 'ops-panel'} rounded-3xl p-6`}><h2 className="text-2xl">Tracking</h2><p>Tracking code lifecycle en realtime updates actief.</p></section>}
-      {path === '/moni-ride' && <section className={`${isPremium ? 'glass-panel' : 'ops-panel'} rounded-3xl p-6`}><h2 className="text-2xl">Moni Ride</h2><p>Moni Ride assistent en API health/fallback gedeeld.</p></section>}
-      {['/maps','/diensten','/contact','/driver','/admin'].includes(path) && <section className={`${isPremium ? 'glass-panel' : 'ops-panel'} rounded-3xl p-6`}><h2 className="text-2xl">{page}</h2><p>Zelfde operationele core, alleen UI-thema verschilt.</p></section>}
-    </div><MoniAssistant /></div>;
-}
-
-export function App() { return <SiteShell />; }
