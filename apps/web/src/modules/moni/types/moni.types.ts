@@ -1,6 +1,6 @@
 export type MoniLanguage = 'nl' | 'es' | 'en' | 'fr';
 
-export type MoniAudience = 'customer' | 'admin' | 'driver';
+export type MoniAudience = 'customer' | 'admin' | 'driver' | 'business';
 
 export type MoniIntent =
   | 'booking_request'
@@ -8,6 +8,9 @@ export type MoniIntent =
   | 'missing_booking_info'
   | 'admin_operational_summary'
   | 'driver_support'
+  | 'onboarding_support'
+  | 'lifecycle_update'
+  | 'review_request'
   | 'airport_transfer'
   | 'business_request'
   | 'vip_request'
@@ -44,6 +47,12 @@ export type MoniMessage = { role: 'assistant' | 'user'; text: string };
 export type MoniEscalationReason = 'sensitive' | 'unclear' | 'payment' | 'complaint' | 'safety' | 'legal';
 
 export type MoniContextEnvelope = {
+  onboarding?: {
+    googleConnected?: boolean;
+    emailVerified?: boolean;
+    phoneVerified?: boolean;
+    identityVerified?: boolean;
+  };
   booking?: { bookingId?: string; status?: string; knownFields?: MoniBookingFields };
   admin?: { activeBookings?: number; delayedBookings?: number; openIncidents?: number; notes?: string[] };
   driver?: { driverId?: string; activeRideId?: string; supportTopic?: string };
