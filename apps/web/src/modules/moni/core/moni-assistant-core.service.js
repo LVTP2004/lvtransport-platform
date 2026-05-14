@@ -18,6 +18,15 @@ const buildReviewPrompt = (context) => {
 export const buildMoniResponse = (input) => {
     const language = detectLanguage(input.userText);
     const escalation = escalationKeywords.find((x) => x.pattern.test(input.userText));
+    const branch = input.audience === 'driver'
+        ? 'driver'
+        : input.audience === 'admin'
+            ? 'control'
+            : input.audience === 'business'
+                ? 'business'
+                : input.intent === 'airport_transfer'
+                    ? 'airport'
+                    : 'ride';
     const text = input.intent === 'booking_status_explanation'
         ? explainBookingStatus(input.context.booking?.status)
         : input.intent === 'missing_booking_info'
@@ -34,6 +43,8 @@ export const buildMoniResponse = (input) => {
                                 ? `Active: ${input.context.admin?.activeBookings ?? 0}, delayed: ${input.context.admin?.delayedBookings ?? 0}, incidents: ${input.context.admin?.openIncidents ?? 0}.`
                                 : customerResponseRules.safeFallback;
     return {
+        branch,
+        evolutionLevel: 2,
         language,
         audience: input.audience,
         intent: input.intent,
