@@ -4,7 +4,8 @@ import { bookingRepository } from './repository.js';
 import { PricingEngineService } from '../../pricing/services/pricing-engine.service.js';
 import { PricingTier } from '../../pricing/enums/fare-rule.enum.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
-import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
+import { TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
+import { validateLifecycleTransition } from './lifecycle-validation.js';
 import { logger } from '../../utils/logger.js';
 import { DomainError } from '../../errors/domain-error.js';
 
@@ -91,22 +92,37 @@ export const bookingFlowService = {
     nextState: CanonicalBookingLifecycleStatus,
     actor: 'system' | 'admin' | 'driver' | 'customer',
     reason?: string,
-    metadata?: Record<string, unknown>
+    metadata?: Record<string, unknown>,
+    expectedVersion?: number
   ): Promise<BookingRecord> {
     const bookings = await bookingRepository.list();
     const booking = bookings.find((item) => item.id === bookingId);
     if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
     const currentState = booking.lifecycle.state;
-    if (TERMINAL_BOOKING_STATUSES.has(currentState)) {
-      if (currentState === nextState) return booking;
-      throw new DomainError('TERMINAL_STATE_IMMUTABLE', 'Deze rit is voltooid en kan niet meer worden aangepast.', 409, { bookingId, currentState, attemptedState: nextState });
+    const validation = validateLifecycleTransition({
+      currentState,
+      nextState,
+      currentVersion: booking.lifecycle.version,
+      expectedVersion
+    });
+
+    if (!validation.ok) {
+      if (validation.reason === 'VERSION_MISMATCH') {
+        throw new DomainError('BOOKING_VERSION_CONFLICT', 'Ritstatus werd intussen bijgewerkt. Vernieuw en probeer opnieuw.', 409, {
+          bookingId,
+          ...validation.details
+        });
+      }
+      if (validation.reason === 'TERMINAL_IMMUTABLE') {
+        throw new DomainError('TERMINAL_STATE_IMMUTABLE', 'Deze rit is voltooid en kan niet meer worden aangepast.', 409, {
+          bookingId,
+          ...validation.details
+        });
+      }
+      throw new DomainError('INVALID_TRANSITION', 'Ongeldige statusovergang voor deze rit.', 409, { bookingId, ...validation.details });
     }
 
-    if (!CANONICAL_ALLOWED_TRANSITIONS[currentState].has(nextState) && currentState !== nextState) {
-      throw new DomainError('INVALID_TRANSITION', 'Ongeldige statusovergang voor deze rit.', 409, { bookingId, currentState, attemptedState: nextState });
-    }
-
-    if (currentState === nextState) return booking;
+    if (validation.duplicate) return booking;
     const now = new Date().toISOString();
     booking.status = nextState;
     booking.lifecycle.state = nextState;
