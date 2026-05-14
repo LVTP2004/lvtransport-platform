@@ -1,17 +1,21 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Button } from '@lvtransport/ui';
+import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
 
 type Step = 1 | 2 | 3;
 type ServiceType = 'standard' | 'airport' | 'vip';
 type Vehicle = { name: string; eta: string; seats: number; serviceType: ServiceType; description: string };
 type BookingConfirmation = { id: string; referenceCode: string; status: string };
 
-type RouteKey = 'home' | 'booking' | 'tracking' | 'prijzen' | 'diensten' | 'contact' | 'driver' | 'admin' | '404';
+type RouteKey = 'home' | 'booking' | 'tracking' | 'prijzen' | 'diensten' | 'contact' | 'driver' | 'admin' | 'moni' | 'maps' | '404';
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const TRACKING_BASE = import.meta.env.VITE_TRACKING_BASE_URL ?? '/tracking';
 const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? 'https://driver.lvtransport.be';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? 'https://admin.lvtransport.be';
+const MAPS_PROVIDER = import.meta.env.VITE_MAP_PROVIDER ?? 'fallback';
+const MAPBOX_KEY = import.meta.env.VITE_MAPBOX_TOKEN ?? '';
+const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '';
 
 const vehicles: Vehicle[] = [
   { name: 'Executive Sedan', eta: '3 min', seats: 3, serviceType: 'standard', description: 'Comfortabele stadsrit voor premium verplaatsingen.' },
@@ -30,6 +34,8 @@ const resolveRoute = (pathname: string): RouteKey => {
   if (p === '/contact') return 'contact';
   if (['/driver', '/driver.html'].includes(p)) return 'driver';
   if (['/admin', '/admin.html', '/tower', '/dashboard'].includes(p)) return 'admin';
+  if (['/moni', '/moni-ride', '/moni.html'].includes(p)) return 'moni';
+  if (['/maps', '/map', '/app'].includes(p)) return 'maps';
   return '404';
 };
 
@@ -73,11 +79,16 @@ export function App() {
     } catch (e) { setError(e instanceof Error ? e.message : 'Reservatie kon niet bevestigd worden.'); } finally { inFlightKeyRef.current = null; setLoading(false); }
   };
 
-  const Header = <header className='glass-panel rounded-3xl p-5'><nav className='flex flex-wrap gap-2 text-sm'>{[['/','Book'],['/prijzen','Prices'],['/tracking','Track'],['/diensten','Services'],['/contact','Contact'],['/driver','Driver'],['/admin','Admin']].map(([p,l]) => <button key={p} onClick={() => navigate(p)} className='rounded-lg border border-lv-gold/30 px-3 py-1.5'>{l}</button>)}</nav></header>;
+  const Header = <header className='glass-panel rounded-3xl p-5'><nav className='flex flex-wrap gap-2 text-sm'>{[['/','Book'],['/prijzen','Prices'],['/tracking','Track'],['/moni','Moni Ride'],['/app','Maps'],['/diensten','Services'],['/contact','Contact'],['/driver','Driver'],['/admin','Admin']].map(([p,l]) => <button key={p} onClick={() => navigate(p)} className='rounded-lg border border-lv-gold/30 px-3 py-1.5'>{l}</button>)}</nav></header>;
 
   if (route === '404') return <div className='premium-shell min-h-screen p-6 text-white'><div className='mx-auto max-w-3xl space-y-4'>{Header}<section className='glass-panel rounded-3xl p-8 text-center'><img src='/brand/lv-logo-header.svg' className='mx-auto h-12' /><h1 className='mt-4 text-3xl font-semibold'>Pagina niet gevonden</h1><p className='mt-2 text-lv-mist'>Deze pagina bestaat niet of is verplaatst.</p><div className='mt-4 flex flex-wrap justify-center gap-2'><Button onClick={() => navigate('/')}>Terug naar startpagina</Button><Button variant='secondary' onClick={() => navigate('/booking')}>Boek uw rit</Button><Button variant='secondary' onClick={() => navigate('/tracking')}>Volg uw taxi</Button></div></section></div></div>;
 
   if (route === 'driver') return <div className='premium-shell min-h-screen p-6 text-white'><div className='mx-auto max-w-4xl space-y-4'>{Header}<section className='glass-panel rounded-3xl p-6'><h1 className='text-2xl font-semibold'>Driver App</h1><p className='mt-2 text-lv-mist'>Login vereist om ritten en GPS-acties veilig te beheren. Founder-driver toegang verloopt via de bestaande driver omgeving.</p><ul className='mt-3 list-disc space-y-1 pl-5 text-sm text-lv-mist'><li>Ga online/offline</li><li>Accepteer nieuwe rit</li><li>Start GPS en update ritstatus</li></ul><a href={DRIVER_SURFACE_URL} className='mt-4 inline-flex rounded-lg border border-lv-gold/40 px-3 py-2'>Open Driver Surface</a></section></div></div>;
+
+
+  if (route === 'moni') return <div className='premium-shell min-h-screen p-6 text-white'><div className='mx-auto max-w-5xl space-y-4'>{Header}<section className='glass-panel rounded-3xl p-6'><h1 className='text-2xl font-semibold'>Moni Ride Concierge</h1><p className='text-lv-mist'>Moni Ride is beschikbaar voor booking assistentie, tracking vragen en escalatie naar operations.</p><ul className='mt-3 list-disc pl-5 text-sm text-lv-mist'><li>Customer-friendly fallback zonder backend afhankelijkheid</li><li>Snelle intents: booking, tracking, airport, premium</li><li>Escalatiepad naar operator bij onduidelijke situaties</li></ul></section><MoniAssistant /></div></div>;
+
+  if (route === 'maps') return <div className='premium-shell min-h-screen p-6 text-white'><div className='mx-auto max-w-5xl space-y-4'>{Header}<section className='glass-panel rounded-3xl p-6'><h1 className='text-2xl font-semibold'>Live Map & Tracking</h1><p className='text-lv-mist'>Map provider: <b>{MAPS_PROVIDER}</b></p>{(!MAPBOX_KEY && !GOOGLE_MAPS_KEY) ? <div className='mt-3 rounded-xl border border-amber-300/40 bg-amber-100/10 p-4 text-sm text-amber-100'>Geen Maps API key gevonden (VITE_MAPBOX_TOKEN of VITE_GOOGLE_MAPS_API_KEY). Fallback kaart actief: tracking blijft beschikbaar via status updates en ETA.</div> : <div className='mt-3 rounded-xl border border-lv-gold/30 p-4 text-sm text-lv-mist'>Maps key gevonden. Koppel hier de provider-component voor realtime kaartvisualisatie.</div>}<div className='mt-3 h-56 rounded-2xl border border-lv-gold/30 bg-black/40 p-4 text-sm text-lv-mist'>Fallback map canvas — geen blanco scherm. Indien externe map faalt blijft deze operationele fallback zichtbaar.</div></section></div></div>;
 
   if (route === 'admin') return <div className='premium-shell min-h-screen p-6 text-white'><div className='mx-auto max-w-5xl space-y-4'>{Header}<section className='glass-panel rounded-3xl p-6'><h1 className='text-2xl font-semibold'>Admin / Control Tower</h1><p className='text-lv-mist'>Active rides, upcoming rides, drivers, booking lifecycle status en operationele readiness.</p><p className='mt-2 text-sm'>API health: <b>{apiHealth}</b></p><ul className='mt-3 list-disc pl-5 text-sm text-lv-mist'><li>Active rides</li><li>Upcoming rides</li><li>Drivers</li><li>Booking lifecycle status</li><li>Operational readiness</li></ul><a href={ADMIN_SURFACE_URL} className='mt-4 inline-flex rounded-lg border border-lv-gold/40 px-3 py-2'>Open Admin Surface</a></section></div></div>;
 
@@ -88,5 +99,5 @@ export function App() {
   {confirmation && <div><p>Referentie {confirmation.referenceCode}</p><button onClick={()=>navigate('/tracking')}>Volg taxi</button></div>}
   {info && <p>{info}</p>}{error && <p>{error}</p>}</div>
   <aside className='space-y-4'><article className='glass-panel rounded-3xl p-4'><p>View prices</p><p>€{estimatedFare}</p></article><article className='glass-panel rounded-3xl p-4'><p>Airport transfer</p></article><article className='glass-panel rounded-3xl p-4'><p>Business/VIP</p></article><article className='glass-panel rounded-3xl p-4'><p>Contact</p></article></aside>
-  </section></div></div>;
+  </section><MoniAssistant /></div></div>;
 }
