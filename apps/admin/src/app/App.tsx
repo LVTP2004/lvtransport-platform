@@ -57,11 +57,11 @@ export function App() {
     <div className="relative mx-auto max-w-7xl space-y-5">
       <header className="lvtp-shell rounded-3xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-11 w-auto rounded-md border border-amber-400/30 bg-black p-1" /><div><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">LV Transport · Premium Control Tower</p><h1 className="text-xl font-semibold text-amber-200">Realtime operationeel overzicht</h1></div></div>
+          <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-11 w-auto rounded-md border border-amber-400/30 bg-black p-1" /><div><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">LV Transport · Premium Control Tower</p><h1 className="text-xl font-semibold text-amber-200">LV Control</h1></div></div>
           <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] ${sync === 'live' ? 'border-emerald-300/40 bg-emerald-400/15 text-emerald-100' : sync === 'recovering' ? 'border-amber-300/40 bg-amber-400/15 text-amber-100' : 'border-rose-300/40 bg-rose-400/15 text-rose-100'}`}>{sync}</span>
         </div>
         <p className="mt-3 text-sm text-zinc-300">Professionele dispatch-opvolging voor luchthaven-, business- en VIP-service met founder-level controle.</p>
-      </header>
+      <button className="lvtp-btn-primary mt-3" onClick={() => (window as any).__lvPwa?.promptInstall?.()}>Install app</button></header>
 
       <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         {[['Boekingen', bookings.length], ['Actieve ritten', active], ['Beschikbare chauffeurs', drivers.length], ['Waarschuwingen', warnings]].map(([label, value]) => <article key={label} className="lvtp-card rounded-2xl p-4"><p className="text-xs uppercase text-zinc-400">{label}</p><p className="mt-2 text-2xl font-semibold text-amber-100">{value}</p></article>)}
