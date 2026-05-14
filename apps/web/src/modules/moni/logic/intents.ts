@@ -1,6 +1,9 @@
 import type { MoniIntent } from '../types/moni.types';
 
 const intentPatterns: Array<{ intent: MoniIntent; pattern: RegExp }> = [
+  { intent: 'onboarding_support', pattern: /(sign in|google|verify|verification|onboarding|identity|email verification|phone verification)/i },
+  { intent: 'lifecycle_update', pattern: /(pending|assigned|on route|en route|arrived|completed|cancelled|canceled|ride status)/i },
+  { intent: 'review_request', pattern: /(review|feedback|rate|rating|punctuality|comfort|professionalism)/i },
   { intent: 'tracking_request', pattern: /(track|volg|status|where is|waar is|reserveringscode|code)/i },
   { intent: 'airport_transfer', pattern: /(airport|luchthaven|zaventem|charleroi|antwerp|eindhoven|schiphol)/i },
   { intent: 'business_request', pattern: /(zakelijk|business|company|maandelijks|invoicing|recurring)/i },
