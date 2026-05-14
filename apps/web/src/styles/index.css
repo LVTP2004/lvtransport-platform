@@ -38,6 +38,11 @@
   .status-line { @apply rounded-xl border border-white/10 bg-black/30 px-3 py-2 text-sm text-lv-mist; }
   .status-line--active { @apply border-lv-gold/40 bg-lv-gold/10 text-white; }
   .service-card { @apply transition duration-300 hover:-translate-y-1 hover:border-lv-gold/70 hover:bg-lv-gold/10; }
+  .auth-overlay { @apply fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4 backdrop-blur-sm; }
+  .auth-card { @apply w-full max-w-2xl rounded-3xl p-6; }
+  .identity-chip { @apply fixed bottom-4 right-4 z-40 flex items-center gap-2 rounded-2xl px-4 py-3 text-xs; }
+  .identity-chip button { @apply rounded-lg border border-lv-gold/40 px-2 py-1 text-lv-champagne; }
+
 
   .moni-root {@apply fixed bottom-4 right-4 z-50;}
   .moni-fab {@apply rounded-full bg-lv-gold px-5 py-3 font-semibold text-black shadow-gold-md;}
