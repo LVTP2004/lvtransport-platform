@@ -1,16 +1,88 @@
 {
-  "name": "LV Ride",
-  "short_name": "LV Ride",
-  "description": "Operationally resilient LV Transport mobile dispatch and booking experience.",
-  "start_url": "/",
+  "name": "LV Transport Premium Ecosystem",
+  "short_name": "LV",
+  "description": "Installable premium realtime mobility ecosystem for LV Ride, Driver, Control, and Business operations.",
+  "start_url": "/?source=pwa",
   "scope": "/",
-  "display": "standalone",
+  "display": "fullscreen",
   "background_color": "#0a0a0a",
   "theme_color": "#C8A96B",
   "orientation": "portrait-primary",
   "icons": [
-    { "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" },
-    { "src": "/icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml" },
-    { "src": "/icons/icon-512.svg", "sizes": "512x512", "type": "image/svg+xml", "purpose": "maskable" }
+    {
+      "src": "/icons/icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml"
+    },
+    {
+      "src": "/icons/icon-512.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "maskable"
+    }
+  ],
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
+  "categories": [
+    "travel",
+    "business",
+    "navigation"
+  ],
+  "shortcuts": [
+    {
+      "name": "LV Ride",
+      "short_name": "Ride",
+      "url": "/booking",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "LV Driver",
+      "short_name": "Driver",
+      "url": "/driver",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "LV Control",
+      "short_name": "Control",
+      "url": "/admin",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    },
+    {
+      "name": "LV Business",
+      "short_name": "Business",
+      "url": "/vip",
+      "icons": [
+        {
+          "src": "/icons/icon-192.svg",
+          "sizes": "192x192",
+          "type": "image/svg+xml"
+        }
+      ]
+    }
   ]
 }
