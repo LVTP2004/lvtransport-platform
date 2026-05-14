@@ -2,44 +2,55 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? 'https://driver.lvtransport.be';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? 'https://admin.lvtransport.be';
-const GOOGLE_MAPS_KEY = import.meta.env.VITE_GOOGLE_MAPS_API_KEY ?? '';
-const MAPBOX_KEY = import.meta.env.VITE_MAPBOX_TOKEN ?? '';
+const navItems = [
+    { path: '/', label: 'Home', section: 'hero' },
+    { path: '/boeken', label: 'Boeken', section: 'booking' },
+    { path: '/prijzen', label: 'Prijzen', section: 'prijzen' },
+    { path: '/tracking', label: 'Volg uw taxi', section: 'tracking' },
+    { path: '/diensten', label: 'Diensten', section: 'diensten' },
+    { path: '/vip', label: 'LV VIP', section: 'vip' },
+    { path: '/contact', label: 'Contact', section: 'footer' }
+];
 const resolveRoute = (pathname) => {
     const p = pathname.toLowerCase();
     if (['/', '/home'].includes(p))
         return 'home';
-    if (['/booking', '/booking.html'].includes(p))
-        return 'booking';
-    if (['/tracking', '/tracking.html'].includes(p))
-        return 'tracking';
+    if (['/boeken', '/booking'].includes(p))
+        return 'boeken';
     if (p === '/prijzen')
         return 'prijzen';
+    if (['/tracking', '/volg-uw-taxi'].includes(p))
+        return 'tracking';
     if (p === '/diensten')
         return 'diensten';
+    if (p === '/vip')
+        return 'vip';
     if (p === '/contact')
         return 'contact';
     if (['/driver', '/driver.html'].includes(p))
         return 'driver';
-    if (['/admin', '/admin.html', '/tower', '/dashboard'].includes(p))
+    if (['/admin', '/admin.html', '/tower'].includes(p))
         return 'admin';
-    if (['/moni', '/moni-ride', '/moni.html'].includes(p))
-        return 'moni';
-    if (['/maps', '/map', '/app'].includes(p))
-        return 'maps';
     return '404';
 };
 export function App() {
     const [route, setRoute] = useState(() => resolveRoute(window.location.pathname));
-    const [apiHealth, setApiHealth] = useState('controle bezig');
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [trackingCode, setTrackingCode] = useState('');
-    const [booking, setBooking] = useState({ date: '', time: '', name: '', phone: '', pickup: '', destination: '', persons: 1, notes: '' });
-    const navigate = (path) => {
+    const [booking, setBooking] = useState({ name: '', phone: '', pickup: '', destination: '', date: '', time: '', passengers: '1', notes: '' });
+    const [estimate, setEstimate] = useState({ distance: '18 km', price: '€74 - €96', airport: 'Nee' });
+    const priceRoutes = useMemo(() => [
+        ['Antwerpen → Brussels Airport', '€95'], ['Antwerpen → Charleroi', '€165'], ['Antwerpen → Schiphol', '€310'], ['Antwerpen → Eindhoven', '€220'],
+        ['Antwerpen → Gent', '€125'], ['Antwerpen → Brugge', '€160'], ['Antwerpen → Leuven', '€150'], ['Antwerpen → Hasselt', '€140'], ['Antwerpen → Rotterdam', '€210']
+    ], []);
+    const navigate = (path, section) => {
         history.pushState({}, '', path);
         setRoute(resolveRoute(path));
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        setMobileOpen(false);
+        if (section)
+            setTimeout(() => document.getElementById(section)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
     };
     useEffect(() => {
         const onPop = () => setRoute(resolveRoute(window.location.pathname));
@@ -47,47 +58,19 @@ export function App() {
         return () => window.removeEventListener('popstate', onPop);
     }, []);
     useEffect(() => {
-        fetch(`${API_BASE}/health`)
-            .then((r) => r.json())
-            .then((d) => setApiHealth(d?.status ?? 'onbekend'))
-            .catch(() => setApiHealth('degraded'));
-    }, []);
-    useEffect(() => {
-        const targets = {
-            home: 'hero',
-            booking: 'booking',
-            tracking: 'tracking',
-            prijzen: 'prijzen',
-            diensten: 'diensten',
-            contact: 'contact',
-            maps: 'maps',
-            moni: 'moni',
-            driver: 'driver',
-            admin: 'admin',
-            '404': 'hero'
-        };
-        const target = document.getElementById(targets[route]);
-        if (target && ['home', 'booking', 'tracking', 'prijzen', 'diensten', 'contact', 'maps', 'moni'].includes(route)) {
-            target.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        }
+        const targetMap = { home: 'hero', boeken: 'booking', prijzen: 'prijzen', tracking: 'tracking', diensten: 'diensten', vip: 'vip', contact: 'footer', driver: 'driver', admin: 'admin', '404': 'hero' };
+        document.getElementById(targetMap[route])?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, [route]);
-    const mapsMissing = !GOOGLE_MAPS_KEY && !MAPBOX_KEY;
-    const apiOnline = apiHealth === 'ok' || apiHealth === 'healthy';
-    const bookingReady = booking.date && booking.time && booking.name && booking.phone && booking.pickup && booking.destination;
-    const fixedPrices = useMemo(() => [
-        ['Antwerpen Centrum → Brussels Airport', '€95'],
-        ['Antwerpen Centrum → Charleroi Airport', '€165'],
-        ['Antwerpen Centrum → Zaventem', '€95'],
-        ['Antwerpen Centrum → Gent Centrum', '€125']
-    ], []);
-    const Header = (_jsx("header", { className: 'glass-panel sticky top-3 z-30 rounded-3xl p-4', children: _jsxs("nav", { className: 'flex flex-wrap items-center gap-2 text-sm', children: [_jsx("img", { src: '/brand/lv-logo-header.svg', className: 'mr-2 h-8', alt: 'LV Transport' }), [
-                    ['/', 'Home'], ['/booking', 'Boeking'], ['/prijzen', 'Prijzen'], ['/tracking', 'Tracking'], ['/moni-ride', 'Moni Ride'], ['/maps', 'Maps'], ['/diensten', 'Diensten'], ['/contact', 'Contact']
-                ].map(([p, l]) => _jsx("button", { onClick: () => navigate(p), className: 'rounded-lg border border-lv-gold/30 px-3 py-1.5 hover:bg-lv-gold/15', children: l }, p)), _jsxs("div", { className: 'ml-auto flex gap-2', children: [_jsx("button", { onClick: () => navigate('/driver'), className: 'rounded-lg border border-white/20 px-3 py-1.5 text-xs text-lv-mist', children: "Driver" }), _jsx("button", { onClick: () => navigate('/admin'), className: 'rounded-lg border border-white/20 px-3 py-1.5 text-xs text-lv-mist', children: "Admin" })] })] }) }));
-    if (route === '404')
-        return _jsx("div", { className: 'premium-shell min-h-screen p-6 text-white', children: _jsxs("div", { className: 'mx-auto max-w-4xl space-y-4', children: [Header, _jsxs("section", { className: 'glass-panel rounded-3xl p-8 text-center', children: [_jsx("h1", { className: 'text-3xl font-semibold', children: "Pagina niet gevonden" }), _jsx(Button, { onClick: () => navigate('/'), children: "Terug naar startpagina" })] })] }) });
+    useEffect(() => {
+        const text = `${booking.pickup} ${booking.destination}`.toLowerCase();
+        const airport = /(airport|zaventem|charleroi|schiphol|eindhoven|antwerp)/.test(text);
+        const distance = airport ? '44 km' : booking.destination ? '22 km' : '18 km';
+        const price = airport ? '€95 - €170' : booking.destination ? '€78 - €110' : '€74 - €96';
+        setEstimate({ distance, price, airport: airport ? 'Ja' : 'Nee' });
+    }, [booking.pickup, booking.destination]);
     if (route === 'driver' || route === 'admin') {
         const isDriver = route === 'driver';
-        return _jsx("div", { className: 'premium-shell min-h-screen p-6 text-white', children: _jsxs("div", { className: 'mx-auto max-w-4xl space-y-4', children: [Header, _jsxs("section", { id: isDriver ? 'driver' : 'admin', className: 'glass-panel rounded-3xl p-7', children: [_jsx("h1", { className: 'text-3xl font-semibold', children: isDriver ? 'Driver toegang' : 'Admin control tower' }), _jsx("p", { className: 'mt-2 text-lv-mist', children: isDriver ? 'Chauffeurs beheren ritacceptatie, statusupdates en navigatie in de beveiligde driver omgeving.' : 'Operations volgt booking lifecycle, actieve ritten en dispatch in de beveiligde admin omgeving.' }), _jsxs("a", { className: 'mt-5 inline-flex rounded-xl border border-lv-gold/40 px-4 py-2', href: isDriver ? DRIVER_SURFACE_URL : ADMIN_SURFACE_URL, children: ["Open ", isDriver ? 'Driver' : 'Admin', " Surface"] })] })] }) });
+        return _jsx("div", { className: 'premium-shell min-h-screen p-6 text-white', children: _jsxs("section", { id: isDriver ? 'driver' : 'admin', className: 'glass-panel mx-auto max-w-5xl rounded-3xl p-8', children: [_jsx("h1", { className: 'text-3xl font-semibold', children: isDriver ? 'Driver Operations App' : 'Admin Control Tower' }), _jsx("p", { className: 'mt-2 text-lv-mist', children: isDriver ? 'Toegewezen ritten, accepteren/weigeren, realtime status en routeprogressie voor chauffeurs.' : 'Beheer prijzen, homepage-teksten, routes, VIP-content, reviews, footertekst en operationele meldingen.' }), _jsx("div", { className: 'mt-5 grid gap-3 sm:grid-cols-2', children: ['Prijzen', 'Homepage tekst', 'Routes', 'VIP content', 'Reviews', 'Footer', 'Announcements', 'Ritmonitoring'].map((m) => _jsx("div", { className: 'rounded-xl border border-lv-gold/25 bg-black/35 p-3', children: m }, m)) }), _jsxs("a", { className: 'mt-6 inline-flex rounded-xl border border-lv-gold/50 px-4 py-2', href: isDriver ? DRIVER_SURFACE_URL : ADMIN_SURFACE_URL, children: ["Open beveiligde ", isDriver ? 'Driver' : 'Admin', " omgeving"] })] }) });
     }
-    return _jsx("div", { className: 'premium-shell min-h-screen px-4 py-4 text-white sm:px-6', children: _jsxs("div", { className: 'mx-auto w-full max-w-6xl space-y-5', children: [Header, _jsxs("section", { id: 'hero', className: 'glass-panel rounded-3xl p-6 sm:p-10', children: [_jsx("p", { className: 'text-sm uppercase tracking-[0.25em] text-lv-champagne', children: "Antwerpen 24/7 service" }), _jsx("h1", { className: 'mt-3 text-4xl font-semibold sm:text-5xl', children: "Premium taxi service voor elke rit in en rond Antwerpen." }), _jsx("p", { className: 'mt-4 max-w-3xl text-lv-mist', children: "LV Transport is operationeel met live booking, tracking en vaste prijzen. U boekt in minuten en volgt uw chauffeur stap voor stap." }), _jsxs("div", { className: 'mt-6 flex flex-wrap gap-3', children: [_jsx(Button, { onClick: () => navigate('/booking'), children: "Book uw rit" }), _jsx(Button, { variant: 'secondary', onClick: () => navigate('/prijzen'), children: "Bekijk prijzen" }), _jsx(Button, { variant: 'secondary', onClick: () => navigate('/tracking'), children: "Volg uw taxi" })] }), _jsxs("div", { className: 'mt-6 grid gap-3 sm:grid-cols-3', children: [_jsxs("div", { className: 'status-pill', children: ["API status: ", _jsx("b", { className: apiOnline ? 'text-emerald-300' : 'text-amber-200', children: apiHealth })] }), _jsx("div", { className: 'status-pill', children: "Booking lifecycle: ontvangen \u2192 toegewezen \u2192 onderweg \u2192 aangekomen" }), _jsx("div", { className: 'status-pill', children: "Tracking werkt met 6-cijferige reservatiecode" })] })] }), _jsx("section", { id: 'diensten', className: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4', children: ['Taxi Antwerpen', 'Luchthaventransfer', 'Zakelijk vervoer', 'LV VIP'].map((service) => _jsxs("article", { className: 'glass-panel rounded-2xl p-5', children: [_jsx("h3", { className: 'text-lg font-semibold', children: service }), _jsx("p", { className: 'mt-2 text-sm text-lv-mist', children: "Stipt, veilig en premium comfort met professionele chauffeurs." })] }, service)) }), _jsxs("section", { id: 'prijzen', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Vaste prijzen" }), _jsx("div", { className: 'mt-4 grid gap-3 sm:grid-cols-2', children: fixedPrices.map(([routeLabel, price]) => _jsxs("div", { className: 'rounded-2xl border border-lv-gold/25 bg-black/20 p-4', children: [_jsx("p", { className: 'text-sm text-lv-mist', children: routeLabel }), _jsx("p", { className: 'text-2xl font-semibold text-lv-champagne', children: price })] }, routeLabel)) })] }), _jsxs("section", { id: 'booking', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Boek uw rit" }), _jsx("div", { className: 'mt-4 grid gap-3 sm:grid-cols-2', children: ['date', 'time', 'name', 'phone', 'pickup', 'destination', 'persons', 'notes'].map((field) => (_jsxs("label", { className: `field-wrap ${field === 'notes' ? 'sm:col-span-2' : ''}`, children: [_jsx("span", { children: field }), field === 'notes' ? _jsx("input", { placeholder: 'Extra details voor chauffeur', value: booking.notes, onChange: (e) => setBooking({ ...booking, notes: e.target.value }) }) : field === 'persons' ? _jsx("input", { type: 'number', min: 1, max: 8, value: booking.persons, onChange: (e) => setBooking({ ...booking, persons: Number(e.target.value) }) }) : _jsx("input", { type: field === 'date' ? 'date' : field === 'time' ? 'time' : 'text', value: booking[field], onChange: (e) => setBooking({ ...booking, [field]: e.target.value }) })] }, field))) }), _jsxs("div", { className: 'mt-4 flex items-center gap-3', children: [_jsx(Button, { disabled: !bookingReady, children: "Reserveer rit" }), _jsx("p", { className: 'text-sm text-lv-mist', children: "Geen blanco scherm: formulier blijft bruikbaar bij trage API." })] })] }), _jsxs("section", { id: 'tracking', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Volg uw rit" }), _jsx("p", { className: 'mt-1 text-lv-mist', children: "Vul uw 6-cijferige reservatiecode in om status en ETA te bekijken." }), _jsxs("div", { className: 'mt-3 flex gap-3', children: [_jsx("input", { className: 'w-full rounded-xl border border-lv-gold/30 bg-black/20 px-4 py-3', maxLength: 6, placeholder: 'Bijv. 482931', value: trackingCode, onChange: (e) => setTrackingCode(e.target.value.replace(/\D/g, '').slice(0, 6)) }), _jsx(Button, { variant: 'secondary', disabled: trackingCode.length !== 6, children: "Controleer" })] })] }), _jsxs("section", { id: 'moni', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Moni Ride assistent" }), _jsx("p", { className: 'mt-2 text-lv-mist', children: "Hallo! Ik ben Moni Ride. Ik help u met boeken, prijzen, tracking en directe hulp bij vragen over uw rit." })] }), _jsxs("section", { id: 'maps', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Route preview" }), mapsMissing ? _jsx("div", { className: 'mt-3 rounded-xl border border-amber-300/40 bg-amber-100/10 p-4 text-amber-100', children: "Maps API key ontbreekt. Fallback route panel actief zodat de klant altijd een operationele interface ziet." }) : _jsx("div", { className: 'mt-3 rounded-xl border border-emerald-300/40 bg-emerald-100/10 p-4 text-emerald-100', children: "Maps key gevonden. Route preview staat klaar." }), _jsx("div", { className: 'mt-3 h-48 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist', children: "Fallback kaartpaneel: pickup, bestemming en ETA blijven zichtbaar." })] }), _jsxs("section", { id: 'contact', className: 'glass-panel rounded-3xl p-6 text-sm', children: [_jsx("h2", { className: 'text-xl font-semibold', children: "Contact" }), _jsx("p", { className: 'mt-2', children: "+32 466 48 79 36" }), _jsx("p", { children: "info@lvtransport.be" }), _jsx("p", { children: "www.lvtransport.be" }), _jsx("p", { children: "BTW: BE 1036.807.066" })] }), _jsx(MoniAssistant, {})] }) });
+    return _jsx("div", { className: 'premium-shell min-h-screen px-4 py-4 text-white sm:px-6', children: _jsxs("div", { className: 'mx-auto max-w-6xl space-y-5', children: [_jsxs("header", { className: 'glass-panel sticky top-3 z-30 rounded-3xl p-4', children: [_jsxs("nav", { className: 'hidden items-center gap-2 md:flex', children: [_jsx("img", { src: '/brand/lv-logo-header.svg', className: 'h-10', alt: 'LV Transport' }), _jsx("div", { className: 'mx-auto flex gap-2', children: navItems.map((n) => _jsx("button", { onClick: () => navigate(n.path, n.section), className: 'nav-btn', children: n.label }, n.path)) }), _jsxs("div", { className: 'flex gap-2', children: [_jsx("button", { className: 'nav-btn-muted', onClick: () => navigate('/driver'), children: "Driver" }), _jsx("button", { className: 'nav-btn-muted', onClick: () => navigate('/admin'), children: "Admin" })] })] }), _jsxs("div", { className: 'flex items-center justify-between md:hidden', children: [_jsx("img", { src: '/brand/lv-logo-header.svg', className: 'h-9', alt: 'LV Transport' }), _jsx("button", { className: 'nav-btn', onClick: () => setMobileOpen((v) => !v), children: "\u2630" })] }), mobileOpen && _jsxs("div", { className: 'mobile-menu mt-3 md:hidden', children: [navItems.map((n) => _jsx("button", { className: 'mobile-link', onClick: () => navigate(n.path, n.section), children: n.label }, n.path)), _jsxs("div", { className: 'mt-2 flex gap-2', children: [_jsx("button", { className: 'nav-btn-muted w-full', onClick: () => navigate('/driver'), children: "Driver" }), _jsx("button", { className: 'nav-btn-muted w-full', onClick: () => navigate('/admin'), children: "Admin" })] })] })] }), _jsxs("section", { id: 'hero', className: 'glass-panel hero-panel rounded-3xl p-6 sm:p-10', children: [_jsx("p", { className: 'text-sm uppercase tracking-[0.25em] text-lv-champagne', children: "Executive mobility \u2022 Antwerpen & Belgi\u00EB" }), _jsx("h1", { className: 'mt-3 text-4xl font-semibold sm:text-6xl', children: "Premium vervoer in Antwerpen en heel Belgi\u00EB" }), _jsx("p", { className: 'mt-4 max-w-3xl text-lv-mist', children: "Direct boeken, realtime opvolgen en vaste premium service voor luchthavens, zakelijke ritten en VIP-vervoer." }), _jsxs("div", { className: 'mt-6 flex flex-wrap gap-3', children: [_jsx(Button, { onClick: () => navigate('/boeken', 'booking'), children: "Boek uw rit" }), _jsx(Button, { variant: 'secondary', onClick: () => navigate('/prijzen', 'prijzen'), children: "Bekijk prijzen" }), _jsx(Button, { variant: 'secondary', onClick: () => navigate('/tracking', 'tracking'), children: "Volg uw taxi" })] }), _jsxs("div", { className: 'mt-6 grid gap-3 md:grid-cols-3', children: [_jsxs("label", { className: 'field-wrap', children: [_jsx("span", { children: "Van" }), _jsx("input", { value: booking.pickup, onChange: (e) => setBooking({ ...booking, pickup: e.target.value }), placeholder: 'Antwerpen, hotel, kantoor...' })] }), _jsxs("label", { className: 'field-wrap', children: [_jsx("span", { children: "Naar" }), _jsx("input", { value: booking.destination, onChange: (e) => setBooking({ ...booking, destination: e.target.value }), placeholder: 'Luchthaven of bestemming...' })] }), _jsxs("div", { className: 'rounded-2xl border border-lv-gold/35 bg-black/45 p-4 text-sm', children: [_jsxs("p", { children: ["Airport detectie: ", _jsx("b", { children: estimate.airport })] }), _jsxs("p", { children: ["Afstand: ", _jsx("b", { children: estimate.distance })] }), _jsxs("p", { children: ["Schatting: ", _jsx("b", { className: 'text-lv-champagne', children: estimate.price })] })] })] })] }), _jsx("section", { id: 'diensten', className: 'grid gap-3 sm:grid-cols-2 lg:grid-cols-4', children: [['Taxi Antwerpen', '24/7 stedelijke ritten met premium comfort.'], ['Luchthavenvervoer', 'Brussels, Charleroi, Schiphol, Eindhoven, Antwerp Airport.'], ['Zakelijk vervoer', 'Facturen, maandelijkse billing en contractritten.'], ['LV VIP', 'Prioriteit, premium chauffeurs en abonnementsvoordelen.']].map(([t, d]) => _jsxs("article", { className: 'glass-panel service-card rounded-2xl p-5', children: [_jsx("h3", { className: 'text-lg font-semibold', children: t }), _jsx("p", { className: 'mt-2 text-sm text-lv-mist', children: d })] }, t)) }), _jsxs("section", { id: 'prijzen', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Premium routeprijzen" }), _jsx("div", { className: 'route-carousel mt-4', children: priceRoutes.concat(priceRoutes).map(([r, p], i) => _jsxs("div", { className: 'route-card', children: [_jsx("p", { className: 'text-sm text-lv-mist', children: r }), _jsx("p", { className: 'text-2xl font-semibold text-lv-champagne', children: p })] }, r + i)) })] }), _jsxs("section", { id: 'booking', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Boek uw rit" }), _jsx("div", { className: 'mt-4 grid gap-3 sm:grid-cols-2', children: [['name', 'Naam'], ['phone', 'Telefoon'], ['pickup', 'Pickup'], ['destination', 'Bestemming'], ['date', 'Datum'], ['time', 'Tijd'], ['passengers', 'Passagiers'], ['notes', 'Notities']].map(([key, label]) => _jsxs("label", { className: `field-wrap ${key === 'notes' ? 'sm:col-span-2' : ''}`, children: [_jsx("span", { children: label }), _jsx("input", { type: key === 'date' || key === 'time' ? 'text' : 'text', value: booking[key], onChange: (e) => setBooking({ ...booking, [key]: e.target.value }) })] }, key)) }), _jsx("div", { className: 'mt-4', children: _jsx(Button, { children: "Reserveer rit" }) })] }), _jsxs("section", { id: 'tracking', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Volg uw taxi" }), _jsxs("div", { className: 'mt-3 flex gap-3', children: [_jsx("input", { className: 'w-full rounded-xl border border-lv-gold/30 bg-black/20 px-4 py-3', maxLength: 6, placeholder: 'Boekingscode', value: trackingCode, onChange: (e) => setTrackingCode(e.target.value.replace(/\D/g, '').slice(0, 6)) }), _jsx(Button, { variant: 'secondary', children: "Track" })] }), _jsxs("div", { className: 'mt-4 rounded-2xl border border-lv-gold/30 bg-black/40 p-4', children: [_jsx("p", { children: "Status: Chauffeur onderweg" }), _jsx("p", { children: "ETA: 9 minuten" }), _jsx("div", { className: 'mt-2 h-44 rounded-xl bg-[radial-gradient(circle_at_30%_20%,rgba(212,175,55,.2),transparent_40%),linear-gradient(140deg,#0b0b0c,#141418)] p-3 text-lv-champagne', children: "\u25CF Gouden route \u2022 taxi-indicator actief \u2022 bestemming gemarkeerd" })] })] }), _jsxs("section", { id: 'vip', className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "LV VIP" }), _jsx("p", { className: 'mt-2 text-lv-mist', children: "Priority booking, premium chauffeurs, loyalty benefits, executive treatment en dedicated ondersteuning voor frequente reizigers en bedrijven." })] }), _jsxs("section", { className: 'glass-panel rounded-3xl p-6', children: [_jsx("h2", { className: 'text-2xl font-semibold', children: "Klantreviews" }), _jsx("div", { className: 'route-carousel mt-4', children: ['“Altijd op tijd voor Zaventem.” ★★★★★', '“Onze directie gebruikt enkel LV VIP.” ★★★★★', '“Facturatie en service zijn top.” ★★★★★', '“Perfecte rit naar Schiphol.” ★★★★★'].concat(['“Altijd op tijd voor Zaventem.” ★★★★★', '“Onze directie gebruikt enkel LV VIP.” ★★★★★']).map((r, i) => _jsx("div", { className: 'route-card text-sm', children: r }, i)) })] }), _jsxs("footer", { id: 'footer', className: 'glass-panel grid rounded-3xl p-6 text-sm md:grid-cols-3', children: [_jsx("div", { children: _jsx("img", { src: '/brand/lv-logo-header.svg', className: 'h-10', alt: 'LV Transport' }) }), _jsxs("div", { children: [_jsx("p", { children: "\uD83D\uDCDE +32 466 48 79 36" }), _jsx("p", { children: "\u2709 info@lvtransport.be" }), _jsx("p", { children: "\uD83C\uDF10 www.lvtransport.be" }), _jsx("p", { children: "BTW BE 1036.807.066" })] }), _jsxs("div", { children: [_jsx("p", { children: "\u00A9 2026 LV Transport. Alle rechten voorbehouden." }), _jsx("p", { children: "Legal notice" }), _jsx("p", { children: "All rights reserved" })] })] }), _jsx(MoniAssistant, {})] }) });
 }
