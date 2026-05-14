@@ -61,6 +61,17 @@ const interactionCopy: Record<InteractionIntent, string> = {
   expansion: 'Start verified partner/operator onboarding voor LV Business Expansion.'
 };
 
+
+const customerMapStates: Array<{ key: BookingLifecycle | 'searching' | 'booking_pending'; label: string; tone: string }> = [
+  { key: 'searching', label: 'Searching', tone: 'bg-sky-400/20 text-sky-100 border-sky-300/40' },
+  { key: 'booking_pending', label: 'Booking pending', tone: 'bg-amber-400/20 text-amber-100 border-amber-300/40' },
+  { key: BookingLifecycle.ASSIGNED, label: 'Driver assigned', tone: 'bg-violet-400/20 text-violet-100 border-violet-300/40' },
+  { key: BookingLifecycle.EN_ROUTE, label: 'Driver approaching', tone: 'bg-indigo-400/20 text-indigo-100 border-indigo-300/40' },
+  { key: BookingLifecycle.ARRIVED, label: 'Arrived', tone: 'bg-cyan-400/20 text-cyan-100 border-cyan-300/40' },
+  { key: BookingLifecycle.IN_PROGRESS, label: 'In ride', tone: 'bg-emerald-400/20 text-emerald-100 border-emerald-300/40' },
+  { key: BookingLifecycle.COMPLETED, label: 'Completed', tone: 'bg-lv-gold/25 text-lv-champagne border-lv-gold/40' }
+];
+
 const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
   const map: Record<string, BookingLifecycle> = {
     draft: BookingLifecycle.PENDING,
@@ -97,6 +108,8 @@ export function App() {
   const [trackingInput, setTrackingInput] = useState('');
   const [trackingResult, setTrackingResult] = useState('Voer uw ritcode in om realtime lifecycle-status te controleren.');
   const [trackingLoading, setTrackingLoading] = useState(false);
+  const [customerMapPhase, setCustomerMapPhase] = useState<(typeof customerMapStates)[number]['key']>('searching');
+  const [driverProgress, setDriverProgress] = useState(10);
   const [verifiedReviews, setVerifiedReviews] = useState<string[]>([]);
 
   const [calc, setCalc] = useState({ km: 22, isNight: false, airport: true, business: false });
@@ -215,6 +228,13 @@ export function App() {
     setTrackingLoading(false);
   };
 
+  useEffect(() => {
+    const timer = setInterval(() => setDriverProgress((p) => (p >= 92 ? 12 : p + 4)), 1800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const mapPhase = customerMapStates.find((state) => state.key === customerMapPhase) ?? customerMapStates[0];
+
   return <div className='premium-shell min-h-screen text-white'>
     <div className='mx-auto max-w-6xl px-4 py-4 sm:px-6'>
       <header className='glass-panel sticky top-3 z-40 rounded-3xl p-3 sm:p-4'>
@@ -233,7 +253,21 @@ export function App() {
           <button className='mobile-nav-btn' onClick={() => requireIdentity('admin', () => navigate('/admin'))}>Admin portal</button>
         </div>
       </header>
-      <section id='hero' className='glass-panel hero-panel mt-4 rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Verified Premium Mobility Ecosystem</h1><p className='mt-4 max-w-3xl text-lv-mist'>Public exploration is open. Operational actions run through verified identity, trusted lifecycle orchestration and premium onboarding.</p><div className='mt-6 flex flex-wrap gap-2'><button className='nav-btn' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Volg uw rit</button></div></section><section id='prijzen' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Prijs berekenen</h3><div className='mt-4 grid gap-3 md:grid-cols-2'><label className='field-wrap'><span>Afstand (km)</span><input type='number' min={1} value={calc.km} onChange={(event) => setCalc({ ...calc, km: Number(event.target.value) || 0 })} /></label><div className='flex flex-col gap-2 rounded-2xl border border-lv-gold/25 bg-black/30 p-4 text-sm'><label><input type='checkbox' checked={calc.airport} onChange={(event) => setCalc({ ...calc, airport: event.target.checked })} /> Airport toeslag</label><label><input type='checkbox' checked={calc.business} onChange={(event) => setCalc({ ...calc, business: event.target.checked })} /> Business service</label><label><input type='checkbox' checked={calc.isNight} onChange={(event) => setCalc({ ...calc, isNight: event.target.checked })} /> Nachtregeling</label></div></div><p className='mt-4 text-lg'>Geschatte prijs: <b className='text-lv-champagne'>€{price}</b></p></section><section id='diensten' className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>{['Airport transfers', 'Private rides', 'Business & VIP', '24/7 dispatch opvolging'].map((service) =><article key={service} className='glass-panel service-card rounded-2xl p-4'>{service}</article>)}</section><section id='vip' className='glass-panel mt-4 rounded-3xl p-6 text-lv-mist'>Prioriteitsservice, facturatie, vaste accountmanager en gecentraliseerde operationele opvolging voor bedrijven en frequente reizigers.</section>
+      <section id='hero' className='glass-panel hero-panel mt-4 rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Verified Premium Mobility Ecosystem</h1><p className='mt-4 max-w-3xl text-lv-mist'>Public exploration is open. Operational actions run through verified identity, trusted lifecycle orchestration and premium onboarding.</p><div className='mt-6 flex flex-wrap gap-2'><button className='nav-btn' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Volg uw rit</button></div></section>
+      <section id='tracking-map' className='glass-panel mt-4 overflow-hidden rounded-3xl'>
+        <div className='map-surface'>
+          <div className='map-grid-overlay' />
+          <div className='map-route' />
+          <div className='map-pin map-pin--pickup'>Pickup</div>
+          <div className='map-pin map-pin--drop'>Destination</div>
+          <div className='map-driver' style={{ left: `${driverProgress}%`, top: `${58 - driverProgress * 0.22}%` }} />
+          <div className='map-overlay-top'><p>Realtime mobility intelligence</p><span className={`map-state-pill ${mapPhase.tone}`}>{mapPhase.label}</span></div>
+          <div className='map-overlay-bottom'><p>ETA 6 min · Airport corridor focus · Lifecycle synchronized</p></div>
+        </div>
+        <div className='flex flex-wrap gap-2 p-3'>
+          {customerMapStates.map((state) => <button key={String(state.key)} className='nav-btn text-xs' onClick={() => setCustomerMapPhase(state.key)}>{state.label}</button>)}
+        </div>
+      </section><section id='prijzen' className='glass-panel mt-4 rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Prijs berekenen</h3><div className='mt-4 grid gap-3 md:grid-cols-2'><label className='field-wrap'><span>Afstand (km)</span><input type='number' min={1} value={calc.km} onChange={(event) => setCalc({ ...calc, km: Number(event.target.value) || 0 })} /></label><div className='flex flex-col gap-2 rounded-2xl border border-lv-gold/25 bg-black/30 p-4 text-sm'><label><input type='checkbox' checked={calc.airport} onChange={(event) => setCalc({ ...calc, airport: event.target.checked })} /> Airport toeslag</label><label><input type='checkbox' checked={calc.business} onChange={(event) => setCalc({ ...calc, business: event.target.checked })} /> Business service</label><label><input type='checkbox' checked={calc.isNight} onChange={(event) => setCalc({ ...calc, isNight: event.target.checked })} /> Nachtregeling</label></div></div><p className='mt-4 text-lg'>Geschatte prijs: <b className='text-lv-champagne'>€{price}</b></p></section><section id='diensten' className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>{['Airport transfers', 'Private rides', 'Business & VIP', '24/7 dispatch opvolging'].map((service) =><article key={service} className='glass-panel service-card rounded-2xl p-4'>{service}</article>)}</section><section id='vip' className='glass-panel mt-4 rounded-3xl p-6 text-lv-mist'>Prioriteitsservice, facturatie, vaste accountmanager en gecentraliseerde operationele opvolging voor bedrijven en frequente reizigers.</section>
       <section id='booking' className='glass-panel mt-4 rounded-3xl p-6'>
         <h3 className='text-2xl font-semibold'>Premium Operational Booking</h3><p className='mt-2 text-sm text-lv-mist'>Alle betekenisvolle acties verlopen via verified identity.</p>
         <form className='mt-4 grid gap-3 sm:grid-cols-2' onSubmit={onSubmitBooking}> {['name', 'phone', 'pickup', 'destination', 'date', 'time', 'serviceType', 'notes'].map((key) =>

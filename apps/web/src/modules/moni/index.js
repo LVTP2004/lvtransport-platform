@@ -7,3 +7,4 @@ export * from './adapters/driver-context.adapter';
 export * from './audit/moni-audit';
 export * from './review/admin-review-queue';
 export * from './future/leo-orchestration.bridge';
+export * from './learning/controlled-learning';
