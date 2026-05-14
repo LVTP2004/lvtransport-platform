@@ -1,9 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
+import { BookingLifecycle, canTransitionLifecycle, isImmutableLifecycleStatus, registerLifecycleEvent } from '@lvtransport/realtime';
 import { createDriverGpsService, type GpsSnapshot } from '../modules/tracking/services/driver-gps.service';
 
-type Booking = { id: string; code: string; status: string; assignedDriverName?: string; version: number; assignedDriverId?: string };
+type Booking = { id: string; code: string; status: BookingLifecycle; assignedDriverName?: string; version: number; assignedDriverId?: string };
 
-const statusFlow = ['pending', 'assigned', 'accepted', 'en_route', 'arrived', 'in_progress', 'completed'] as const;
+
 const DRIVER_ID = 'drv-101';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 
@@ -33,15 +34,25 @@ export function App() {
   useEffect(() => { if (!liveLocation) { gpsService.stop(); setGpsMessage('Locatiedeling staat uit.'); return; } gpsService.start(sendLocation, setGpsMessage); return () => gpsService.stop(); }, [liveLocation, activeBookingId, gpsService]);
 
   const updateStatus = async (booking: Booking) => {
-    const idx = statusFlow.findIndex((s) => s === booking.status);
-    if (idx < 0 || idx >= statusFlow.length - 1) return;
-    const nextStatus = statusFlow[idx + 1];
+    const transitionMap: Partial<Record<BookingLifecycle, BookingLifecycle>> = {
+      [BookingLifecycle.ASSIGNED]: BookingLifecycle.ACCEPTED,
+      [BookingLifecycle.ACCEPTED]: BookingLifecycle.EN_ROUTE,
+      [BookingLifecycle.EN_ROUTE]: BookingLifecycle.ARRIVED,
+      [BookingLifecycle.ARRIVED]: BookingLifecycle.IN_PROGRESS,
+      [BookingLifecycle.IN_PROGRESS]: BookingLifecycle.COMPLETED
+    };
+    const nextStatus = transitionMap[booking.status];
+    if (!nextStatus || !canTransitionLifecycle(booking.status, nextStatus)) return;
+    if (isImmutableLifecycleStatus(booking.status)) return;
+    const eventKey = `driver-${booking.id}-${booking.version}`;
+    if (!registerLifecycleEvent(eventKey)) return;
     setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: nextStatus, version: b.version + 1 } : b));
     const response = await fetch(`${API_BASE}/bookings/${booking.id}/status`, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ status: nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: `driver-${booking.id}-${booking.version}` })
+      body: JSON.stringify({ status: nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: eventKey })
     });
     if (!response.ok) refresh();
+    if (response.ok && isImmutableLifecycleStatus(nextStatus)) setLiveLocation(false);
   };
 
   return <main className="min-h-screen bg-zinc-950 p-4 text-white sm:p-6">
