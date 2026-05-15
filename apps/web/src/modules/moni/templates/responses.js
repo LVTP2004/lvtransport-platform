@@ -1,8 +1,8 @@
 const intro = {
-    nl: 'Natuurlijk, ik help u graag met uw rit bij LV Transport.',
-    en: 'Of course, I can help with your booking at LV Transport.',
-    es: 'Claro, le ayudo con su reserva en LV Transport.',
-    fr: 'Bien sûr, je peux vous aider avec votre réservation chez LV Transport.'
+    nl: 'Moni Core is actief. Ik begeleid u kalm en realtime via Moni Ride binnen het LV Transport ecosysteem.',
+    en: 'Moni Core is active. I will guide you calmly and in realtime through Moni Ride in the LV Transport ecosystem.',
+    es: 'Moni Core está activo. Le guiaré con calma y en tiempo real a través de Moni Ride en el ecosistema LV Transport.',
+    fr: 'Moni Core est actif. Je vous guide avec calme et en temps réel via Moni Ride dans l’écosystème LV Transport.'
 };
 const intentReply = {
     nl: {
