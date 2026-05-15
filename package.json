@@ -6,6 +6,7 @@
   "scripts": {
     "dev:web": "pnpm --filter @lvtransport/web dev",
     "dev:admin": "pnpm --filter @lvtransport/admin dev",
+    "dev:admin:https": "pnpm --filter @lvtransport/admin dev --host 0.0.0.0 --https",
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
     "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build && pnpm --filter @lvtransport/business build",
     "typecheck": "pnpm -r --filter './apps/*' typecheck",
