@@ -26,7 +26,7 @@ type LeoExecutiveSummary = {
   report: string;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be/api/v1';
 const LIFECYCLE: LifecycleStage[] = ['booking_created', 'driver_assigned', 'en_route', 'airport_arrival', 'pickup_waiting', 'passenger_onboard', 'destination_sync', 'payment_completed', 'ride_closed'];
 const stateTone: Record<RuntimeState, string> = {
   Healthy: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
