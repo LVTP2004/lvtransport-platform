@@ -1,20 +1,52 @@
 import { useEffect, useMemo, useState } from 'react';
 
-type Booking = { id: string; referenceCode?: string; code?: string; serviceType: string; status: string; updatedAt?: string; assignedDriverId?: string };
+type RuntimeState = 'Healthy' | 'Warning' | 'Degraded' | 'Critical';
+
+type Booking = {
+  id: string;
+  referenceCode?: string;
+  code?: string;
+  serviceType: string;
+  status: string;
+  updatedAt?: string;
+  assignedDriverId?: string;
+};
+
 type Driver = { driverId: string; state: string; activeBookingId?: string; lastUpdatedAt?: string };
 type Incident = { code: string; severity: string; message: string };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+type PulseItem = {
+  label: string;
+  state: RuntimeState;
+  detail: string;
+};
 
-const statusTone: Record<string, string> = {
-  assigned: 'text-amber-200 bg-amber-500/15 border-amber-400/35',
-  accepted: 'text-sky-200 bg-sky-500/15 border-sky-400/35',
-  en_route: 'text-violet-200 bg-violet-500/15 border-violet-400/35',
-  arrived: 'text-indigo-200 bg-indigo-500/15 border-indigo-400/35',
-  in_progress: 'text-cyan-200 bg-cyan-500/15 border-cyan-400/35',
-  completed: 'text-emerald-200 bg-emerald-500/15 border-emerald-400/35',
-  cancelled: 'text-rose-200 bg-rose-500/15 border-rose-400/35',
-  failed: 'text-rose-200 bg-rose-500/15 border-rose-400/35'
+type AttentionItem = {
+  title: string;
+  state: RuntimeState;
+  reason: string;
+};
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const ACTIVE_STATUSES = ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'];
+
+const stateTone: Record<RuntimeState, string> = {
+  Healthy: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
+  Warning: 'border-amber-300/40 bg-amber-400/10 text-amber-100',
+  Degraded: 'border-orange-300/40 bg-orange-400/10 text-orange-100',
+  Critical: 'border-rose-300/40 bg-rose-400/10 text-rose-100'
+};
+
+const severityRank: Record<RuntimeState, number> = { Healthy: 0, Warning: 1, Degraded: 2, Critical: 3 };
+const toRuntimeState = (severity: string): RuntimeState => {
+  if (severity === 'critical' || severity === 'high') return 'Critical';
+  if (severity === 'error' || severity === 'major') return 'Degraded';
+  if (severity === 'warning' || severity === 'medium') return 'Warning';
+  return 'Healthy';
+};
+
+const mergeState = (...states: RuntimeState[]): RuntimeState => {
+  return states.reduce((worst, next) => (severityRank[next] > severityRank[worst] ? next : worst), 'Healthy');
 };
 
 export function App() {
@@ -22,7 +54,6 @@ export function App() {
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [sync, setSync] = useState<'live' | 'recovering' | 'degraded'>('recovering');
-  const [tick, setTick] = useState(0);
 
   useEffect(() => {
     const load = async () => {
@@ -43,48 +74,148 @@ export function App() {
         setSync('degraded');
       }
     };
+
     load();
-    const poll = setInterval(() => { setSync((p) => p === 'degraded' ? 'recovering' : p); load(); }, 12000);
+    const poll = setInterval(() => {
+      setSync((prev) => (prev === 'degraded' ? 'recovering' : prev));
+      load();
+    }, 12000);
+
     return () => clearInterval(poll);
   }, []);
 
-  const active = useMemo(() => bookings.filter((b) => ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(b.status)).length, [bookings]);
-  const warnings = useMemo(() => incidents.filter((i) => i.severity !== 'info').length, [incidents]);
-  useEffect(() => { const t = setInterval(() => setTick((v) => v + 1), 1500); return () => clearInterval(t); }, []);
+  const activeRides = useMemo(
+    () => bookings.filter((booking) => ACTIVE_STATUSES.includes(booking.status)),
+    [bookings]
+  );
+
+  const activeAirportRides = useMemo(
+    () => activeRides.filter((booking) => booking.serviceType.toLowerCase().includes('airport')),
+    [activeRides]
+  );
+
+  const delayedRides = useMemo(
+    () => activeRides.filter((booking) => booking.status === 'arrived' || booking.status === 'assigned'),
+    [activeRides]
+  );
+
+  const paymentSignals = useMemo(
+    () => incidents.filter((incident) => /(payment|invoice|billing|sync mismatch)/i.test(incident.code + incident.message)),
+    [incidents]
+  );
+
+  const reconnectSignals = useMemo(
+    () => incidents.filter((incident) => /(reconnect|socket|sync|network)/i.test(incident.code + incident.message)),
+    [incidents]
+  );
+
+  const gpsSignals = useMemo(
+    () => incidents.filter((incident) => /(gps|location|eta)/i.test(incident.code + incident.message)),
+    [incidents]
+  );
+
+  const airportSignals = useMemo(
+    () => incidents.filter((incident) => /(airport|terminal|pickup|flight)/i.test(incident.code + incident.message)),
+    [incidents]
+  );
+
+  const runtimeState = useMemo<RuntimeState>(() => {
+    const incidentState = incidents.reduce<RuntimeState>((state, incident) => mergeState(state, toRuntimeState(incident.severity)), 'Healthy');
+    const syncState: RuntimeState = sync === 'live' ? 'Healthy' : sync === 'recovering' ? 'Warning' : 'Degraded';
+    return mergeState(incidentState, syncState);
+  }, [incidents, sync]);
+
+  const pulseItems = useMemo<PulseItem[]>(() => [
+    { label: 'System health', state: runtimeState, detail: `${incidents.length} active incident signals` },
+    { label: 'Realtime synchronization', state: sync === 'live' ? 'Healthy' : sync === 'recovering' ? 'Warning' : 'Degraded', detail: sync === 'live' ? 'Stream stable' : sync === 'recovering' ? 'Recovery in progress' : 'Dispatch continuity risk' },
+    { label: 'Reconnect stability', state: reconnectSignals.length ? 'Warning' : 'Healthy', detail: reconnectSignals.length ? `${reconnectSignals.length} reconnect anomalies` : 'Connection continuity stable' },
+    { label: 'GPS health', state: gpsSignals.length ? 'Warning' : 'Healthy', detail: gpsSignals.length ? `${gpsSignals.length} location confidence alerts` : 'Location confidence stable' },
+    { label: 'Payment integrity', state: paymentSignals.length ? 'Degraded' : 'Healthy', detail: paymentSignals.length ? `${paymentSignals.length} trust anomalies require review` : 'No payment trust risk detected' },
+    { label: 'Airport coordination', state: airportSignals.length || delayedRides.length ? 'Warning' : 'Healthy', detail: `${activeAirportRides.length} active pickups · ${airportSignals.length} airport warnings` },
+    { label: 'Runtime degradation', state: runtimeState, detail: runtimeState === 'Healthy' ? 'No operational drag detected' : 'Operational drag observed across subsystems' }
+  ], [runtimeState, incidents.length, sync, reconnectSignals.length, gpsSignals.length, paymentSignals.length, airportSignals.length, delayedRides.length, activeAirportRides.length]);
+
+  const founderAttention = useMemo<AttentionItem[]>(() => {
+    const items: AttentionItem[] = [];
+    if (airportSignals.length || delayedRides.length > 1) items.push({ title: 'Airport operational risk', state: 'Warning', reason: `${airportSignals.length} warnings with ${delayedRides.length} rides at coordination risk` });
+    if (paymentSignals.length) items.push({ title: 'Payment integrity failure', state: 'Degraded', reason: `${paymentSignals.length} anomalies can reduce customer trust` });
+    if (reconnectSignals.length) items.push({ title: 'Reconnect instability', state: 'Warning', reason: `${reconnectSignals.length} reconnect issues may stale ride lifecycle` });
+    if (runtimeState === 'Critical' || runtimeState === 'Degraded') items.push({ title: 'Runtime degradation', state: runtimeState, reason: 'Multiple subsystems need simplification and founder attention now' });
+    return items.slice(0, 4);
+  }, [airportSignals.length, delayedRides.length, paymentSignals.length, reconnectSignals.length, runtimeState]);
 
   return <main className="min-h-screen bg-lvtp-obsidian p-5 text-zinc-100">
-    <div className="lvtp-network absolute inset-0 pointer-events-none opacity-50" />
+    <div className="lvtp-network absolute inset-0 pointer-events-none opacity-40" />
     <div className="relative mx-auto max-w-7xl space-y-5">
       <header className="lvtp-shell rounded-3xl p-6">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-11 w-auto rounded-md border border-amber-400/30 bg-black p-1" /><div><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">LV Transport · Premium Control Tower</p><h1 className="text-xl font-semibold text-amber-200">LV Control</h1></div></div>
-          <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] ${sync === 'live' ? 'border-emerald-300/40 bg-emerald-400/15 text-emerald-100' : sync === 'recovering' ? 'border-amber-300/40 bg-amber-400/15 text-amber-100' : 'border-rose-300/40 bg-rose-400/15 text-rose-100'}`}>{sync}</span>
+          <div className="flex items-center gap-3">
+            <img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-11 w-auto rounded-md border border-amber-400/30 bg-black p-1" />
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Founder Control Tower · Operational Pulse</p>
+              <h1 className="text-xl font-semibold text-amber-200">LV Transport Founder Dashboard</h1>
+            </div>
+          </div>
+          <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] ${stateTone[runtimeState]}`}>{runtimeState}</span>
         </div>
-        <p className="mt-3 text-sm text-zinc-300">Professionele dispatch-opvolging voor luchthaven-, business- en VIP-service met founder-level controle.</p>
-      <button className="lvtp-btn-primary mt-3" onClick={() => (window as any).__lvPwa?.promptInstall?.()}>Install app</button></header>
+        <p className="mt-3 text-sm text-zinc-300">Calm realtime visibility focused on trust risk, subsystem stability and immediate founder attention.</p>
+      </header>
 
-      <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
-        {[['Boekingen', bookings.length], ['Actieve ritten', active], ['Beschikbare chauffeurs', drivers.length], ['Waarschuwingen', warnings]].map(([label, value]) => <article key={label} className="lvtp-card rounded-2xl p-4"><p className="text-xs uppercase text-zinc-400">{label}</p><p className="mt-2 text-2xl font-semibold text-amber-100">{value}</p></article>)}
-      </section>
-
-
-      <section className="lvtp-card overflow-hidden rounded-2xl p-0">
-        <div className="relative h-[60vh] min-h-[420px] bg-[#06070a]">
-          <div className="absolute inset-0 opacity-35" style={{ backgroundImage: 'linear-gradient(rgba(245,191,73,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(245,191,73,.08) 1px, transparent 1px)', backgroundSize: '38px 38px' }} />
-          {drivers.slice(0, 12).map((driver, index) => <div key={driver.driverId} className="absolute h-3 w-3 rounded-full bg-amber-300 shadow-[0_0_12px_rgba(245,191,73,.75)] transition-all duration-1000" style={{ left: `${12 + (index * 7 + tick * 1.6) % 76}%`, top: `${16 + (index * 11 + tick) % 66}%` }} />)}
-          <div className="absolute left-3 right-3 top-3 flex items-center justify-between rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-zinc-200"><span>Control Tower realtime command map</span><span>{drivers.length} live drivers · {active} active rides</span></div>
-          <div className="absolute bottom-3 left-3 right-3 rounded-2xl border border-white/10 bg-black/55 px-3 py-2 text-xs text-zinc-300">Lifecycle synchronized dispatch · congestion and assignment awareness enabled.</div>
+      <section className="lvtp-card rounded-2xl p-4">
+        <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Operational Pulse Center</h2>
+        <div className="mt-3 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          {pulseItems.map((item) => <article key={item.label} className="rounded-xl border border-white/10 bg-black/25 p-3"><div className="flex items-center justify-between gap-2"><p className="text-xs uppercase tracking-[0.12em] text-zinc-400">{item.label}</p><span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase ${stateTone[item.state]}`}>{item.state}</span></div><p className="mt-2 text-sm text-zinc-200">{item.detail}</p></article>)}
         </div>
       </section>
 
       <section className="grid gap-5 xl:grid-cols-3">
         <article className="lvtp-card xl:col-span-2 rounded-2xl p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Boekingen</h2>
-          <div className="mt-3 overflow-x-auto"><table className="w-full min-w-[700px] text-sm"><thead className="text-zinc-400"><tr><th className="py-2 text-left">Referentie</th><th className="py-2 text-left">Service</th><th className="py-2 text-left">Status</th><th className="py-2 text-left">Chauffeur</th></tr></thead><tbody>{bookings.map((b) => <tr key={b.id} className="border-t border-zinc-800/80"><td className="py-2">{b.referenceCode ?? b.code ?? b.id}</td><td>{b.serviceType}</td><td><span className={`inline-flex rounded-full border px-2 py-0.5 text-xs ${statusTone[b.status] ?? 'border-zinc-600 bg-zinc-800 text-zinc-200'}`}>{b.status}</span></td><td>{b.assignedDriverId ?? 'Nog niet toegewezen'}</td></tr>)}</tbody></table></div>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Active Rides Panel</h2>
+          <div className="mt-3 space-y-3">
+            {activeRides.slice(0, 8).map((ride) => <div key={ride.id} className="rounded-xl border border-white/10 bg-black/25 p-3"><div className="flex flex-wrap items-center justify-between gap-2"><p className="text-sm font-medium text-zinc-100">{ride.referenceCode ?? ride.code ?? ride.id}</p><span className="rounded-full border border-zinc-600 px-2 py-0.5 text-xs uppercase text-zinc-300">{ride.status}</span></div><div className="mt-2 grid gap-2 text-xs text-zinc-300 sm:grid-cols-2 lg:grid-cols-4"><p>Driver state: {drivers.find((driver) => driver.driverId === ride.assignedDriverId)?.state ?? 'Awaiting'}</p><p>Ride lifecycle: {ride.status}</p><p>GPS confidence: {gpsSignals.length ? 'Monitored' : 'Stable'}</p><p>Operational alerts: {incidents.filter((incident) => incident.message.includes(ride.id)).length || 0}</p></div></div>)}
+            {!activeRides.length && <p className="text-sm text-zinc-400">No active rides currently require attention.</p>}
+          </div>
         </article>
+
         <article className="lvtp-card rounded-2xl p-4">
-          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Readiness</h2>
-          <ul className="mt-3 space-y-2 text-sm text-zinc-300"><li>Synchronisatie blijft realtime actief met herstelmodus.</li><li>Rittoewijzing en escalatie volgen premium lifecycle regels.</li><li>Fallbackcommunicatie via klantnummer beschikbaar.</li><li>Founder beta monitoring staat klaar.</li></ul>
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Founder Attention Engine</h2>
+          <div className="mt-3 space-y-2">
+            {founderAttention.map((item) => <div key={item.title} className="rounded-xl border border-white/10 bg-black/25 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm text-zinc-100">{item.title}</p><span className={`rounded-full border px-2 py-0.5 text-[10px] uppercase ${stateTone[item.state]}`}>{item.state}</span></div><p className="mt-1 text-xs text-zinc-300">{item.reason}</p></div>)}
+            {!founderAttention.length && <p className="text-sm text-emerald-200">No immediate founder interventions required now.</p>}
+          </div>
+        </article>
+      </section>
+
+      <section className="grid gap-5 xl:grid-cols-3">
+        <article className="lvtp-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Weakness-chain</h2>
+          <ol className="mt-3 space-y-2 text-sm text-zinc-300">
+            <li>Weak LTE → reconnect delay</li>
+            <li>Reconnect delay → stale GPS confidence</li>
+            <li>Stale GPS → ETA drift near terminal</li>
+            <li>ETA drift → airport coordination uncertainty</li>
+            <li>Coordination uncertainty → customer stress risk</li>
+          </ol>
+        </article>
+
+        <article className="lvtp-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Airport Operations Center</h2>
+          <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+            <li>Active pickups: {activeAirportRides.length}</li>
+            <li>Airport risk level: {airportSignals.length ? 'Warning' : 'Healthy'}</li>
+            <li>Pickup uncertainty: {delayedRides.length ? `${delayedRides.length} rides` : 'None detected'}</li>
+            <li>Driver coordination: {drivers.length ? 'Live' : 'Fallback only'}</li>
+          </ul>
+        </article>
+
+        <article className="lvtp-card rounded-2xl p-4">
+          <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Payment Trust Center</h2>
+          <ul className="mt-3 space-y-2 text-sm text-zinc-300">
+            <li>Failed or retry-required: {paymentSignals.length}</li>
+            <li>Sync mismatch warnings: {paymentSignals.filter((incident) => /sync/i.test(incident.message + incident.code)).length}</li>
+            <li>Pending unresolved anomalies: {paymentSignals.length}</li>
+            <li>Trust posture: {paymentSignals.length ? 'Degraded' : 'Healthy'}</li>
+          </ul>
         </article>
       </section>
     </div>
