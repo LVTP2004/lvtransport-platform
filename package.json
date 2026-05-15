@@ -14,7 +14,8 @@
     "dev:business": "pnpm --filter @lvtransport/business dev",
     "ops:final-scorecard": "node scripts/ops/lvtp-final-runtime-scorecard.js",
     "ops:loop-report": "node scripts/ops/lvtp-final-runtime-scorecard.js",
-    "ops:matrix-evolution": "node scripts/ops/lvtp-matrix-evolution-extended-loop.js"
+    "ops:matrix-evolution": "node scripts/ops/lvtp-matrix-evolution-extended-loop.js",
+    "ops:maturity-simplification": "node scripts/ops/lvtp-operational-maturity-simplification.js"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
