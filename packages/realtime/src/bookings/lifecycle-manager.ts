@@ -1,4 +1,4 @@
-import { BookingLifecycle } from '../models/enums.js';
+import { BookingLifecycle, CanonicalBookingLifecycle } from '../models/enums.js';
 import type { BookingActor, BookingRecord, BookingTimelineEntry } from '../models/realtime.js';
 
 const IMMUTABLE_STATUSES = new Set<BookingLifecycle>([BookingLifecycle.COMPLETED, BookingLifecycle.CANCELLED, BookingLifecycle.FAILED]);
@@ -53,4 +53,39 @@ export function applyLifecycleTransition(record: BookingRecord, nextStatus: Book
     updatedAt: at,
     timeline: [...record.timeline, timelineEntry]
   };
+}
+
+
+const CANONICAL_TRANSITIONS: Record<CanonicalBookingLifecycle, ReadonlySet<CanonicalBookingLifecycle>> = {
+  [CanonicalBookingLifecycle.BOOKING_CREATED]: new Set([CanonicalBookingLifecycle.PENDING_ASSIGNMENT, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.PENDING_ASSIGNMENT]: new Set([CanonicalBookingLifecycle.DRIVER_ASSIGNED, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.DRIVER_ASSIGNED]: new Set([CanonicalBookingLifecycle.DRIVER_ON_ROUTE, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.DRIVER_ON_ROUTE]: new Set([CanonicalBookingLifecycle.DRIVER_ARRIVED, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.DRIVER_ARRIVED]: new Set([CanonicalBookingLifecycle.PASSENGER_ONBOARD, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.PASSENGER_ONBOARD]: new Set([CanonicalBookingLifecycle.RIDE_ACTIVE, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.RIDE_ACTIVE]: new Set([CanonicalBookingLifecycle.RIDE_COMPLETED, CanonicalBookingLifecycle.CANCELLED, CanonicalBookingLifecycle.FAILED_RECOVERY]),
+  [CanonicalBookingLifecycle.RIDE_COMPLETED]: new Set(),
+  [CanonicalBookingLifecycle.CANCELLED]: new Set(),
+  [CanonicalBookingLifecycle.FAILED_RECOVERY]: new Set()
+};
+
+const LEGACY_TO_CANONICAL: Record<BookingLifecycle, CanonicalBookingLifecycle> = {
+  [BookingLifecycle.PENDING]: CanonicalBookingLifecycle.PENDING_ASSIGNMENT,
+  [BookingLifecycle.ASSIGNED]: CanonicalBookingLifecycle.DRIVER_ASSIGNED,
+  [BookingLifecycle.ACCEPTED]: CanonicalBookingLifecycle.DRIVER_ON_ROUTE,
+  [BookingLifecycle.EN_ROUTE]: CanonicalBookingLifecycle.DRIVER_ON_ROUTE,
+  [BookingLifecycle.ARRIVED]: CanonicalBookingLifecycle.DRIVER_ARRIVED,
+  [BookingLifecycle.IN_PROGRESS]: CanonicalBookingLifecycle.RIDE_ACTIVE,
+  [BookingLifecycle.COMPLETED]: CanonicalBookingLifecycle.RIDE_COMPLETED,
+  [BookingLifecycle.CANCELLED]: CanonicalBookingLifecycle.CANCELLED,
+  [BookingLifecycle.FAILED]: CanonicalBookingLifecycle.FAILED_RECOVERY
+};
+
+export function toCanonicalLifecycle(status: BookingLifecycle): CanonicalBookingLifecycle {
+  return LEGACY_TO_CANONICAL[status];
+}
+
+export function canTransitionCanonicalLifecycle(from: CanonicalBookingLifecycle, to: CanonicalBookingLifecycle): boolean {
+  if (from === to) return true;
+  return CANONICAL_TRANSITIONS[from].has(to);
 }
