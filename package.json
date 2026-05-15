@@ -13,7 +13,8 @@
     "ops:endurance": "node scripts/ops/lvtp-phase1-stress-sim.js",
     "dev:business": "pnpm --filter @lvtransport/business dev",
     "ops:final-scorecard": "node scripts/ops/lvtp-final-runtime-scorecard.js",
-    "ops:loop-report": "node scripts/ops/lvtp-final-runtime-scorecard.js"
+    "ops:loop-report": "node scripts/ops/lvtp-final-runtime-scorecard.js",
+    "ops:matrix-evolution": "node scripts/ops/lvtp-matrix-evolution-extended-loop.js"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
