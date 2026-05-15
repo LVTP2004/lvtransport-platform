@@ -32,20 +32,16 @@ export const finalEcosystemScorecardService = {
     const providerReadiness = pct(providerReady, providerTotal);
 
     const metrics: ScorecardMetric[] = [
-      { key: 'runtime_stability', label: 'Runtime stability', score: clamp((completion * 0.6) + (assignmentAcceptance * 0.4)), rationale: 'Completion rate blended with assignment acceptance.' },
-      { key: 'realtime_synchronization', label: 'Realtime synchronization', score: clamp((completion * 0.5) + ((100 - analytics.dispatchEfficiency.averageAssignmentResponseSeconds) * 0.5)), rationale: 'Uses booking completion and assignment response latency guardrail.' },
-      { key: 'fullscreen_maps', label: 'Fullscreen maps', score: clamp((providerReadiness * 0.7) + (completion * 0.3)), rationale: 'Maps provider readiness weighted against successful trip completion.' },
-      { key: 'gps_reliability', label: 'GPS reliability', score: clamp((providerReadiness * 0.5) + (assignmentAcceptance * 0.5)), rationale: 'Provider readiness and field dispatch outcomes indicate tracking reliability.' },
-      { key: 'lv_messenger_integration', label: 'LV Messenger integration', score: clamp(completion), rationale: 'Messenger confidence follows lifecycle continuity through to completion.' },
-      { key: 'lv_pay_readiness', label: 'LV Pay readiness', score: clamp(pct(readiness.payments.filter((p) => p.state === 'ready').length, readiness.payments.length)), rationale: 'Directly driven by payment integration readiness checks.' },
-      { key: 'airport_intelligence_maturity', label: 'Airport intelligence maturity', score: clamp((completion * 0.5) + (providerReadiness * 0.5)), rationale: 'Airport orchestration depends on completed flows and map/data providers.' },
-      { key: 'moni_operational_maturity', label: 'Moni Ride operational maturity', score: clamp((completion * 0.7) + (assignmentAcceptance * 0.3)), rationale: 'Moni effectiveness depends on successful lifecycle and driver responsiveness.' },
-      { key: 'mobile_pwa_quality', label: 'Mobile/PWA quality', score: clamp((providerReadiness * 0.4) + (completion * 0.6)), rationale: 'PWA quality correlates with stable flow and provider availability.' },
-      { key: 'security_gdpr_readiness', label: 'Security/GDPR readiness', score: clamp(providerReadiness), rationale: 'Operational readiness snapshot requires configured secure providers and env.' },
-      { key: 'recovery_readiness', label: 'Recovery readiness', score: clamp((100 - (busyRatio * 100 * 0.5)) + (completion * 0.5)), rationale: 'Recovery confidence increases with balanced utilization and successful completions.' },
-      { key: 'operational_trust_quality', label: 'Operational trust quality', score: clamp((completion * 0.5) + (assignmentAcceptance * 0.5)), rationale: 'Trust built via successful rides and responsive dispatch.' },
-      { key: 'founder_operational_readiness', label: 'Founder operational readiness', score: clamp((completion * 0.4) + (providerReadiness * 0.6)), rationale: 'Founder operations require stable integrations and successful ride outcomes.' },
-      { key: 'pilot_operation_readiness', label: 'Pilot operation readiness', score: clamp((completion * 0.5) + (assignmentAcceptance * 0.3) + (providerReadiness * 0.2)), rationale: 'Pilot readiness blends lifecycle success, driver response, and provider readiness.' },
+      { key: 'realtime_reliability', label: 'Realtime reliability', score: clamp((completion * 0.65) + (assignmentAcceptance * 0.35)), rationale: 'Lifecycle completion remains the strongest reliability signal, balanced with dispatch acceptance.' },
+      { key: 'reconnect_resilience', label: 'Reconnect resilience', score: clamp((completion * 0.5) + ((100 - analytics.dispatchEfficiency.averageAssignmentResponseSeconds) * 0.5)), rationale: 'Reconnect behavior is inferred through continuity and bounded response latency.' },
+      { key: 'airport_operational_maturity', label: 'Airport operational maturity', score: clamp((completion * 0.55) + (providerReadiness * 0.45)), rationale: 'Airport operations depend on coordinated lifecycle execution and map/provider readiness.' },
+      { key: 'payment_trust', label: 'Payment trust', score: clamp((pct(readiness.payments.filter((p) => p.state === 'ready').length, readiness.payments.length) * 0.7) + (completion * 0.3)), rationale: 'Payment trust combines provider readiness with verified completed rides.' },
+      { key: 'lifecycle_integrity', label: 'Lifecycle integrity', score: clamp(completion), rationale: 'Lifecycle integrity tracks rides reaching completed state without churn.' },
+      { key: 'moni_calmness', label: 'Moni calmness', score: clamp((completion * 0.7) + (assignmentAcceptance * 0.3)), rationale: 'Moni calmness requires smooth ride progression and fast driver acceptance outcomes.' },
+      { key: 'founder_visibility_quality', label: 'Founder visibility quality', score: clamp((completion * 0.35) + (providerReadiness * 0.65)), rationale: 'Founder visibility quality prioritizes trustworthy provider integrations and clear operational continuity.' },
+      { key: 'operational_simplicity', label: 'Operational simplicity', score: clamp((providerReadiness * 0.6) + (assignmentAcceptance * 0.4)), rationale: 'Simplicity improves when integrations are stable and dispatch loops are predictable.' },
+      { key: 'runtime_recovery_discipline', label: 'Runtime recovery discipline', score: clamp((100 - (busyRatio * 100 * 0.5)) + (completion * 0.5)), rationale: 'Recovery discipline improves with balanced capacity and consistent completion rates.' },
+      { key: 'emotional_trust_preservation', label: 'Emotional trust preservation', score: clamp((completion * 0.5) + (assignmentAcceptance * 0.5)), rationale: 'Customer trust follows timely driver response and successful trip completion.' },
     ];
 
     const overallProductionMaturity = clamp(metrics.reduce((acc, metric) => acc + metric.score, 0) / metrics.length);
@@ -53,7 +49,7 @@ export const finalEcosystemScorecardService = {
     return {
       generatedAt: new Date().toISOString(),
       overallProductionMaturity,
-      metrics: [...metrics, { key: 'overall_production_maturity', label: 'Overall production maturity', score: overallProductionMaturity, rationale: 'Average of the 14 scored operational dimensions.' }]
+      metrics: [...metrics, { key: 'overall_production_maturity', label: 'Overall production maturity', score: overallProductionMaturity, rationale: 'Average of the 10 scored operational dimensions.' }]
     };
   }
 };

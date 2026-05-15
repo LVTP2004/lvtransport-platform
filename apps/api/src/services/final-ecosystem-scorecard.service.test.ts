@@ -16,14 +16,15 @@ const buildCompletedRide = (suffix: string): void => {
   }
 };
 
-test('final ecosystem scorecard returns all 15 readiness dimensions with bounded scores', () => {
+test('final ecosystem scorecard returns founder controlled reality dimensions with bounded scores', () => {
   for (const suffix of ['A', 'B', 'C']) buildCompletedRide(suffix);
 
   const scorecard = finalEcosystemScorecardService.getScorecard();
 
-  assert.equal(scorecard.metrics.length, 15);
+  assert.equal(scorecard.metrics.length, 11);
   assert.ok(scorecard.metrics.every((metric) => metric.score >= 0 && metric.score <= 100));
-  assert.ok(scorecard.metrics.some((metric) => metric.key === 'lv_pay_readiness'));
+  assert.ok(scorecard.metrics.some((metric) => metric.key === 'payment_trust'));
+  assert.ok(scorecard.metrics.some((metric) => metric.key === 'realtime_reliability'));
   assert.ok(scorecard.metrics.some((metric) => metric.key === 'overall_production_maturity'));
   assert.ok(scorecard.overallProductionMaturity >= 0 && scorecard.overallProductionMaturity <= 100);
 });
