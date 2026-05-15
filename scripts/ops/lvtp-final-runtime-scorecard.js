@@ -59,6 +59,14 @@ function parseArgs(argv) {
   return args;
 }
 
+function parseCsv(value) {
+  if (!value) return [];
+  return String(value)
+    .split('|')
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
 function kebabToCamel(s) {
   return s.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
 }
@@ -117,6 +125,22 @@ const phaseValues = Object.values(phases);
 const scoreAverage = average(scoreValues);
 const phaseAverage = average(phaseValues);
 const transformationReadiness = Math.round(((scoreAverage * 0.65) + (phaseAverage * 0.35)) * 100) / 100;
+const productionRiskLevel = transformationReadiness >= 90
+  ? 'Low'
+  : transformationReadiness >= 80
+    ? 'Moderate'
+    : transformationReadiness >= 70
+      ? 'High'
+      : 'Critical';
+
+const observed = parseCsv(resolveArg(args, 'observed'));
+const failed = parseCsv(resolveArg(args, 'failed'));
+const improved = parseCsv(resolveArg(args, 'improved'));
+const simplified = parseCsv(resolveArg(args, 'simplified'));
+const hardened = parseCsv(resolveArg(args, 'hardened'));
+const remainsWeak = parseCsv(resolveArg(args, 'remainsWeak'));
+const nextTopPriorities = parseCsv(resolveArg(args, 'nextTopPriorities'));
+const founderPilotRecommendation = resolveArg(args, 'founderPilotRecommendation') ?? 'Continue controlled founder-operated pilot with monitored fallback paths.';
 
 const payload = {
   generatedAt: now,
@@ -125,10 +149,21 @@ const payload = {
     scoreAverage,
     phaseAverage,
     transformationReadiness,
-    readinessBand: readinessBand(transformationReadiness)
+    readinessBand: readinessBand(transformationReadiness),
+    productionRiskLevel
   },
   scores,
-  phases
+  phases,
+  loopReport: {
+    observed,
+    failed,
+    improved,
+    simplified,
+    hardened,
+    remainsWeak,
+    nextTopPriorities,
+    founderPilotRecommendation
+  }
 };
 
 const jsonPath = path.join(outDir, 'LVTP_FINAL_RUNTIME_SCORECARD.json');
@@ -158,6 +193,42 @@ lines.push('', '## Transformation Phase Maturity', '', '| Phase | Percentage |',
 for (const phase of transformationPhases) {
   lines.push(`| ${phase.label} | ${phases[phase.key].toFixed(2)}% |`);
 }
+
+lines.push(
+  '',
+  '## Final Decision Loop',
+  '',
+  `- Runtime stability stronger: ${scores.runtimeStability >= 85 ? 'Yes' : 'No'}`,
+  `- User simplicity stronger: ${scores.mobileExperience >= 85 ? 'Yes' : 'No'}`,
+  `- Realtime reliability stronger: ${scores.bookingFlowReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Moni calmer and useful: ${scores.moniRideRuntimeMaturity >= 85 ? 'Yes' : 'No'}`,
+  `- Maps alive and coherent: ${scores.driverFlowReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Payments clear and synchronized: ${scores.lvPayReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Airport operation smarter: ${scores.airportWorkflowReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Communications coherent: ${scores.lvMessengerReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Founder visibility improved: ${scores.adminFlowReadiness >= 85 ? 'Yes' : 'No'}`,
+  `- Pilot readiness increased: ${scores.founderPilotReadiness >= 85 ? 'Yes' : 'No'}`,
+  '',
+  `**Production Risk Level:** ${productionRiskLevel}`
+);
+
+function pushListSection(title, items, fallback) {
+  lines.push('', `## ${title}`, '');
+  if (!items.length) {
+    lines.push(`- ${fallback}`);
+    return;
+  }
+  items.forEach((item) => lines.push(`- ${item}`));
+}
+
+pushListSection('Loop Report — What Was Observed', observed, 'No observations were provided for this cycle.');
+pushListSection('Loop Report — What Failed', failed, 'No failed flows were reported for this cycle.');
+pushListSection('Loop Report — What Improved', improved, 'No explicit improvements were reported for this cycle.');
+pushListSection('Loop Report — What Was Simplified', simplified, 'No simplifications were reported for this cycle.');
+pushListSection('Loop Report — What Was Hardened', hardened, 'No hardening updates were reported for this cycle.');
+pushListSection('Loop Report — What Remains Weak', remainsWeak, 'No remaining weaknesses were reported for this cycle.');
+pushListSection('Loop Report — Next Top 5 Priorities', nextTopPriorities.slice(0, 5), 'No priorities were provided for the next cycle.');
+lines.push('', '## Founder Pilot Recommendation', '', `- ${founderPilotRecommendation}`);
 
 const mdPath = path.join(outDir, 'LVTP_FINAL_RUNTIME_SCORECARD.md');
 fs.writeFileSync(mdPath, `${lines.join('\n')}\n`);
