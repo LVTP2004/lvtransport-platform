@@ -9,15 +9,16 @@ const NOW = new Date().toISOString();
 const scale = Number(process.env.LVTP_DURATION_SCALE || '1');
 const sleepMs = Number(process.env.LVTP_TICK_MS || '900');
 
-const CYCLES = [
-  { name: 'A_WARM_LOAD', customers: 25, minutes: 20 },
-  { name: 'B_SUSTAINED_LOAD', customers: 50, minutes: 45 },
-  { name: 'C_HIGHER_SUSTAINED', customers: 75, minutes: 60 },
-  { name: 'D_COOLDOWN', customers: 20, minutes: 20 },
-  { name: 'E_RECOVERY_CHECK_3', customers: 3, minutes: 4 },
-  { name: 'E_RECOVERY_CHECK_2', customers: 2, minutes: 4 },
-  { name: 'E_RECOVERY_CHECK_1', customers: 1, minutes: 4 }
-].map((c) => ({ ...c, ms: Math.max(10_000, Math.floor(c.minutes * 60_000 * scale)) }));
+const phaseDurationMinutes = Number(process.env.LVTP_PHASE_MINUTES || '2');
+const phaseDurationMs = Math.max(10_000, Math.floor(phaseDurationMinutes * 60_000 * scale));
+
+const LOAD_PHASES = [20, 60, 80, 120, 150, 200, 150, 120, 80, 60, 20, 3, 2, 1];
+const CYCLES = LOAD_PHASES.map((customers, index) => ({
+  name: `PHASE_${String(index + 1).padStart(2, '0')}_${customers}_RIDES`,
+  customers,
+  minutes: phaseDurationMinutes,
+  ms: phaseDurationMs
+}));
 
 const counters = {
   totals: { requests: 0, success: 0, non2xx: 0, avgMsSum: 0 },
