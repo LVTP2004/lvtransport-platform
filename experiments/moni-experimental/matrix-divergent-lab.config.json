@@ -1,0 +1,47 @@
+{
+  "name": "matrix-divergent-lab",
+  "mode": "isolated-sandbox",
+  "productionIsolation": {
+    "enabled": true,
+    "autoDeploy": false,
+    "allowProductionCredentials": false,
+    "allowLiveLifecycleMutation": false,
+    "requireFounderApproval": true
+  },
+  "engines": {
+    "simulation": true,
+    "weaknessChainIntelligence": true,
+    "moniDivergentCore": true,
+    "multiBranchResponseTesting": true,
+    "runtimeStress": true,
+    "airportChaosMatrix": true,
+    "emotionalSignalAnalysis": true,
+    "mapIntelligence": true,
+    "evolutionComparison": true,
+    "divergentDashboard": true
+  },
+  "governanceFlow": [
+    "observe",
+    "simulate",
+    "branch",
+    "compare",
+    "score",
+    "founder-review",
+    "approve-or-reject",
+    "candidate-promotion"
+  ],
+  "scorecard": [
+    "anomaly-resilience",
+    "emotional-calmness",
+    "runtime-recovery",
+    "moni-discipline",
+    "operational-convergence",
+    "branch-efficiency",
+    "airport-stability",
+    "payment-recovery",
+    "gps-resilience",
+    "messaging-coherence",
+    "production-safety",
+    "experimental-usefulness"
+  ]
+}

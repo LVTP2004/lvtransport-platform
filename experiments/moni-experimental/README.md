@@ -136,3 +136,13 @@ Supported simulation languages:
 ## Implementation Note
 
 This README defines architecture and constraints only. Integrations with production LVTP systems remain forbidden unless a separate controlled interface is explicitly approved and sandbox-safe.
+
+
+## MATRIX DIVERGENT LAB Extension
+
+The MATRIX DIVERGENT LAB protocol is defined in:
+
+- `matrix-divergent-lab.protocol.md`
+- `matrix-divergent-lab.config.json`
+
+This extension adds structured divergence simulation, weakness-chain intelligence, multi-branch response testing, emotional signal analysis, and founder-governed promotion gates while preserving strict production isolation.
