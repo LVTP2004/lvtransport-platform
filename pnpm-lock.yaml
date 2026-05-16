@@ -226,6 +226,8 @@ importers:
         specifier: ^3.4.16
         version: 3.4.19(tsx@4.21.0)
 
+  packages/leo-auditoria: {}
+
   packages/maps: {}
 
   packages/moni-assistent: {}

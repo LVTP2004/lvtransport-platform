@@ -1,9 +1,11 @@
-import { jsx as _jsx } from "react/jsx-runtime";
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { App } from './app/App';
-import { createInstallPromptState, registerServiceWorker } from './pwa';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './styles/index.css';
-createInstallPromptState();
-registerServiceWorker().catch(() => undefined);
-ReactDOM.createRoot(document.getElementById('root')).render(_jsx(React.StrictMode, { children: _jsx(App, {}) }));
+import Home from './pages/Home';
+import Admin from './pages/Admin';
+import Driver from './pages/Driver';
+import Booking from './pages/Booking';
+import Founder from './pages/Founder';
+ReactDOM.createRoot(document.getElementById('root')).render(_jsx(React.StrictMode, { children: _jsx(BrowserRouter, { children: _jsxs(Routes, { children: [_jsx(Route, { path: "/", element: _jsx(Home, {}) }), _jsx(Route, { path: "/admin", element: _jsx(Admin, {}) }), _jsx(Route, { path: "/driver", element: _jsx(Driver, {}) }), _jsx(Route, { path: "/booking", element: _jsx(Booking, {}) }), _jsx(Route, { path: "/founder", element: _jsx(Founder, {}) })] }) }) }));
