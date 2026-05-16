@@ -2,6 +2,13 @@ name: LVTP Safe Deploy
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: lvtp-production-deploy
+  cancel-in-progress: false
 
 jobs:
   deploy:
