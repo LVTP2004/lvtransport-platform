@@ -14,6 +14,14 @@ import Driver from './pages/Driver'
 import Booking from './pages/Booking'
 import Founder from './pages/Founder'
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/service-worker.js')
+      .catch((error) => console.error('LVTP service worker registration failed', error))
+  })
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <BrowserRouter>
@@ -27,4 +35,3 @@ ReactDOM.createRoot(document.getElementById('root')!).render(
     </BrowserRouter>
   </React.StrictMode>
 )
-
