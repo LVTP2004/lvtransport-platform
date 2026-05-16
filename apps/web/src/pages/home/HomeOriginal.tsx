@@ -1,8 +1,8 @@
 import { FormEvent, useEffect, useMemo, useState } from 'react';
-import { getInstallPromptState } from '../pwa';
+import { getInstallPromptState } from '../../pwa';
 import { Button } from '@lvtransport/ui';
 import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
-import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { MoniAssistant } from '../../modules/moni/components/MoniAssistant';
 
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
 type BookingStatus = 'draft' | 'submitted' | 'confirmed' | BookingLifecycle;
