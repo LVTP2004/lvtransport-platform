@@ -1,88 +1,53 @@
 {
-  "name": "LV Transport Premium Ecosystem",
-  "short_name": "LV",
-  "description": "Installable premium realtime mobility ecosystem for LV Ride, Driver, Control, and Business operations.",
+  "id": "/",
+  "name": "LV Transport Platform",
+  "short_name": "LV Transport",
+  "description": "Premium taxi, airport transfer, booking, tracking and founder control tower for LV Transport.",
   "start_url": "/?source=pwa",
   "scope": "/",
-  "display": "fullscreen",
-  "background_color": "#0a0a0a",
-  "theme_color": "#C8A96B",
+  "display": "standalone",
+  "display_override": ["standalone", "fullscreen", "minimal-ui"],
+  "background_color": "#070707",
+  "theme_color": "#d4af37",
   "orientation": "portrait-primary",
+  "lang": "nl-BE",
+  "dir": "ltr",
+  "categories": ["travel", "business", "navigation"],
   "icons": [
     {
       "src": "/icons/icon-192.svg",
       "sizes": "192x192",
-      "type": "image/svg+xml"
-    },
-    {
-      "src": "/icons/icon-512.svg",
-      "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
-      "purpose": "maskable"
+      "purpose": "any maskable"
     }
-  ],
-  "display_override": [
-    "fullscreen",
-    "standalone"
-  ],
-  "categories": [
-    "travel",
-    "business",
-    "navigation"
   ],
   "shortcuts": [
     {
-      "name": "LV Ride",
-      "short_name": "Ride",
-      "url": "/booking",
-      "icons": [
-        {
-          "src": "/icons/icon-192.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "name": "Reserveer rit",
+      "short_name": "Boeken",
+      "description": "Maak snel een LV Transport ritaanvraag.",
+      "url": "/booking?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
-      "name": "LV Driver",
-      "short_name": "Driver",
-      "url": "/driver",
-      "icons": [
-        {
-          "src": "/icons/icon-192.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "name": "Volg uw taxi",
+      "short_name": "Tracking",
+      "description": "Volg een rit met LV-code.",
+      "url": "/booking#tracking",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     },
     {
-      "name": "LV Control",
-      "short_name": "Control",
-      "url": "/admin",
-      "icons": [
-        {
-          "src": "/icons/icon-192.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
-    },
-    {
-      "name": "LV Business",
-      "short_name": "Business",
-      "url": "/vip",
-      "icons": [
-        {
-          "src": "/icons/icon-192.svg",
-          "sizes": "192x192",
-          "type": "image/svg+xml"
-        }
-      ]
+      "name": "Founder Cockpit",
+      "short_name": "Founder",
+      "description": "Open de LV founder control tower.",
+      "url": "/founder?source=pwa-shortcut",
+      "icons": [{ "src": "/icons/icon-192.svg", "sizes": "192x192", "type": "image/svg+xml" }]
     }
   ]
 }
