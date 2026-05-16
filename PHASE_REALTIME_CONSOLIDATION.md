@@ -24,5 +24,4 @@
 - duplicated booking states
 
 ## Goal
-Transition LVTP from controlled MVP simulation
-into operationally coherent realtime orchestration.
+Transition LVTP from controlled MVP simulation into operationally coherent realtime orchestration.
