@@ -11,6 +11,7 @@ type InteractionIntent = 'booking' | 'tracking' | 'vip' | 'business' | 'driver' 
 
 type BookingRecord = {
   code: string;
+  id?: string;
   name: string;
   phone: string;
   pickup: string;
@@ -192,31 +193,35 @@ export function App() {
     if (!identity) return startIntent('booking');
     setBookingSubmitting(true);
     setConfirm('Boeking wordt veilig verwerkt...');
+    if (!API_BASE_URL) {
+      setConfirm('Boeking kan niet verzonden worden: API endpoint ontbreekt. Contacteer dispatch.');
+      setBookingSubmitting(false);
+      return;
+    }
     const code = createRideCode();
     const payload: BookingRecord = { ...form, name: identity.name, phone: identity.phone || form.phone, code, createdAt: new Date().toISOString(), status: 'submitted' };
     const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
-    const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
     if (sessionStorage.getItem(dedupeKey)) {
       setConfirm('Dubbele verzending geblokkeerd. Uw eerdere boeking werd al verwerkt.');
       setBookingSubmitting(false);
       return;
     }
-    localStorage.setItem('lvtransport_bookings', JSON.stringify([payload, ...existing].slice(0, 50)));
-    sessionStorage.setItem(dedupeKey, payload.code);
 
-    let message = `Bedankt ${identity.name || 'klant'}, uw verified rit ${code} is ingediend.`;
     try {
-      if (API_BASE_URL) {
-        const response = await fetch(`${API_BASE_URL}/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
-        message += response.ok ? ' Sync met dispatch bevestigd.' : ' API tijdelijk offline: veilige lokale fallback actief.';
-      } else {
-        message += ' API endpoint ontbreekt: veilige lokale fallback actief.';
+      const response = await fetch(`${API_BASE_URL}/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+      if (!response.ok) {
+        setConfirm('Boeking niet opgeslagen in dispatch. Probeer opnieuw of contacteer support.');
+        setBookingSubmitting(false);
+        return;
       }
+      const result = await response.json() as { id?: string; referenceCode?: string; status?: string };
+      const referenceCode = result.referenceCode ?? payload.code;
+      sessionStorage.setItem(dedupeKey, referenceCode);
+      setConfirmedReviewSeed(referenceCode);
+      setConfirm(`Bedankt ${identity.name || 'klant'}, uw rit ${referenceCode} is bevestigd in dispatch.`);
     } catch {
-      message += ' Synchronisatie tijdelijk verstoord, rit veilig lokaal opgeslagen.';
+      setConfirm('Boeking niet verzonden door netwerkfout. Geen lokale fallback gebruikt. Probeer opnieuw.');
     }
-    setConfirmedReviewSeed(payload.code);
-    setConfirm(message);
     setBookingSubmitting(false);
   };
 
@@ -224,33 +229,47 @@ export function App() {
     setVerifiedReviews((existing) => Array.from(new Set([`Verified Ride Review unlocked for ${rideCode}`, ...existing])).slice(0, 5));
   };
 
-  const checkTracking = () => {
+  const checkTracking = async () => {
     if (trackingLoading) return;
     if (!identity) return startIntent('tracking');
     setTrackingLoading(true);
     const normalized = trackingInput.trim().toUpperCase();
-    if (!/^LV\d{5}$/.test(normalized)) {
-      setTrackingResult('Ongeldige code. Gebruik formaat LV12345.');
+    if (!normalized) {
+      setTrackingResult('Voer een trackingcode in uit uw bevestiging.');
+      setTrackingLoading(false);
+      return;
+    }
+    if (!API_BASE_URL) {
+      setTrackingResult('Tracking niet beschikbaar: API endpoint ontbreekt. Contacteer dispatch.');
       setTrackingLoading(false);
       return;
     }
 
-    const records = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
-    const ride = records.find((record) => record.code === normalized);
-    if (!ride) {
-      setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
-      setTrackingLoading(false);
-      return;
+    try {
+      const response = await fetch(`${API_BASE_URL}/tracking/booking/${normalized}`);
+      if (!response.ok) {
+        setTrackingResult(`Rit ${normalized} niet gevonden in operationele database.`);
+        setTrackingLoading(false);
+        return;
+      }
+      const payload = await response.json() as { data?: { code?: string; status?: string } };
+      const ride = payload.data;
+      if (!ride?.code || !ride?.status) {
+        setTrackingResult(`Rit ${normalized}: onvolledige trackingdata, contacteer dispatch.`);
+        setTrackingLoading(false);
+        return;
+      }
+      const lifecycle = normalizeLifecycle(ride.status as BookingStatus);
+      if (!lifecycle) {
+        setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+        setTrackingLoading(false);
+        return;
+      }
+      const immutable = isImmutableLifecycleStatus(lifecycle);
+      setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
+    } catch {
+      setTrackingResult('Tracking tijdelijk niet bereikbaar door netwerkfout. Probeer opnieuw.');
     }
-
-    const lifecycle = normalizeLifecycle(ride.status);
-    if (!lifecycle) {
-      setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
-      setTrackingLoading(false);
-      return;
-    }
-    const immutable = isImmutableLifecycleStatus(lifecycle);
-    setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
     setTrackingLoading(false);
   };
 
