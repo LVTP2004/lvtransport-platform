@@ -8,7 +8,7 @@ import type { MoniBookingFields, MoniMessage } from '../types/moni.types';
 
 type MoniPresenceState = 'idle' | 'listening' | 'thinking' | 'confirmation' | 'issue';
 
-const quickReplies = ['Reserveer premium rit', 'Volg mijn rit', 'Moni Airport update', 'Moni Business support', 'Moni Driver assist', 'Contact dispatch'];
+const quickReplies = ['Calculadora inteligente', 'Mapa / rutas', 'Crear reserva', 'Rastrear envío', 'Ayuda operativa'];
 
 export function MoniAssistant() {
   const [open, setOpen] = useState(false);
@@ -19,6 +19,24 @@ export function MoniAssistant() {
     { role: 'assistant', text: 'Moni Core • Unified intelligence layer\nMoni Ride online. Welkom — ik bewaak uw rit kalm, premium en stap voor stap.' }
   ]);
   const [bookingData] = useState<MoniBookingFields>({});
+
+  const playSound = () => {
+    const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = 520;
+    gain.gain.value = 0.0001;
+    osc.connect(gain);
+    gain.connect(ctx.destination);
+    const now = ctx.currentTime;
+    gain.gain.exponentialRampToValueAtTime(0.03, now + 0.01);
+    gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.12);
+    osc.start(now);
+    osc.stop(now + 0.13);
+  };
 
   const send = (text: string) => {
     if (!text.trim()) return;
@@ -36,6 +54,7 @@ export function MoniAssistant() {
     const learningRecord = createLearningRecord({ userText: text, replyText: assistantReply, language, intent });
     persistLearningRecord(learningRecord);
     setMessages((prev) => [...prev, { role: 'user', text }, { role: 'assistant', text: assistantReply }]);
+    playSound();
     setPresenceState(/probleem|issue|klacht|vertraging/i.test(text) ? 'issue' : 'confirmation');
     setInput('');
     setTimeout(() => setPresenceState('idle'), 1400);
