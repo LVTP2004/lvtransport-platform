@@ -5,6 +5,7 @@ import { corsMiddleware } from './config/cors.js';
 import { env } from './config/env.js';
 import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
 import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js';
+import { basicRateLimitMiddleware } from './middleware/basic-rate-limit.middleware.js';
 import { apiSecurityMiddleware, requestValidationMiddleware } from './modules/security/middleware/security.middleware.js';
 import apiRoutes from './routes/index.js';
 
@@ -24,6 +25,7 @@ export const createApp = () => {
   app.use(corsMiddleware);
   app.use(express.json({ limit: '1mb' }));
   app.use(requestValidationMiddleware);
+  app.use(basicRateLimitMiddleware);
   app.use(requestLoggerMiddleware);
 
   app.get('/health', (_req, res) => {
