@@ -42,7 +42,6 @@ const routeMap: Record<string, RouteKey> = {
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin'
 };
 
-const navItems = [
 const primaryNavItems = [
   { label: 'Home', path: '/', section: 'hero' },
   { label: 'Booking', path: '/booking', section: 'booking', intent: 'booking' as InteractionIntent },
@@ -182,7 +181,7 @@ export function App() {
       email: authForm.email,
       phone: authForm.phone,
       company: authForm.company || undefined,
-      roleIntent: a louthForm.roleIntent || 'Customer',
+      roleIntent: authForm.roleIntent || 'Customer',
       method,
       verifiedAt: new Date().toISOString()
     };
@@ -326,11 +325,6 @@ export function App() {
           <button onClick={() => navigate('/', 'hero')}><img src='/brand/lv-logo-header.svg' className='h-9' alt='LV Transport logo' /></button>
           <button className='hamburger md:hidden' onClick={() => setMenuOpen((value) => !value)}>{menuOpen ? 'Sluit' : 'Menu'}</button>
           <nav className='ml-auto hidden items-center gap-2 md:flex'>
-            {navItems.map((item) => <button key={item.path} className='nav-btn' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
-            {secondaryItems.map((item) => <button key={item.label} className='surface-btn' onClick={() => item.path ? requireIdentity(item.label.toLowerCase() as InteractionIntent, () => navigate(item.path!)) : navigate('/', item.section)}>{item.label}</button>)}
-            {installReady && <button className='surface-btn' onClick={installEcosystemApp}>Install app</button>}
-          <button className='hamburger md:hidden' onClick={() => setMenuOpen((value) => !value)} aria-expanded={menuOpen} aria-label='Open mobile menu'>{menuOpen ? 'Sluit' : 'Menu'}</button>
-          <nav className='ml-auto hidden items-center gap-3 md:flex'>
             <div className='nav-group-primary'>
               {primaryNavItems.map((item) => <button key={item.path} className='nav-btn nav-btn--primary' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
             </div>
@@ -342,11 +336,6 @@ export function App() {
         </div>
         <div className={`mobile-menu-overlay ${menuOpen ? 'mobile-menu-overlay--open' : ''}`} onClick={() => setMenuOpen(false)} />
         <div className={`mobile-menu ${menuOpen ? 'mobile-menu--open' : ''}`}>
-          {navItems.map((item) => <button key={item.path} className='mobile-nav-btn' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
-          {secondaryItems.map((item) => <button key={item.label} className='mobile-nav-btn mobile-nav-btn--utility' onClick={() => item.path ? requireIdentity(item.label.toLowerCase() as InteractionIntent, () => navigate(item.path!)) : navigate('/', item.section)}>{item.label}</button>)}
-        </div>
-      </header>
-      <section id='hero' className='glass-panel hero-panel rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Premium stadsmobiliteit met operationele rust</h1><p className='mt-4 max-w-3xl text-lv-mist'>Een modern dispatch-platform voor booking, tracking en business transport. Snel, betrouwbaar en ontworpen voor een premium klantervaring op elk scherm.</p><div className='mt-6 flex flex-wrap gap-2'><button className='btn-primary' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Start booking</button><button className='btn-secondary' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Track rit</button></div></section>
           <p className='mobile-menu-title'>Primary</p>
           {primaryNavItems.map((item) => <button key={item.path} className='mobile-nav-btn mobile-nav-btn--primary' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
           <p className='mobile-menu-title'>Tools</p>
@@ -384,7 +373,6 @@ export function App() {
             <label key={key} className={`field-wrap ${key === 'notes' ? 'sm:col-span-2' : ''}`}><span>{key}</span><input required={key !== 'notes'} value={form[key as keyof typeof form]} onChange={(event) => setForm({ ...form, [key]: event.target.value })} /></label>)}
           <div className='sm:col-span-2'><Button type='submit' disabled={bookingSubmitting} onClick={() => playUiSound('click')}>{bookingSubmitting ? 'Verwerken...' : 'Reserveer nu'}</Button></div></form>{confirm && <p className='mt-3 status-line status-line--active'>{confirm}</p>}
       </section>
-      <section id='tracking' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Tracking Tower</h3><div className='mt-3 flex flex-col gap-2 sm:flex-row'><input className='estimate-input' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button variant='secondary' onClick={() => { playUiSound('success'); checkTracking(); }} disabled={trackingLoading}>{trackingLoading ? 'Synchronisatie...' : 'Controleer status'}</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
       <section id='tracking' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Tracking Tower</h3><div className='mt-3 flex flex-col gap-3 sm:flex-row'><input className='estimate-input estimate-input--tracking' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button className='tracking-cta' onClick={checkTracking} disabled={trackingLoading}>{trackingLoading ? 'Synchronisatie...' : 'Controleer status'}</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>Verified Ride Reviews</h3><p className='text-sm text-lv-mist'>Alle reviews zijn gekoppeld aan completed rides en verified identities.</p><ul className='mt-3 space-y-2'>{verifiedReviews.length ? verifiedReviews.map((review) => <li key={review} className='status-line status-line--active'>{review}</li>) : <li className='status-line'>Nog geen eligible verified reviews.</li>}</ul><Button variant='secondary' className='mt-3' onClick={() => requireIdentity('reviews', () => setTrackingResult('Verified review flow geactiveerd na completed ride lifecycle.'))}>Open review flow</Button></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>LV Business Expansion</h3><p className='text-lv-mist text-sm'>U brengt operationele capaciteit. LVTP levert verified dispatch, realtime lifecycle controle en premium klanttoegang.</p><Button className='mt-3' onClick={() => requireIdentity('expansion', () => setTrackingResult('Expansion onboarding geopend voor verified operator intake.'))}>Start Expansion Onboarding</Button></section>
