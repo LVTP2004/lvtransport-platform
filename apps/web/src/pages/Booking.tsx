@@ -1,6 +1,7 @@
 import { FormEvent, useState } from 'react'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be').replace(/\/$/, '')
+const API_V1_BASE = `${API_BASE}/api/v1`
 const gold = '#d4af37'
 
 const fieldStyle = {
@@ -39,31 +40,27 @@ export default function Booking() {
     setConfirmation('')
 
     try {
-      const response = await fetch(`${API_BASE}/api/bookings`, {
+      const scheduleAt = new Date(`${form.date}T${form.time}`).toISOString()
+      const response = await fetch(`${API_V1_BASE}/bookings`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: form.name,
-          phone: form.phone,
-          email: form.email,
           pickup: form.pickup,
           destination: form.destination,
-          date: form.date,
-          time: form.time,
-          serviceType: form.serviceType,
-          notes: form.notes,
-          source: 'website',
+          scheduleAt,
+          serviceType: form.serviceType === 'business' ? 'vip' : form.serviceType,
+          customerTier: form.serviceType === 'business' ? 'business' : 'retail',
         }),
       })
 
       const result = await response.json()
-      if (!response.ok || !result?.booking?.code) {
+      if (!response.ok || !result?.booking?.referenceCode) {
         throw new Error(result?.message || result?.error || 'Boeking mislukt.')
       }
 
-      const code = result.booking.code
+      const code = result.booking.referenceCode
       setTrackingCode(code)
-      setConfirmation(`Boeking bevestigd. Uw ritcode: ${code}. Geschatte prijs: €${result.booking.priceEstimate?.exact ?? 'n.v.t.'}`)
+      setConfirmation(`Boeking bevestigd. Uw referentie: ${code}. Status: ${result.booking.status}.`)
     } catch (error) {
       setConfirmation(error instanceof Error ? error.message : 'Boeking mislukt.')
     } finally {
@@ -77,7 +74,7 @@ export default function Booking() {
 
     setTrackingLoading(true)
     try {
-      const response = await fetch(`${API_BASE}/api/bookings/code/${code}`)
+      const response = await fetch(`${API_V1_BASE}/tracking/booking/${encodeURIComponent(code.toUpperCase())}`)
       const result = await response.json()
 
       if (!response.ok || !result?.booking) {
@@ -85,8 +82,8 @@ export default function Booking() {
       }
 
       const ride = result.booking
-      const driver = ride.driverName ? ` • Chauffeur: ${ride.driverName}` : ''
-      const when = `${ride.date || ''} ${ride.time || ''}`.trim()
+      const driver = ride.assignedDriverName ? ` • Chauffeur: ${ride.assignedDriverName}` : ''
+      const when = ride.scheduleAt ? new Date(ride.scheduleAt).toLocaleString('nl-BE') : ''
       setTrackingResult(`Rit ${ride.code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}${driver}`)
     } catch (error) {
       setTrackingResult(error instanceof Error ? error.message : 'Tracking mislukt.')
@@ -154,7 +151,7 @@ export default function Booking() {
           <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Volg uw taxi met ritcode</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) auto', gap: 12 }}>
-            <input style={fieldStyle} placeholder="Bijvoorbeeld 374256" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
+            <input style={fieldStyle} placeholder="Bijvoorbeeld LV-MA37F9-F3A29D" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
             <button onClick={() => lookupTracking()} style={{ border: 0, borderRadius: 16, padding: '0 18px', background: gold, color: '#080808', fontWeight: 900 }}>
               {trackingLoading ? 'Synchronisatie...' : 'Zoeken'}
             </button>
