@@ -1,114 +1,149 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
-const charcoal = '#111214'
-const gold = '#d4af37'
-
-const serviceTypes = [
-  { key: 'standard', label: 'Standard', base: 24, perKm: 1.8 },
-  { key: 'business', label: 'Business', base: 35, perKm: 2.3 },
-  { key: 'van', label: 'Mercedes Van', base: 42, perKm: 2.8 },
-]
-
-const sectionWrap: React.CSSProperties = {
-  maxWidth: 1180,
-  margin: '0 auto',
-  padding: '32px 18px',
+const colors = {
+  bg: '#111214',
+  bgSoft: '#17181c',
+  panel: 'rgba(29,31,36,0.82)',
+  panelStrong: 'rgba(35,37,43,0.9)',
+  gold: '#c8a96b',
+  goldLine: 'rgba(200,169,107,0.42)',
+  white: '#f2f3f5',
+  grey: '#b7b9be',
 }
 
-export default function HeroSection() {
-  const [calc, setCalc] = useState({ origin: '', destination: '', service: serviceTypes[0].key, night: false })
+const menuItems = ['HOME', 'DIENSTEN', 'PRIJZEN', 'TRACKING', 'CONTACT']
+const services = ['Taxi Antwerpen', 'Luchthavenvervoer', 'Zakelijk vervoer', 'Haven transport', 'Lange afstand']
+const pricing = ['Zaventem', 'Brussel', 'Mechelen', 'Gent', 'Schiphol']
 
-  const estimate = useMemo(() => {
-    const service = serviceTypes.find((item) => item.key === calc.service) ?? serviceTypes[0]
-    const pseudoKm = Math.max(12, Math.min(80, Math.round((calc.origin.length + calc.destination.length) / 2.5)))
-    const total = service.base + pseudoKm * service.perKm + (calc.night ? 18 : 0)
-    return { total, pseudoKm, label: service.label }
-  }, [calc])
-
-  return (
-    <main style={{ background: '#090a0b', color: 'white', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
-      <header style={{ position: 'sticky', top: 12, zIndex: 50, padding: '0 12px' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(212,175,55,.22)', borderRadius: 18, background: 'rgba(12,14,18,.76)', backdropFilter: 'blur(18px)' }}>
-          <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 22 }} />
-          <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['Home', 'Booking', 'Pricing', 'Tracking', 'VIP'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} style={{ color: '#f5f5f5', textDecoration: 'none', padding: '9px 14px', borderRadius: 999, fontSize: 13, background: 'rgba(255,255,255,.04)' }}>{item}</a>
-            ))}
-          </nav>
-        </div>
-      </header>
-
-      <section id="home" style={{ ...sectionWrap, paddingTop: 56 }}>
-        <div style={{ borderRadius: 30, overflow: 'hidden', border: '1px solid rgba(212,175,55,.24)', background: 'linear-gradient(135deg, rgba(18,18,22,.96), rgba(28,30,38,.88))' }}>
-          <div style={{ minHeight: 560, backgroundImage: 'linear-gradient(90deg, rgba(6,8,10,.88) 18%, rgba(10,12,15,.72) 48%, rgba(16,18,22,.54) 100%), url(/brand/lvtransport/hero-byd-night.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center' }}>
-            <div style={{ maxWidth: 720, padding: '54px 34px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 999, background: 'rgba(212,175,55,.1)', border: '1px solid rgba(212,175,55,.22)', marginBottom: 18 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: gold }} />
-                <span style={{ fontSize: 12, color: '#f6e8ba', letterSpacing: '.08em', textTransform: 'uppercase' }}>Premium Hybrid Mobility</span>
-              </div>
-
-              <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(42px,7vw,74px)', lineHeight: 1.02, fontWeight: 800 }}>
-                Mercedes & BYD executive transport in Antwerpen
-              </h1>
-
-              <p style={{ maxWidth: 620, color: '#d7d9de', fontSize: 18, lineHeight: 1.7, marginBottom: 28 }}>
-                Luxury airport transfers, real-time operational tracking and premium chauffeur mobility.
-              </p>
-
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <a href="#booking" style={{ background: gold, color: charcoal, padding: '14px 20px', borderRadius: 14, textDecoration: 'none', fontWeight: 800 }}>Reserve now</a>
-                <a href="#tracking" style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '14px 20px', borderRadius: 14, textDecoration: 'none', background: 'rgba(255,255,255,.05)' }}>Track your ride</a>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section id="pricing" style={sectionWrap}>
-        <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
-          <div style={{ borderRadius: 24, padding: 24, background: 'rgba(18,20,24,.92)', border: '1px solid rgba(212,175,55,.16)' }}>
-            <h2 style={{ marginTop: 0 }}>Smart fare calculator</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <input placeholder="Pickup" value={calc.origin} onChange={(e) => setCalc((p) => ({ ...p, origin: e.target.value }))} style={inputStyle} />
-              <input placeholder="Destination" value={calc.destination} onChange={(e) => setCalc((p) => ({ ...p, destination: e.target.value }))} style={inputStyle} />
-              <select value={calc.service} onChange={(e) => setCalc((p) => ({ ...p, service: e.target.value }))} style={inputStyle}>
-                {serviceTypes.map((service) => <option key={service.key} value={service.key}>{service.label}</option>)}
-              </select>
-            </div>
-          </div>
-
-          <div style={{ borderRadius: 24, padding: 24, background: 'linear-gradient(145deg, rgba(212,175,55,.12), rgba(20,20,24,.92))', border: '1px solid rgba(212,175,55,.22)' }}>
-            <p style={{ margin: 0, color: '#f3d98b', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Estimated premium fare</p>
-            <h3 style={{ fontSize: 58, margin: '10px 0' }}>€{estimate.total.toFixed(0)}</h3>
-            <p style={{ color: '#d9d9d9' }}>{estimate.label} · ~{estimate.pseudoKm} km operational route</p>
-          </div>
-        </div>
-      </section>
-
-      <section id="tracking" style={sectionWrap}>
-        <div style={{ borderRadius: 28, overflow: 'hidden', border: '1px solid rgba(212,175,55,.18)', background: 'rgba(12,13,16,.95)' }}>
-          <div style={{ padding: 24 }}>
-            <h2 style={{ margin: 0 }}>Operational tracking tower</h2>
-            <p style={{ color: '#cfcfcf' }}>Driver ETA and premium ride lifecycle visibility.</p>
-          </div>
-          <iframe title="Antwerpen map" src="https://www.google.com/maps?q=Antwerpen&output=embed" width="100%" height="320" style={{ border: 0, filter: 'grayscale(.92)' }} />
-        </div>
-      </section>
-
-      <aside aria-label="MoniRide assistant" style={{ position: 'fixed', bottom: 18, right: 18, width: 58, height: 58, borderRadius: '50%', border: '1px solid rgba(212,175,55,.48)', background: 'radial-gradient(circle at 30% 30%, rgba(212,175,55,.42), rgba(16,16,18,.98))', boxShadow: '0 0 30px rgba(212,175,55,.35)', display: 'grid', placeItems: 'center', fontSize: 24, color: '#fff4cf', zIndex: 60, cursor: 'pointer' }}>
-        🌟
-      </aside>
-    </main>
-  )
+const buttonStyle: React.CSSProperties = {
+  borderRadius: 12,
+  border: `1px solid ${colors.goldLine}`,
+  padding: '12px 16px',
+  background: 'linear-gradient(180deg, rgba(200,169,107,0.18), rgba(200,169,107,0.1))',
+  color: colors.white,
+  fontSize: 14,
+  fontWeight: 600,
+  letterSpacing: '0.01em',
 }
 
 const inputStyle: React.CSSProperties = {
-  border: '1px solid rgba(255,255,255,.14)',
-  background: 'rgba(10,10,12,.92)',
-  color: 'white',
-  padding: '14px 14px',
-  borderRadius: 14,
+  background: 'rgba(17,18,20,0.8)',
+  border: `1px solid ${colors.goldLine}`,
+  borderRadius: 12,
+  color: colors.white,
+  padding: '12px 14px',
   width: '100%',
   boxSizing: 'border-box',
-  fontSize: 14,
+}
+
+export default function HeroSection() {
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [rideCode, setRideCode] = useState('')
+
+  return (
+    <main style={{ background: `linear-gradient(${colors.bg}, ${colors.bgSoft})`, color: colors.white, minHeight: '100vh' }}>
+      <style>{`
+        .lv-wrap{max-width:1180px;margin:0 auto;padding:0 20px}
+        .lv-hero-grid{display:grid;grid-template-columns:1.05fr 1fr;gap:34px;align-items:center}
+        .lv-cards-grid{display:grid;gap:16px;grid-template-columns:repeat(5,minmax(0,1fr))}
+        .lv-scroll-row{display:grid;gap:16px;grid-template-columns:repeat(5,minmax(220px,1fr))}
+        @media (max-width: 1000px){
+          .lv-hero-grid{grid-template-columns:1fr;}
+          .lv-cards-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+        }
+        @media (max-width: 760px){
+          .lv-cards-grid{display:flex;overflow:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+          .lv-cards-grid > div{min-width:78%;scroll-snap-align:start}
+          .lv-scroll-row{display:flex;overflow:auto;padding-bottom:6px;scroll-snap-type:x mandatory}
+          .lv-scroll-row > div{min-width:74%;scroll-snap-align:start}
+        }
+      `}</style>
+
+      <header style={{ position: 'sticky', top: 0, zIndex: 80, backdropFilter: 'blur(8px)', background: 'rgba(17,18,20,0.7)', borderBottom: `1px solid ${colors.goldLine}` }}>
+        <div className="lv-wrap" style={{ height: 76, display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 22 }} />
+          <button aria-label="Open menu" onClick={() => setMenuOpen(true)} style={{ ...buttonStyle, width: 52, height: 44, display: 'grid', placeItems: 'center', background: 'rgba(23,24,28,0.85)' }}>☰</button>
+        </div>
+      </header>
+
+      {menuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 120, background: 'rgba(17,18,20,0.96)', backdropFilter: 'blur(16px)', padding: 28 }}>
+          <div className="lv-wrap" style={{ display: 'flex', flexDirection: 'column', gap: 28 }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 22 }} />
+              <button onClick={() => setMenuOpen(false)} style={buttonStyle}>Sluiten</button>
+            </div>
+            {menuItems.map((item) => <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)} style={{ color: colors.white, textDecoration: 'none', fontSize: 34, letterSpacing: '0.03em' }}>{item}</a>)}
+            <div style={{ display: 'flex', gap: 12, marginTop: 6 }}>
+              <a href="tel:+32000000000" style={buttonStyle}>Bel nu</a>
+              <a href="#contact" style={buttonStyle}>WhatsApp</a>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <section className="lv-wrap" id="home" style={{ paddingTop: 40, paddingBottom: 18 }}>
+        <div className="lv-hero-grid" style={{ border: `1px solid ${colors.goldLine}`, borderRadius: 18, padding: 24, background: colors.panel }}>
+          <div>
+            <h1 style={{ margin: '0 0 14px', fontSize: 'clamp(32px,5vw,56px)', lineHeight: 1.08 }}>Betrouwbaar.<br />Comfortabel.<br />Altijd op tijd.</h1>
+            <p style={{ margin: 0, color: colors.grey, fontSize: 18, lineHeight: 1.6 }}>Premium vervoer in Antwerpen en België.<br />24/7 beschikbaar.</p>
+          </div>
+          <div style={{ minHeight: 320, borderRadius: 16, border: `1px solid ${colors.goldLine}`, background: `linear-gradient(130deg, rgba(17,18,20,.85), rgba(29,31,36,.55)), url(/brand/lvtransport/hero-byd-night.png)`, backgroundSize: 'cover', backgroundPosition: 'center' }} />
+        </div>
+      </section>
+
+      <section className="lv-wrap" id="booking" style={{ paddingTop: 18, paddingBottom: 18 }}>
+        <div style={{ background: colors.panel, borderRadius: 16, border: `1px solid ${colors.goldLine}`, backdropFilter: 'blur(10px)', padding: 20 }}>
+          <h2 style={{ marginTop: 0 }}>Reserveer uw rit</h2>
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }}>
+            <input placeholder="Pickup" style={inputStyle} />
+            <input placeholder="Destination" style={inputStyle} />
+            <input type="date" style={inputStyle} />
+            <input type="time" style={inputStyle} />
+            <select style={inputStyle}><option>Ride type</option><option>Standard</option><option>Business</option></select>
+            <input placeholder="Phone" style={inputStyle} />
+          </div>
+          <div style={{ marginTop: 14 }}><button style={buttonStyle}>Reserveer nu</button></div>
+        </div>
+      </section>
+
+      <section className="lv-wrap" id="diensten" style={{ padding: '18px 20px' }}>
+        <h2>Diensten</h2>
+        <div className="lv-cards-grid">
+          {services.map((item) => <div key={item} style={{ padding: 18, borderRadius: 14, background: colors.panelStrong, border: `1px solid ${colors.goldLine}` }}>{item}</div>)}
+        </div>
+      </section>
+
+      <section className="lv-wrap" id="prijzen" style={{ padding: '18px 20px' }}>
+        <h2>Transparante prijzen</h2>
+        <div className="lv-scroll-row">
+          {pricing.map((item) => <div key={item} style={{ padding: 18, borderRadius: 14, background: colors.panelStrong, border: `1px solid ${colors.goldLine}` }}><div style={{ color: colors.grey, marginBottom: 8 }}>{item}</div><strong>Vanaf €65</strong></div>)}
+        </div>
+      </section>
+
+      <section className="lv-wrap" id="tracking" style={{ padding: '18px 20px 38px' }}>
+        <div style={{ padding: 20, borderRadius: 16, border: `1px solid ${colors.goldLine}`, background: colors.panel }}>
+          <h2 style={{ marginTop: 0 }}>Tracking toegang</h2>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <input maxLength={5} placeholder="Voer uw ritcode in" value={rideCode} onChange={(e) => setRideCode(e.target.value.replace(/\D/g, '').slice(0, 5))} style={{ ...inputStyle, maxWidth: 220 }} />
+            <button style={buttonStyle}>Tracking openen</button>
+          </div>
+          <p style={{ color: colors.grey, marginBottom: 0 }}>Status: Onderweg · Bij u in de buurt · Aangekomen · Rit voltooid</p>
+        </div>
+      </section>
+
+      <button aria-label="MoniRide" style={{ position: 'fixed', right: 16, bottom: 16, width: 54, height: 54, borderRadius: '50%', border: `1px solid ${colors.goldLine}`, background: 'radial-gradient(circle at 25% 20%, rgba(200,169,107,.2), rgba(17,18,20,.96))', color: colors.white, boxShadow: '0 0 14px rgba(200,169,107,.18)' }}>LV</button>
+
+      <footer id="contact" style={{ borderTop: `1px solid ${colors.goldLine}`, background: 'rgba(17,18,20,0.94)', padding: '28px 0 40px' }}>
+        <div className="lv-wrap" style={{ display: 'grid', gap: 12 }}>
+          <img src="/brand/lv-logo-primary.svg" alt="LV Transport" style={{ height: 30 }} />
+          <div>Phone: +32 000 00 00 00</div>
+          <div>Email: info@lvtransport.be</div>
+          <div>Website: lvtransport.be</div>
+          <div>VAT: BE 0000.000.000</div>
+          <div>LV Transport · Antwerpen, België · Support · Privacy · Voorwaarden</div>
+        </div>
+      </footer>
+    </main>
+  )
 }
