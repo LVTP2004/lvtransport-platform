@@ -37,6 +37,9 @@ export function App() {
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
 
+  const [trackingCode, setTrackingCode] = useState('');
+  const trackingLink = trackingCode ? `/track/${trackingCode.toUpperCase()}` : '/track/{CODE}';
+
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
     const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
@@ -157,6 +160,16 @@ export function App() {
               <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
                 Includes base transfer, selected vehicle class, and service options.
               </div>
+            </article>
+
+
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Tracking link (MVP)</p>
+              <label className="field-wrap mt-3">
+                <span>Public tracking code</span>
+                <input value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} placeholder="e.g. A1B2C3D4" />
+              </label>
+              <p className="mt-3 text-sm text-lv-mist">Customer tracking route prepared: <span className="text-white">{trackingLink}</span></p>
             </article>
 
             <article className="glass-panel rounded-3xl p-5 sm:p-6">
