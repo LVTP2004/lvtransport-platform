@@ -1,114 +1,164 @@
 import { useMemo, useState } from 'react'
 
-const charcoal = '#111214'
-const gold = '#d4af37'
+const colors = {
+  bg: '#111214',
+  panel: '#17181c',
+  panelSoft: '#1d1f24',
+  border: 'rgba(212,175,55,.28)',
+  text: '#f3f0e7',
+  textMuted: '#b8bcc6',
+  gold: '#d4af37',
+}
 
-const serviceTypes = [
-  { key: 'standard', label: 'Standard', base: 24, perKm: 1.8 },
-  { key: 'business', label: 'Business', base: 35, perKm: 2.3 },
-  { key: 'van', label: 'Mercedes Van', base: 42, perKm: 2.8 },
+const rideTypes = [
+  { key: 'standaard', label: 'Standaard' },
+  { key: 'zakelijk', label: 'Zakelijk' },
+  { key: 'luchthaven', label: 'Luchthaven' },
 ]
 
-const sectionWrap: React.CSSProperties = {
+const pricing = [
+  { destination: 'Zaventem', from: '€85' },
+  { destination: 'Brussel', from: '€95' },
+  { destination: 'Mechelen', from: '€70' },
+  { destination: 'Gent', from: '€140' },
+  { destination: 'Schiphol', from: '€240' },
+]
+
+const services = ['Taxi Antwerpen', 'Luchthavenvervoer', 'Zakelijk vervoer', 'Haven transport', 'Lange afstand']
+
+const section: React.CSSProperties = {
   maxWidth: 1180,
   margin: '0 auto',
-  padding: '32px 18px',
+  padding: '28px 18px',
 }
 
 export default function HeroSection() {
-  const [calc, setCalc] = useState({ origin: '', destination: '', service: serviceTypes[0].key, night: false })
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [booking, setBooking] = useState({ pickup: '', destination: '', date: '', time: '', rideType: rideTypes[0].key, phone: '' })
+  const [calc, setCalc] = useState({ pickup: '', destination: '', rideType: rideTypes[0].key, datetime: '' })
+  const [rideCode, setRideCode] = useState('')
 
   const estimate = useMemo(() => {
-    const service = serviceTypes.find((item) => item.key === calc.service) ?? serviceTypes[0]
-    const pseudoKm = Math.max(12, Math.min(80, Math.round((calc.origin.length + calc.destination.length) / 2.5)))
-    const total = service.base + pseudoKm * service.perKm + (calc.night ? 18 : 0)
-    return { total, pseudoKm, label: service.label }
+    const chars = calc.pickup.length + calc.destination.length
+    if (!calc.pickup || !calc.destination) {
+      return { price: '—', route: 'Vul vertrek en bestemming in', duration: '—' }
+    }
+    const pseudoKm = Math.max(8, Math.min(120, Math.round(chars / 2.4)))
+    const base = calc.rideType === 'zakelijk' ? 38 : calc.rideType === 'luchthaven' ? 44 : 28
+    const estimated = base + pseudoKm * 2.1
+    const mins = Math.max(18, Math.min(130, Math.round(pseudoKm * 2.4)))
+    return {
+      price: `€${estimated.toFixed(0)}`,
+      route: `Geschatte route: ± ${pseudoKm} km`,
+      duration: `Geschatte duur: ${mins} min`,
+    }
   }, [calc])
 
   return (
-    <main style={{ background: '#090a0b', color: 'white', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
-      <header style={{ position: 'sticky', top: 12, zIndex: 50, padding: '0 12px' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(212,175,55,.22)', borderRadius: 18, background: 'rgba(12,14,18,.76)', backdropFilter: 'blur(18px)' }}>
+    <main style={{ background: colors.bg, color: colors.text, minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 50, padding: '14px 14px 0' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', border: `1px solid ${colors.border}`, borderRadius: 16, background: 'rgba(23,24,28,.84)', backdropFilter: 'blur(14px)', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 22 }} />
-          <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['Home', 'Booking', 'Pricing', 'Tracking', 'VIP'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} style={{ color: '#f5f5f5', textDecoration: 'none', padding: '9px 14px', borderRadius: 999, fontSize: 13, background: 'rgba(255,255,255,.04)' }}>{item}</a>
-            ))}
-          </nav>
+          <button onClick={() => setMenuOpen(true)} aria-label="Open menu" style={iconButton}>☰</button>
         </div>
       </header>
 
-      <section id="home" style={{ ...sectionWrap, paddingTop: 56 }}>
-        <div style={{ borderRadius: 30, overflow: 'hidden', border: '1px solid rgba(212,175,55,.24)', background: 'linear-gradient(135deg, rgba(18,18,22,.96), rgba(28,30,38,.88))' }}>
-          <div style={{ minHeight: 560, backgroundImage: 'linear-gradient(90deg, rgba(6,8,10,.88) 18%, rgba(10,12,15,.72) 48%, rgba(16,18,22,.54) 100%), url(/brand/lvtransport/hero-byd-night.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center' }}>
-            <div style={{ maxWidth: 720, padding: '54px 34px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 999, background: 'rgba(212,175,55,.1)', border: '1px solid rgba(212,175,55,.22)', marginBottom: 18 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: gold }} />
-                <span style={{ fontSize: 12, color: '#f6e8ba', letterSpacing: '.08em', textTransform: 'uppercase' }}>Premium Hybrid Mobility</span>
-              </div>
+      {menuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 80, background: 'rgba(17,18,20,.97)', backdropFilter: 'blur(8px)', padding: '28px' }}>
+          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <button onClick={() => setMenuOpen(false)} aria-label="Sluit menu" style={iconButton}>✕</button>
+          </div>
+          <nav style={{ display: 'grid', gap: 18, marginTop: 40 }}>
+            {['HOME', 'DIENSTEN', 'PRIJZEN', 'TRACKING', 'CONTACT'].map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)} style={menuLink}>{item}</a>
+            ))}
+          </nav>
+          <div style={{ marginTop: 42, display: 'grid', gap: 10 }}>
+            <a href="tel:+32000000000" style={secondaryLink}>Bel nu</a>
+            <a href="https://wa.me/32000000000" style={secondaryLink}>WhatsApp</a>
+          </div>
+        </div>
+      )}
 
-              <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(42px,7vw,74px)', lineHeight: 1.02, fontWeight: 800 }}>
-                Mercedes & BYD executive transport in Antwerpen
-              </h1>
-
-              <p style={{ maxWidth: 620, color: '#d7d9de', fontSize: 18, lineHeight: 1.7, marginBottom: 28 }}>
-                Luxury airport transfers, real-time operational tracking and premium chauffeur mobility.
-              </p>
-
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <a href="#booking" style={{ background: gold, color: charcoal, padding: '14px 20px', borderRadius: 14, textDecoration: 'none', fontWeight: 800 }}>Reserve now</a>
-                <a href="#tracking" style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '14px 20px', borderRadius: 14, textDecoration: 'none', background: 'rgba(255,255,255,.05)' }}>Track your ride</a>
-              </div>
+      <section id="home" style={{ ...section, paddingTop: 34 }}>
+        <div style={{ borderRadius: 26, overflow: 'hidden', border: `1px solid ${colors.border}` }}>
+          <div style={{ minHeight: 540, backgroundImage: 'linear-gradient(95deg, rgba(17,18,20,.92) 20%, rgba(23,24,28,.76) 55%, rgba(35,37,43,.56) 100%), url(/brand/lvtransport/hero-byd-night.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center' }}>
+            <div style={{ maxWidth: 700, padding: '52px 28px' }}>
+              <h1 style={{ margin: '0 0 16px', lineHeight: 1.04, fontSize: 'clamp(38px,6vw,74px)' }}>Betrouwbaar.<br/>Comfortabel.<br/>Altijd op tijd.</h1>
+              <p style={{ fontSize: 19, color: colors.textMuted, maxWidth: 560, lineHeight: 1.6 }}>Premium vervoer in Antwerpen en België.<br/>24/7 beschikbaar.</p>
             </div>
           </div>
         </div>
       </section>
 
-      <section id="pricing" style={sectionWrap}>
-        <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
-          <div style={{ borderRadius: 24, padding: 24, background: 'rgba(18,20,24,.92)', border: '1px solid rgba(212,175,55,.16)' }}>
-            <h2 style={{ marginTop: 0 }}>Smart fare calculator</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <input placeholder="Pickup" value={calc.origin} onChange={(e) => setCalc((p) => ({ ...p, origin: e.target.value }))} style={inputStyle} />
-              <input placeholder="Destination" value={calc.destination} onChange={(e) => setCalc((p) => ({ ...p, destination: e.target.value }))} style={inputStyle} />
-              <select value={calc.service} onChange={(e) => setCalc((p) => ({ ...p, service: e.target.value }))} style={inputStyle}>
-                {serviceTypes.map((service) => <option key={service.key} value={service.key}>{service.label}</option>)}
-              </select>
-            </div>
+      <section id="booking" style={section}>
+        <div style={card}>
+          <h2 style={h2}>Boeking</h2>
+          <p style={muted}>Boekingsaanvragen worden door ons team bevestigd via telefoon of bericht. Er wordt geen automatische ritbevestiging getoond zonder backend-validatie.</p>
+          <div style={grid2}>
+            <input placeholder="Pickup" value={booking.pickup} onChange={(e) => setBooking((s) => ({ ...s, pickup: e.target.value }))} style={input} />
+            <input placeholder="Bestemming" value={booking.destination} onChange={(e) => setBooking((s) => ({ ...s, destination: e.target.value }))} style={input} />
+            <input type="date" value={booking.date} onChange={(e) => setBooking((s) => ({ ...s, date: e.target.value }))} style={input} />
+            <input type="time" value={booking.time} onChange={(e) => setBooking((s) => ({ ...s, time: e.target.value }))} style={input} />
+            <select value={booking.rideType} onChange={(e) => setBooking((s) => ({ ...s, rideType: e.target.value }))} style={input}>{rideTypes.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</select>
+            <input placeholder="Telefoon" value={booking.phone} onChange={(e) => setBooking((s) => ({ ...s, phone: e.target.value }))} style={input} />
           </div>
-
-          <div style={{ borderRadius: 24, padding: 24, background: 'linear-gradient(145deg, rgba(212,175,55,.12), rgba(20,20,24,.92))', border: '1px solid rgba(212,175,55,.22)' }}>
-            <p style={{ margin: 0, color: '#f3d98b', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Estimated premium fare</p>
-            <h3 style={{ fontSize: 58, margin: '10px 0' }}>€{estimate.total.toFixed(0)}</h3>
-            <p style={{ color: '#d9d9d9' }}>{estimate.label} · ~{estimate.pseudoKm} km operational route</p>
-          </div>
+          <button type="button" style={cta}>Reserveer nu</button>
         </div>
       </section>
 
-      <section id="tracking" style={sectionWrap}>
-        <div style={{ borderRadius: 28, overflow: 'hidden', border: '1px solid rgba(212,175,55,.18)', background: 'rgba(12,13,16,.95)' }}>
-          <div style={{ padding: 24 }}>
-            <h2 style={{ margin: 0 }}>Operational tracking tower</h2>
-            <p style={{ color: '#cfcfcf' }}>Driver ETA and premium ride lifecycle visibility.</p>
-          </div>
-          <iframe title="Antwerpen map" src="https://www.google.com/maps?q=Antwerpen&output=embed" width="100%" height="320" style={{ border: 0, filter: 'grayscale(.92)' }} />
+      <section id="diensten" style={section}><div style={card}><h2 style={h2}>Diensten</h2><div style={serviceGrid}>{services.map((name) => <article key={name} style={serviceCard}><div style={dot} />{name}</article>)}</div></div></section>
+
+      <section id="prijzen" style={section}>
+        <div style={card}>
+          <h2 style={h2}>Prijzen</h2>
+          <div style={serviceGrid}>{pricing.map((p) => <article key={p.destination} style={serviceCard}><strong>{p.destination}</strong><span style={{ color: colors.textMuted }}>Vanaf {p.from}</span></article>)}</div>
         </div>
       </section>
 
-      <aside aria-label="MoniRide assistant" style={{ position: 'fixed', bottom: 18, right: 18, width: 58, height: 58, borderRadius: '50%', border: '1px solid rgba(212,175,55,.48)', background: 'radial-gradient(circle at 30% 30%, rgba(212,175,55,.42), rgba(16,16,18,.98))', boxShadow: '0 0 30px rgba(212,175,55,.35)', display: 'grid', placeItems: 'center', fontSize: 24, color: '#fff4cf', zIndex: 60, cursor: 'pointer' }}>
-        🌟
-      </aside>
+      <section style={section}>
+        <div style={card}>
+          <h2 style={h2}>Smart calculator</h2>
+          <div style={grid2}>
+            <input placeholder="Pickup" value={calc.pickup} onChange={(e) => setCalc((s) => ({ ...s, pickup: e.target.value }))} style={input} />
+            <input placeholder="Bestemming" value={calc.destination} onChange={(e) => setCalc((s) => ({ ...s, destination: e.target.value }))} style={input} />
+            <select value={calc.rideType} onChange={(e) => setCalc((s) => ({ ...s, rideType: e.target.value }))} style={input}>{rideTypes.map((r) => <option key={r.key} value={r.key}>{r.label}</option>)}</select>
+            <input type="datetime-local" value={calc.datetime} onChange={(e) => setCalc((s) => ({ ...s, datetime: e.target.value }))} style={input} />
+          </div>
+          <p style={{ marginBottom: 8, color: '#f2dfab' }}>Geschatte prijs: {estimate.price}</p>
+          <p style={muted}>{estimate.route} · {estimate.duration}</p>
+        </div>
+      </section>
+
+      <section id="tracking" style={section}>
+        <div style={card}>
+          <h2 style={h2}>Tracking</h2>
+          <p style={muted}>Voer je ritcode in om tracking te openen. Tracking beschikbaar na bevestiging van rit.</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <input placeholder="Ritcode (max 5 cijfers)" value={rideCode} maxLength={5} onChange={(e) => setRideCode(e.target.value.replace(/\D/g, ''))} style={{ ...input, maxWidth: 240 }} />
+            <button type="button" style={ctaSecondary}>Tracking openen</button>
+          </div>
+          <p style={{ ...muted, marginTop: 12 }}>API contract: <code>POST /api/v1/tracking/access {'{ rideCode: string(5) }'}</code>.</p>
+        </div>
+      </section>
+
+      <section id="contact" style={section}><div style={card}><h2 style={h2}>Contact</h2><p style={muted}>Bel of WhatsApp voor directe ondersteuning, of gebruik het boekingsformulier voor geplande ritten.</p></div></section>
+
+      <aside aria-label="MoniRide" style={{ position: 'fixed', right: 16, bottom: 16, width: 54, height: 54, borderRadius: '50%', background: 'rgba(23,24,28,.96)', border: `1px solid ${colors.border}`, display: 'grid', placeItems: 'center', boxShadow: '0 0 20px rgba(212,175,55,.16)', color: '#f2dfab', fontWeight: 700 }}>LV</aside>
     </main>
   )
 }
 
-const inputStyle: React.CSSProperties = {
-  border: '1px solid rgba(255,255,255,.14)',
-  background: 'rgba(10,10,12,.92)',
-  color: 'white',
-  padding: '14px 14px',
-  borderRadius: 14,
-  width: '100%',
-  boxSizing: 'border-box',
-  fontSize: 14,
-}
+const iconButton: React.CSSProperties = { background: 'transparent', border: '1px solid rgba(212,175,55,.32)', color: '#f3f0e7', width: 36, height: 36, borderRadius: 10, cursor: 'pointer' }
+const menuLink: React.CSSProperties = { color: '#f3f0e7', textDecoration: 'none', letterSpacing: '.05em', fontSize: 'clamp(28px,5vw,54px)' }
+const secondaryLink: React.CSSProperties = { color: '#d4af37', textDecoration: 'none', fontSize: 16 }
+const h2: React.CSSProperties = { marginTop: 0, marginBottom: 10, fontSize: 30 }
+const muted: React.CSSProperties = { color: colors.textMuted, marginTop: 0, lineHeight: 1.6 }
+const grid2: React.CSSProperties = { display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))' }
+const serviceGrid: React.CSSProperties = { display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(180px,1fr))' }
+const card: React.CSSProperties = { border: `1px solid ${colors.border}`, borderRadius: 22, padding: 22, background: `linear-gradient(145deg, ${colors.panel}, ${colors.panelSoft})` }
+const serviceCard: React.CSSProperties = { border: `1px solid ${colors.border}`, borderRadius: 14, padding: 14, background: 'rgba(17,18,20,.72)', display: 'grid', gap: 8 }
+const dot: React.CSSProperties = { width: 8, height: 8, borderRadius: '50%', background: colors.gold }
+const input: React.CSSProperties = { border: '1px solid rgba(212,175,55,.24)', borderRadius: 12, padding: '12px 13px', background: '#111214', color: colors.text, width: '100%', boxSizing: 'border-box' }
+const cta: React.CSSProperties = { marginTop: 14, background: colors.gold, color: '#111214', border: 0, borderRadius: 12, padding: '12px 18px', fontWeight: 700, cursor: 'pointer' }
+const ctaSecondary: React.CSSProperties = { ...cta, background: 'transparent', color: colors.text, border: '1px solid rgba(212,175,55,.32)' }
