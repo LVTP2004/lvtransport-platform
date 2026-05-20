@@ -1,4 +1,4 @@
-import { Permission, UserRole } from '../enums/auth.enums';
+import { Permission, UserRole } from '../enums/auth.enums.js';
 export const ROLE_PERMISSIONS: Record<UserRole, Permission[]> = {
   [UserRole.CUSTOMER]: [Permission.BOOK_RIDE, Permission.MANAGE_PROFILE],
   [UserRole.BUSINESS_CUSTOMER]: [Permission.BOOK_RIDE, Permission.MANAGE_PROFILE],

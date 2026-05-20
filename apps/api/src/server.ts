@@ -1,23 +1,25 @@
 import { createApp } from './app.js';
 import { bootstrapHttpAndWebSocketServer } from './websocket/socket.server.js';
 import { realtimeOrchestratorService } from './services/realtime-orchestrator.service.js';
+import { logger } from './utils/logger.js';
 
 const app = createApp();
 realtimeOrchestratorService.initialize();
 
-const { start } = bootstrapHttpAndWebSocketServer(app);
-start();
-import { createServer } from 'node:http';
-import { createApp } from './app.js';
-import { env } from './config/env.js';
-import { createSocketServer } from './websocket/socketServer.js';
+const { start, stop } = bootstrapHttpAndWebSocketServer(app);
 
-const app = createApp();
-const server = createServer(app);
+const handleShutdown = async (signal: string): Promise<void> => {
+  logger.info('Shutdown signal received', { signal });
+  await stop();
+  process.exit(0);
+};
 
-createSocketServer(server);
-
-server.listen(env.port, () => {
-  // eslint-disable-next-line no-console
-  console.log(`API server listening on port ${env.port}`);
+process.on('SIGINT', () => {
+  void handleShutdown('SIGINT');
 });
+
+process.on('SIGTERM', () => {
+  void handleShutdown('SIGTERM');
+});
+
+start();

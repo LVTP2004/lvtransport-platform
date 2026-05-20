@@ -1,86 +1,134 @@
-# ARCHITECTURE — LV Transport Platform
+# ARCHITECTURE — LV Transport Platform (Premium Mobility SaaS Evolution)
 
 ## 1) Architectural Style
 
-LV Transport Platform follows a **modular, API-first, multi-application architecture**:
+LV Transport Platform evolves as a **modular realtime mobility operations platform** while preserving the existing premium black/gold web experience, booking/auth/admin/driver flows, and VPS/PM2/Nginx compatibility.
 
-- Multiple frontend apps by domain (Ride, Driver, Admin, Business, Eats, Main Web)
-- Single central backend (`apps/api`) as authoritative domain service layer
-- Shared platform services for identity, notifications, tracking, and auditing
+Core style:
+- Multi-app frontend by role/service (Ride, Driver, Admin, Business, future Eats)
+- Central API orchestration layer (`apps/api`) as single source of operational truth
+- Realtime event propagation for booking + driver + admin synchronization
+- Domain modules that can scale independently toward SaaS-grade operations
 
-## 2) High-Level Components
+## 2) Operational Hierarchy Alignment (Preparation Layer)
 
-1. **Experience Layer**
-   - `apps/main-web`
-   - `apps/ride`
-   - `apps/driver`
-   - `apps/admin`
-   - `apps/business`
-   - `apps/eats`
+This repository now explicitly documents the conceptual LVTP hierarchy without changing existing runtime flows:
 
-2. **Application/API Layer**
-   - `apps/api` (core domain APIs)
-   - Domain modules exposed via service boundaries
+- **CEO / Founder:** Leonardo Daniel Vargas Hinojosa
+- **Leo IA (Orchestration + Supervision Layer)**
+  - Executive Intelligence Layer
+  - LV Control Tower
+  - Technical Infrastructure
+  - AI Operations Layer
+  - Customer Layer
+  - Driver Layer
+  - Future Ecosystem
 
-3. **Data & Integration Layer**
-   - Operational database(s)
-   - Event and audit logs
-   - External integrations (email, payments, maps, invoicing)
+Boundary rules:
+- **Leo IA** orchestrates and supervises cross-layer alignment.
+- **LV Control Tower** remains operational authority.
+- **Booking Engine** remains operational source of truth.
+- **Moni Assistant** remains inside AI Operations Layer.
 
-4. **Operations Layer**
-   - Deployment (`deploy/`)
-   - Monitoring, observability, and incident response processes
+## 3) Platform Domains
 
-## 3) Domain Boundaries (Initial)
+1. **LV Ride**
+   - Customer booking lifecycle, pricing estimate, airport/business/long-distance requests.
+2. **LV Business**
+   - Corporate/VIP account grouping, recurring routes, invoice-ready monthly reporting.
+3. **LV VIP / LV Black**
+   - Priority dispatch and premium service class abstraction.
+4. **LV Driver**
+   - Driver operational lifecycle, acceptance flow, activity/earnings/statistics readiness.
+5. **LV Admin Control Tower**
+   - Live operations monitoring, interventions, pricing overrides, incident visibility.
+6. **LV API**
+   - Booking orchestration, auth/session, pricing engine, notifications, payment integration.
+7. **LV Eats foundation**
+   - Future multi-service extensibility by reusing dispatch, driver, realtime, and billing patterns.
 
-- **Identity Domain**: authentication, sessions, password flows, multi-role support.
-- **Booking Domain**: ride requests, state transitions, dispatch lifecycle.
-- **Driver Domain**: onboarding state, availability, assignment response.
-- **Tracking Domain**: location/events timeline and trip progress states.
-- **Business Domain**: corporate accounts, subscription plans, billing references.
-- **Delivery Domain (Eats readiness)**: merchant/order/courier entities scaffolded for future.
-- **Admin Domain**: dashboard views, interventions, operational controls.
+## 4) Canonical Booking Lifecycle (Operations)
 
-## 4) Data Ownership Principles
+Canonical lifecycle for operational sync:
 
-- LV API owns authoritative write paths for core business entities.
-- Frontends do not contain duplicated business decision logic.
-- Cross-domain read models may be composed, but ownership remains explicit.
-- Audit history for sensitive actions is mandatory.
+`pending -> accepted -> assigned -> onderweg -> arrived -> in_progress -> completed`
 
-## 5) API Principles
+Terminal branch:
 
-- Versioned endpoints and change-control discipline.
-- Strict authn/authz enforcement on all non-public endpoints.
-- Idempotency where retries are likely (booking updates, status transitions).
-- Validation and schema consistency across apps.
-- Structured error model for operational troubleshooting.
+`cancelled`
 
-## 6) Environments
+Architecture note:
+- Backward-compatible transitional states like `quoted`, `confirmed`, and `available` remain supported in realtime orchestration to avoid breaking existing deployments while migrating to the canonical premium lifecycle.
 
-Minimum environment strategy:
+## 5) Realtime Operational Model
 
-- **Development**
-- **Staging**
-- **Production**
+Realtime architecture responsibilities:
+- **Booking stream:** create/update/lifecycle changes emitted as ordered events
+- **Driver stream:** online/offline + assignment status propagation
+- **Admin stream:** control tower updates and intervention visibility
+- **Idempotency:** event retries protected by idempotency keys
+- **Version checks:** expected-version protection on critical status transitions
+- **Reconnect safety:** websocket clients receive snapshot hydration on reconnect before incremental events
 
-Requirements:
+## 6) Centralized Orchestration Layers
 
-- Isolated data per environment
-- Distinct credentials and secrets per environment
-- Controlled rollout and rollback procedures
+### Booking orchestration
+- API-owned status transitions with transition policy enforcement.
+- Single authoritative booking timeline for audits and interventions.
 
-## 7) Phase-Based Implementation Focus
+### Driver orchestration
+- Driver state map for availability, assignment, and trip-stage progression.
+- Future heat-zone/ETA/navigation hooks via maps package boundaries.
 
-- **Phase 1:** LV Ride + LV Admin + LV Driver + LV API
-- **Phase 2:** login, roles, bookings, tracking, emails
-- **Phase 3:** LV Business/VIP
-- **Phase 4:** LV Eats basic structure
-- **Phase 5:** marketplace expansion
+### Pricing orchestration
+- Central API-driven pricing engine (day/night, airport, minimum fare, long-distance, waiting-time, VIP/business modifiers, dynamic pricing-ready extension points).
 
-## 8) Architectural Guardrails
+### Payment + notification lifecycle
+- Payment events and notification templates remain modularized; wiring remains API-driven and environment-configurable.
 
-- No reuse of external branded UI/assets/text from competitors.
-- Keep modules loosely coupled through API contracts.
-- Prefer composable services over monolithic feature entanglement.
-- Preserve operational transparency for admin and support teams.
+## 7) Admin Control Tower Architecture
+
+Admin is positioned as a realtime operations center:
+- Live booking queue and status timeline visibility
+- Live driver state visibility
+- Manual assignment/intervention hooks
+- Pricing override entry points
+- Incident and operational event logging foundation
+- Readiness for live map/GPS and dispatch automation augmentation
+
+## 8) AI Operations Layer (Moni Preparation)
+
+Non-destructive preparation contracts are now defined for:
+- Moni Assistant core context
+- Multilingual AI responses
+- Booking context reading boundaries
+- Escalation queue structures
+- AI audit log structures
+- Operational prompt template structures
+
+These contracts are extension points only and do not change current booking/realtime behavior.
+
+## 9) Multi-Service Expansion (LV Eats + Ecosystem Readiness)
+
+LV Eats and broader ecosystem foundation leverage shared patterns:
+- Booking lifecycle pattern -> order lifecycle analogue
+- Driver lifecycle pattern -> courier lifecycle analogue
+- Control tower pattern -> delivery operations analogue
+- Pricing + notification + auth + realtime modules reused with domain-specific adapters
+- Leo IA orchestration boundary reused across future service verticals
+
+## 10) Operational Automation Foundation
+
+Infrastructure-ready architecture supports:
+- PM2 health and restart workflows
+- Uptime/error monitoring hooks
+- Booking/incident alerts
+- Centralized logging and backup routines
+- Scheduled operational reporting
+
+## 11) Guardrails
+
+- No full redesign; preserve current premium branding and responsive UX
+- No breaking of existing auth, booking, admin, driver, realtime, payment, deployment flows
+- No hardcoded secrets; environment-driven config
+- Keep modules composable and bounded for production scaling
