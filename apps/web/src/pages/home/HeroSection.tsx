@@ -1,113 +1,173 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 
-const charcoal = '#111214'
-const gold = '#d4af37'
+const palette = {
+  bg: '#111214',
+  panel: '#17181c',
+  panelAlt: '#1d1f24',
+  panelSoft: '#23252b',
+  text: '#f4f2ee',
+  muted: '#b6b8bf',
+  gold: '#c7a24a',
+  goldSoft: 'rgba(199,162,74,.35)',
+}
 
-const serviceTypes = [
-  { key: 'standard', label: 'Standard', base: 24, perKm: 1.8 },
-  { key: 'business', label: 'Business', base: 35, perKm: 2.3 },
-  { key: 'van', label: 'Mercedes Van', base: 42, perKm: 2.8 },
-]
+const navItems = ['HOME', 'DIENSTEN', 'PRIJZEN', 'TRACKING', 'CONTACT']
+const services = ['Taxi Antwerpen', 'Luchthavenvervoer', 'Zakelijk vervoer', 'Haven transport', 'Lange afstand']
+const destinations = ['Zaventem', 'Brussel', 'Mechelen', 'Gent', 'Schiphol']
 
 const sectionWrap: React.CSSProperties = {
   maxWidth: 1180,
   margin: '0 auto',
-  padding: '32px 18px',
+  padding: '34px 18px',
+}
+
+const buttonBase: React.CSSProperties = {
+  borderRadius: 12,
+  padding: '12px 18px',
+  textDecoration: 'none',
+  fontWeight: 600,
+  letterSpacing: '.01em',
+  transition: 'all .25s ease',
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  border: `1px solid ${palette.goldSoft}`,
 }
 
 export default function HeroSection() {
-  const [calc, setCalc] = useState({ origin: '', destination: '', service: serviceTypes[0].key, night: false })
-
-  const estimate = useMemo(() => {
-    const service = serviceTypes.find((item) => item.key === calc.service) ?? serviceTypes[0]
-    const pseudoKm = Math.max(12, Math.min(80, Math.round((calc.origin.length + calc.destination.length) / 2.5)))
-    const total = service.base + pseudoKm * service.perKm + (calc.night ? 18 : 0)
-    return { total, pseudoKm, label: service.label }
-  }, [calc])
+  const [menuOpen, setMenuOpen] = useState(false)
+  const [trackingCode, setTrackingCode] = useState('')
+  const [moniRideOpen, setMoniRideOpen] = useState(false)
 
   return (
-    <main style={{ background: '#090a0b', color: 'white', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
-      <header style={{ position: 'sticky', top: 12, zIndex: 50, padding: '0 12px' }}>
-        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '10px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid rgba(212,175,55,.22)', borderRadius: 18, background: 'rgba(12,14,18,.76)', backdropFilter: 'blur(18px)' }}>
+    <main style={{ background: palette.bg, color: palette.text, minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
+      <header style={{ position: 'sticky', top: 0, zIndex: 80, padding: '12px 12px 0' }}>
+        <div style={{ maxWidth: 1180, margin: '0 auto', padding: '14px 16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: `1px solid ${palette.goldSoft}`, borderRadius: 16, background: 'rgba(17,18,20,.88)', backdropFilter: 'blur(14px)' }}>
           <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 22 }} />
-          <nav style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            {['Home', 'Booking', 'Pricing', 'Tracking', 'VIP'].map((item) => (
-              <a key={item} href={`#${item.toLowerCase()}`} style={{ color: '#f5f5f5', textDecoration: 'none', padding: '9px 14px', borderRadius: 999, fontSize: 13, background: 'rgba(255,255,255,.04)' }}>{item}</a>
-            ))}
-          </nav>
+          <button onClick={() => setMenuOpen((v) => !v)} aria-label="Open menu" style={{ ...buttonBase, background: 'rgba(255,255,255,.02)', color: palette.text, width: 50, height: 42, padding: 0 }}>
+            <span style={{ fontSize: 20 }}>☰</span>
+          </button>
         </div>
       </header>
 
-      <section id="home" style={{ ...sectionWrap, paddingTop: 56 }}>
-        <div style={{ borderRadius: 30, overflow: 'hidden', border: '1px solid rgba(212,175,55,.24)', background: 'linear-gradient(135deg, rgba(18,18,22,.96), rgba(28,30,38,.88))' }}>
-          <div style={{ minHeight: 560, backgroundImage: 'linear-gradient(90deg, rgba(6,8,10,.88) 18%, rgba(10,12,15,.72) 48%, rgba(16,18,22,.54) 100%), url(/brand/lvtransport/hero-byd-night.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center' }}>
-            <div style={{ maxWidth: 720, padding: '54px 34px' }}>
-              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 10, padding: '8px 14px', borderRadius: 999, background: 'rgba(212,175,55,.1)', border: '1px solid rgba(212,175,55,.22)', marginBottom: 18 }}>
-                <span style={{ width: 8, height: 8, borderRadius: '50%', background: gold }} />
-                <span style={{ fontSize: 12, color: '#f6e8ba', letterSpacing: '.08em', textTransform: 'uppercase' }}>Premium Hybrid Mobility</span>
-              </div>
+      {menuOpen && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 90, background: 'rgba(17,18,20,.96)', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: 26 }}>
+          <button onClick={() => setMenuOpen(false)} aria-label="Close menu" style={{ ...buttonBase, position: 'absolute', top: 16, right: 16, width: 46, height: 42, padding: 0, color: palette.text, background: 'rgba(255,255,255,.02)' }}>✕</button>
+          <nav style={{ display: 'grid', gap: 22 }}>
+            {navItems.map((item) => (
+              <a key={item} href={`#${item.toLowerCase()}`} onClick={() => setMenuOpen(false)} style={{ color: palette.text, textDecoration: 'none', fontSize: 'clamp(26px,7vw,40px)', letterSpacing: '.04em' }}>{item}</a>
+            ))}
+          </nav>
+          <div style={{ marginTop: 34, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+            <a href="tel:+32000000000" style={{ ...buttonBase, background: palette.gold, color: palette.bg }}>Bel nu</a>
+            <a href="https://wa.me/32000000000" style={{ ...buttonBase, background: 'rgba(255,255,255,.03)', color: palette.text }}>WhatsApp</a>
+          </div>
+        </div>
+      )}
 
-              <h1 style={{ margin: '0 0 16px', fontSize: 'clamp(42px,7vw,74px)', lineHeight: 1.02, fontWeight: 800 }}>
-                Mercedes & BYD executive transport in Antwerpen
-              </h1>
-
-              <p style={{ maxWidth: 620, color: '#d7d9de', fontSize: 18, lineHeight: 1.7, marginBottom: 28 }}>
-                Luxury airport transfers, real-time operational tracking and premium chauffeur mobility.
-              </p>
-
-              <div style={{ display: 'flex', gap: 14, flexWrap: 'wrap' }}>
-                <a href="#booking" style={{ background: gold, color: charcoal, padding: '14px 20px', borderRadius: 14, textDecoration: 'none', fontWeight: 800 }}>Reserve now</a>
-                <a href="#tracking" style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '14px 20px', borderRadius: 14, textDecoration: 'none', background: 'rgba(255,255,255,.05)' }}>Track your ride</a>
+      <section id="home" style={{ ...sectionWrap, paddingTop: 28 }}>
+        <div style={{ borderRadius: 26, overflow: 'hidden', border: `1px solid ${palette.goldSoft}`, background: `linear-gradient(140deg, ${palette.panel}, ${palette.panelAlt})` }}>
+          <div style={{ minHeight: 560, backgroundImage: 'linear-gradient(90deg, rgba(12,13,16,.95) 20%, rgba(14,15,19,.74) 52%, rgba(17,18,20,.35) 100%), url(/brand/lvtransport/hero-byd-night.png)', backgroundSize: 'cover', backgroundPosition: 'center', display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
+            <div style={{ padding: '58px 26px', display: 'grid', alignContent: 'center', gap: 18 }}>
+              <p style={{ margin: 0, color: '#e6cf97', letterSpacing: '.08em', fontSize: 12, textTransform: 'uppercase' }}>Antwerpen · 24/7 premium mobiliteit</p>
+              <h1 style={{ margin: 0, fontSize: 'clamp(38px,7vw,70px)', lineHeight: 1.02 }}>Betrouwbaar.<br />Comfortabel.<br />Altijd op tijd.</h1>
+              <p style={{ margin: 0, color: palette.muted, fontSize: 18, lineHeight: 1.6 }}>Premium vervoer in Antwerpen en België.<br />24/7 beschikbaar.</p>
+              <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
+                <a href="#booking" style={{ ...buttonBase, background: palette.gold, color: palette.bg }}>Reserveer nu</a>
+                <a href="#prijzen" style={{ ...buttonBase, background: 'rgba(255,255,255,.03)', color: palette.text }}>Bekijk prijzen</a>
               </div>
             </div>
+            <div aria-hidden="true" />
           </div>
         </div>
       </section>
 
-      <section id="pricing" style={sectionWrap}>
-        <div style={{ display: 'grid', gap: 18, gridTemplateColumns: 'repeat(auto-fit,minmax(280px,1fr))' }}>
-          <div style={{ borderRadius: 24, padding: 24, background: 'rgba(18,20,24,.92)', border: '1px solid rgba(212,175,55,.16)' }}>
-            <h2 style={{ marginTop: 0 }}>Smart fare calculator</h2>
-            <div style={{ display: 'grid', gap: 12 }}>
-              <input placeholder="Pickup" value={calc.origin} onChange={(e) => setCalc((p) => ({ ...p, origin: e.target.value }))} style={inputStyle} />
-              <input placeholder="Destination" value={calc.destination} onChange={(e) => setCalc((p) => ({ ...p, destination: e.target.value }))} style={inputStyle} />
-              <select value={calc.service} onChange={(e) => setCalc((p) => ({ ...p, service: e.target.value }))} style={inputStyle}>
-                {serviceTypes.map((service) => <option key={service.key} value={service.key}>{service.label}</option>)}
-              </select>
-            </div>
+      <section id="booking" style={sectionWrap}>
+        <div style={{ borderRadius: 20, padding: 22, border: `1px solid ${palette.goldSoft}`, background: palette.panel }}>
+          <h2 style={{ marginTop: 0, marginBottom: 16 }}>Boeking</h2>
+          <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(170px,1fr))' }}>
+            {['Pickup', 'Bestemming', 'Datum', 'Tijd', 'Rit type', 'Telefoon'].map((label) => (
+              <input key={label} placeholder={label} style={inputStyle} />
+            ))}
           </div>
+          <div style={{ marginTop: 14 }}><button style={{ ...buttonBase, background: palette.gold, color: palette.bg }}>Reserveer nu</button></div>
+        </div>
+      </section>
 
-          <div style={{ borderRadius: 24, padding: 24, background: 'linear-gradient(145deg, rgba(212,175,55,.12), rgba(20,20,24,.92))', border: '1px solid rgba(212,175,55,.22)' }}>
-            <p style={{ margin: 0, color: '#f3d98b', textTransform: 'uppercase', letterSpacing: '.08em', fontSize: 12 }}>Estimated premium fare</p>
-            <h3 style={{ fontSize: 58, margin: '10px 0' }}>€{estimate.total.toFixed(0)}</h3>
-            <p style={{ color: '#d9d9d9' }}>{estimate.label} · ~{estimate.pseudoKm} km operational route</p>
+      <section id="diensten" style={sectionWrap}>
+        <h2 style={{ margin: '0 0 14px' }}>Diensten</h2>
+        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))' }}>
+          {services.map((item) => (
+            <article key={item} style={{ borderRadius: 16, border: `1px solid ${palette.goldSoft}`, background: 'rgba(35,37,43,.52)', padding: 18 }}>
+              <div style={{ width: 28, height: 28, borderRadius: 10, border: `1px solid ${palette.goldSoft}`, marginBottom: 12 }} />
+              <h3 style={{ margin: 0, fontSize: 18 }}>{item}</h3>
+            </article>
+          ))}
+        </div>
+      </section>
+
+      <section id="prijzen" style={sectionWrap}>
+        <h2 style={{ margin: '0 0 14px' }}>Prijzen</h2>
+        <div style={{ overflowX: 'auto', paddingBottom: 4 }}>
+          <div style={{ display: 'flex', gap: 12, minWidth: 740 }}>
+            {destinations.map((destination) => (
+              <article key={destination} style={{ flex: '1 0 140px', borderRadius: 16, border: `1px solid ${palette.goldSoft}`, background: palette.panelAlt, padding: 18, cursor: 'pointer' }}>
+                <p style={{ margin: '0 0 10px', color: palette.muted }}>Vanaf Antwerpen</p>
+                <h3 style={{ margin: 0 }}>{destination}</h3>
+              </article>
+            ))}
           </div>
         </div>
       </section>
 
       <section id="tracking" style={sectionWrap}>
-        <div style={{ borderRadius: 28, overflow: 'hidden', border: '1px solid rgba(212,175,55,.18)', background: 'rgba(12,13,16,.95)' }}>
-          <div style={{ padding: 24 }}>
-            <h2 style={{ margin: 0 }}>Operational tracking tower</h2>
-            <p style={{ color: '#cfcfcf' }}>Driver ETA and premium ride lifecycle visibility.</p>
+        <div style={{ borderRadius: 20, padding: 22, border: `1px solid ${palette.goldSoft}`, background: palette.panel }}>
+          <h2 style={{ margin: '0 0 10px' }}>Tracking</h2>
+          <p style={{ marginTop: 0, color: palette.muted }}>Voer uw ritcode in</p>
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+            <input
+              placeholder="Ritcode"
+              maxLength={5}
+              value={trackingCode}
+              onChange={(e) => setTrackingCode(e.target.value.replace(/\D/g, '').slice(0, 5))}
+              style={{ ...inputStyle, maxWidth: 180 }}
+            />
+            <button style={{ ...buttonBase, background: palette.gold, color: palette.bg }}>Tracking openen</button>
           </div>
-          <iframe title="Antwerpen map" src="https://www.google.com/maps?q=Antwerpen&output=embed" width="100%" height="320" style={{ border: 0, filter: 'grayscale(.92)' }} />
         </div>
       </section>
 
-      <aside aria-label="MoniRide assistant" style={{ position: 'fixed', bottom: 18, right: 18, width: 58, height: 58, borderRadius: '50%', border: '1px solid rgba(212,175,55,.48)', background: 'radial-gradient(circle at 30% 30%, rgba(212,175,55,.42), rgba(16,16,18,.98))', boxShadow: '0 0 30px rgba(212,175,55,.35)', display: 'grid', placeItems: 'center', fontSize: 24, color: '#fff4cf', zIndex: 60, cursor: 'pointer' }}>
-        🌟
-      </aside>
+      <footer id="contact" style={{ ...sectionWrap, paddingBottom: 86 }}>
+        <div style={{ borderRadius: 20, padding: 22, border: `1px solid ${palette.goldSoft}`, background: palette.panelSoft }}>
+          <img src="/brand/lv-logo-header.svg" alt="LV Transport" style={{ height: 20, marginBottom: 12 }} />
+          <p style={{ margin: '0 0 6px', color: palette.muted }}>Antwerpen, België · support@lvtransport.be · +32 00 00 00 00</p>
+          <p style={{ margin: '0 0 6px', color: palette.muted }}>LV Transport BV · BTW BE0123.456.789</p>
+          <p style={{ margin: 0, color: palette.muted }}>Juridisch · Privacy · Support</p>
+        </div>
+      </footer>
+
+      {moniRideOpen && (
+        <aside style={{ position: 'fixed', right: 20, bottom: 92, zIndex: 85, width: 260, borderRadius: 14, border: `1px solid ${palette.goldSoft}`, background: 'rgba(23,24,28,.94)', backdropFilter: 'blur(10px)', padding: 14 }}>
+          <p style={{ margin: 0, color: palette.muted, fontSize: 13 }}>MoniRide operationeel</p>
+        </aside>
+      )}
+      <button
+        aria-label="Open MoniRide"
+        onClick={() => setMoniRideOpen((v) => !v)}
+        style={{ position: 'fixed', bottom: 20, right: 20, width: 56, height: 56, borderRadius: '50%', border: `1px solid ${palette.goldSoft}`, background: 'radial-gradient(circle at 35% 35%, rgba(199,162,74,.25), rgba(23,24,28,.96))', boxShadow: '0 0 20px rgba(199,162,74,.26)', zIndex: 86, display: 'grid', placeItems: 'center', color: '#ead6a2' }}
+      >
+        LV
+      </button>
     </main>
   )
 }
 
 const inputStyle: React.CSSProperties = {
   border: '1px solid rgba(255,255,255,.14)',
-  background: 'rgba(10,10,12,.92)',
-  color: 'white',
-  padding: '14px 14px',
-  borderRadius: 14,
+  background: 'rgba(17,18,20,.92)',
+  color: '#f4f2ee',
+  padding: '12px 12px',
+  borderRadius: 12,
   width: '100%',
   boxSizing: 'border-box',
   fontSize: 14,
