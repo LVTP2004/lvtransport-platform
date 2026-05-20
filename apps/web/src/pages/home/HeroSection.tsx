@@ -15,8 +15,40 @@ const sectionWrap: React.CSSProperties = {
   padding: '32px 18px',
 }
 
+type TrackingStatus = 'confirmed' | 'en_route' | 'nearby' | 'arrived' | 'completed' | 'cancelled'
+
+type TrackingResult = {
+  code: string
+  status: TrackingStatus
+  message?: string
+  updatedAt?: string
+}
+
+const statusLabels: Record<TrackingStatus, string> = {
+  confirmed: 'Bevestigd',
+  en_route: 'Onderweg',
+  nearby: 'Bij u in de buurt',
+  arrived: 'Aangekomen',
+  completed: 'Rit voltooid',
+  cancelled: 'Geannuleerd',
+}
+
+const statusMessages: Record<TrackingStatus, string> = {
+  confirmed: 'Uw rit is bevestigd. Tracking beschikbaar zodra uw rit bevestigd is.',
+  en_route: 'Uw chauffeur is onderweg.',
+  nearby: 'Uw chauffeur is bij u in de buurt.',
+  arrived: 'Uw chauffeur is aangekomen.',
+  completed: 'Uw rit is voltooid.',
+  cancelled: 'Uw rit is geannuleerd.',
+}
+
 export default function HeroSection() {
   const [calc, setCalc] = useState({ origin: '', destination: '', service: serviceTypes[0].key, night: false })
+  const [trackingCode, setTrackingCode] = useState('')
+  const [trackingError, setTrackingError] = useState('')
+  const [trackingLoading, setTrackingLoading] = useState(false)
+  const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null)
+  const [trackingTried, setTrackingTried] = useState(false)
 
   const estimate = useMemo(() => {
     const service = serviceTypes.find((item) => item.key === calc.service) ?? serviceTypes[0]
@@ -24,6 +56,31 @@ export default function HeroSection() {
     const total = service.base + pseudoKm * service.perKm + (calc.night ? 18 : 0)
     return { total, pseudoKm, label: service.label }
   }, [calc])
+
+  const submitTrackingLookup = async () => {
+    if (!trackingCode) {
+      setTrackingError('Voer een geldige ritcode in om tracking te openen.')
+      setTrackingTried(false)
+      setTrackingResult(null)
+      return
+    }
+
+    setTrackingLoading(true)
+    setTrackingError('')
+    setTrackingTried(true)
+
+    try {
+      const response = await fetch(`/api/v1/tracking/${trackingCode}`)
+      if (!response.ok) throw new Error('lookup_failed')
+      const payload = (await response.json()) as TrackingResult
+      if (!payload?.status || !(payload.status in statusLabels)) throw new Error('invalid_payload')
+      setTrackingResult({ ...payload, code: trackingCode })
+    } catch {
+      setTrackingResult(null)
+    } finally {
+      setTrackingLoading(false)
+    }
+  }
 
   return (
     <main style={{ background: '#090a0b', color: 'white', minHeight: '100vh', fontFamily: 'Inter, Arial, sans-serif' }}>
@@ -87,17 +144,63 @@ export default function HeroSection() {
 
       <section id="tracking" style={sectionWrap}>
         <div style={{ borderRadius: 28, overflow: 'hidden', border: '1px solid rgba(212,175,55,.18)', background: 'rgba(12,13,16,.95)' }}>
-          <div style={{ padding: 24 }}>
-            <h2 style={{ margin: 0 }}>Operational tracking tower</h2>
-            <p style={{ color: '#cfcfcf' }}>Driver ETA and premium ride lifecycle visibility.</p>
+          <div style={{ padding: 24, borderBottom: '1px solid rgba(212,175,55,.14)' }}>
+            <h2 style={{ margin: 0 }}>MoniRide Tracking</h2>
+            <p style={{ color: '#cfcfcf', marginBottom: 0 }}>Volg uw rit veilig met uw ritcode.</p>
           </div>
-          <iframe title="Antwerpen map" src="https://www.google.com/maps?q=Antwerpen&output=embed" width="100%" height="320" style={{ border: 0, filter: 'grayscale(.92)' }} />
+          <div style={{ padding: 24, display: 'grid', gap: 18 }}>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10 }}>
+              <input
+                value={trackingCode}
+                onChange={(e) => {
+                  const next = e.target.value.replace(/\D/g, '').slice(0, 5)
+                  setTrackingCode(next)
+                  setTrackingError('')
+                }}
+                inputMode="numeric"
+                maxLength={5}
+                placeholder="Voer uw ritcode in"
+                style={{ ...inputStyle, maxWidth: 220 }}
+              />
+              <button
+                type="button"
+                onClick={submitTrackingLookup}
+                disabled={trackingLoading}
+                style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '12px 18px', borderRadius: 12, background: 'rgba(255,255,255,.05)', fontWeight: 700, cursor: 'pointer' }}
+              >
+                {trackingLoading ? 'Bezig met ophalen...' : 'Tracking openen'}
+              </button>
+            </div>
+            {trackingError ? <p style={{ margin: 0, color: '#f6e8ba' }}>{trackingError}</p> : null}
+
+            <div style={{ borderRadius: 20, border: '1px solid rgba(212,175,55,.18)', background: 'linear-gradient(150deg, rgba(18,20,24,.96), rgba(14,16,20,.92))', padding: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 14 }}>
+                <p style={{ margin: 0, color: '#c9c9c9', fontSize: 13 }}>Ritcode: {trackingCode || '— — — — —'}</p>
+                <span style={{ width: 22, height: 22, borderRadius: '50%', border: '1px solid rgba(212,175,55,.42)', display: 'grid', placeItems: 'center', color: '#f1d785', fontSize: 11 }}>LV</span>
+              </div>
+              {trackingLoading ? (
+                <p style={{ margin: 0, color: '#d6d6d6' }}>Uw ritstatus wordt opgehaald.</p>
+              ) : trackingResult ? (
+                <>
+                  <h3 style={{ margin: '0 0 8px', color: '#f2dea1' }}>{statusLabels[trackingResult.status]}</h3>
+                  <p style={{ margin: 0, color: '#d4d7db' }}>{trackingResult.message || statusMessages[trackingResult.status]}</p>
+                </>
+              ) : trackingTried ? (
+                <>
+                  <h3 style={{ margin: '0 0 8px', color: '#f2dea1' }}>Tracking tijdelijk niet beschikbaar</h3>
+                  <p style={{ margin: 0, color: '#d4d7db' }}>We kunnen uw rit tijdelijk niet automatisch ophalen. Neem contact op via WhatsApp of telefoon met uw ritcode.</p>
+                </>
+              ) : (
+                <p style={{ margin: 0, color: '#d6d6d6' }}>Tracking beschikbaar zodra uw rit bevestigd is.</p>
+              )}
+              <div style={{ marginTop: 16, display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <a href="tel:+32466487936" style={{ border: '1px solid rgba(212,175,55,.28)', color: '#f4f4f4', textDecoration: 'none', padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,.03)' }}>Bel nu</a>
+                <a href="https://wa.me/32466487936" style={{ border: '1px solid rgba(212,175,55,.28)', color: '#f4f4f4', textDecoration: 'none', padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,.03)' }}>WhatsApp</a>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-
-      <aside aria-label="MoniRide assistant" style={{ position: 'fixed', bottom: 18, right: 18, width: 58, height: 58, borderRadius: '50%', border: '1px solid rgba(212,175,55,.48)', background: 'radial-gradient(circle at 30% 30%, rgba(212,175,55,.42), rgba(16,16,18,.98))', boxShadow: '0 0 30px rgba(212,175,55,.35)', display: 'grid', placeItems: 'center', fontSize: 24, color: '#fff4cf', zIndex: 60, cursor: 'pointer' }}>
-        🌟
-      </aside>
     </main>
   )
 }
