@@ -1,4 +1,4 @@
-import type { FirebaseAppHandle } from "../core/firebase-app";
+import type { FirebaseAppHandle } from "../core/firebase-app.js";
 
 export interface AuthPreparation {
   app: FirebaseAppHandle;

@@ -1,2 +1,17 @@
 import type { ReactNode } from 'react';
-export function ProtectedRoute({ allowed, children }: { allowed: boolean; children: ReactNode }) { return <>{allowed ? children : null}</>; }
+import type { UserRole } from '@lvtransport/auth';
+
+export function ProtectedRoute({
+  isAuthenticated,
+  allowedRoles,
+  role,
+  children
+}: {
+  isAuthenticated: boolean;
+  allowedRoles: UserRole[];
+  role?: UserRole;
+  children: ReactNode;
+}) {
+  const allowed = isAuthenticated && !!role && allowedRoles.includes(role);
+  return <>{allowed ? children : null}</>;
+}

@@ -1,4 +1,4 @@
-import { PricingEngineService } from './pricing-engine.service';
+import { PricingEngineService } from './pricing-engine.service.js';
 export class QuoteOrchestratorService {
     pricingEngine;
     constructor(pricingEngine = new PricingEngineService()) {

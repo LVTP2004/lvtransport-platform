@@ -1,4 +1,4 @@
-import { FareRuleType, PricingTier, QuoteStatus } from '../enums/fare-rule.enum';
+import { FareRuleType, PricingTier, QuoteStatus } from '../enums/fare-rule.enum.js';
 
 export type CurrencyCode = 'USD' | 'EUR' | 'GBP';
 
@@ -9,6 +9,8 @@ export interface RouteEstimateInput {
   isAirportRoute?: boolean;
   isNight?: boolean;
   tier?: PricingTier;
+  etaDelayMin?: number;
+  bookingId?: string;
 }
 
 export interface FareComponent {
@@ -25,12 +27,6 @@ export interface TaxBreakdown {
   taxAmount: number;
 }
 
-export interface CommissionBreakdown {
-  platformCommissionAmount: number;
-  driverPayoutAmount: number;
-  commissionRate: number;
-}
-
 export interface TripCostBreakdown {
   currency: CurrencyCode;
   baseAmount: number;
@@ -39,7 +35,11 @@ export interface TripCostBreakdown {
   discountsTotal: number;
   taxes: TaxBreakdown[];
   total: number;
-  commission?: CommissionBreakdown;
+  diagnostics: {
+    operationalMinimumApplied: boolean;
+    realtimeRecalculationReady: boolean;
+    pricingVersion: string;
+  };
 }
 
 export interface BookingQuote {
@@ -50,13 +50,4 @@ export interface BookingQuote {
   expiresAt: string;
   createdAt: string;
   pricingVersion: string;
-}
-
-export interface InvoicePreparation {
-  bookingId: string;
-  customerId: string;
-  quoteId: string;
-  tripBreakdown: TripCostBreakdown;
-  vatNumber?: string;
-  businessMetadata?: Record<string, string>;
 }

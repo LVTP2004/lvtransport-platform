@@ -1,27 +1,44 @@
-
-
-name: LV Transport Auto Deploy
+name: LVTP Safe Deploy
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
 
+concurrency:
+  group: lvtp-production-deploy
+  cancel-in-progress: false
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
+
     steps:
-      - name: Deploy to VPS
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm --filter @lvtransport/web build
+
+      - name: Deploy VPS
+        uses: appleboy/ssh-action@v1.2.0
         with:
           host: ${{ secrets.VPS_HOST }}
           username: ${{ secrets.VPS_USER }}
           password: ${{ secrets.VPS_PASSWORD }}
           port: 22
           script: |
-            cd ${{ secrets.VPS_PATH }}
-            git pull origin main
-            pnpm install
-            pm2 restart lvtransport-web
-            pm2 restart lvtransport-api
-            pm2 save
+            cd /home/ubuntu/lvtransport-platform
+            /home/ubuntu/lvtp-ops/safe-deploy.sh

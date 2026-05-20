@@ -1,6 +1,6 @@
-import { pricingConstants } from './constants';
-import { calculateDistanceComponent, calculateDurationComponent } from './fare-utils';
-import { RouteEstimateInput } from './models';
+import { pricingConstants } from './constants.js';
+import { calculateDistanceComponent, calculateDurationComponent } from './fare-utils.js';
+import { RouteEstimateInput } from './models.js';
 
 export interface RouteEstimateResult {
   estimatedBaseCost: number;

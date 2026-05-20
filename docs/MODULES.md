@@ -1,132 +1,151 @@
-# MODULES — LV Transport Platform
+# MODULES — LV Transport Platform (Operational Ecosystem)
 
-## 1) LV Ride (`apps/ride`)
+## 1) LV Ride (`apps/ride`, `apps/web`)
 
 ### Purpose
-Taxi and premium passenger transport flows.
+Premium customer-facing ride booking and trip lifecycle experience.
 
 ### Scope
-- Ride request creation
-- Pickup/dropoff handling
-- Fare estimate/summary integration hooks
-- Trip status lifecycle (requested, assigned, in-progress, completed, cancelled)
+- Realtime booking creation and lifecycle states
+- Airport transfers, business rides, long-distance requests
+- Estimated pricing hooks (API-driven)
+- Booking history/account-readiness structure
+- Multilingual-ready customer flow
 
 ### Key Dependencies
-- LV API (domain logic)
-- LV Driver (fulfillment)
-- LV Admin (operations overrides and support)
+- LV API orchestration
+- Realtime lifecycle stream
+- Pricing engine
+- Payments + notifications
 
 ---
 
-## 2) LV Driver (`apps/driver`)
+## 2) LV Business (`apps/business` + API business domain)
 
 ### Purpose
-Operational panel for drivers and delivery couriers.
+Corporate and executive mobility account operations.
 
 ### Scope
-- Driver/courier profile and readiness state
-- Availability toggling
-- Assignment acceptance/rejection
-- Active job status management
-- Earnings/summary visibility (phase-dependent)
+- Company account structures
+- Recurring rides and fixed-route readiness
+- VIP priority business flow
+- Invoice/reporting and subscription-readiness modeling
+- Profitability/account analytics readiness
 
 ### Key Dependencies
-- LV API
-- LV Ride (ride assignments)
-- LV Eats (future delivery assignments)
-- LV Admin (manual interventions)
+- LV API bookings/pricing/auth
+- Admin governance and interventions
 
 ---
 
-## 3) LV Admin (`apps/admin`)
+## 3) LV VIP / LV Black (cross-module service class)
 
 ### Purpose
-Control tower for operational oversight.
+Ultra-premium executive service layer across Ride, Driver, and Admin.
 
 ### Scope
-- Live operations dashboard
-- Booking/assignment oversight
-- Support and incident workflows
-- Role-managed operational tools
-- Audit and intervention tracking
+- Premium ride category strategy
+- Priority dispatch abstraction
+- Executive airport pickup and discreet transport flow
+- Premium notification/styling contract compatibility
+- Concierge-ready extension points
 
 ### Key Dependencies
-- LV API
-- LV Ride / LV Driver / LV Business / LV Eats domain events
+- Booking + dispatch orchestration
+- Pricing engine VIP modifiers
+- Notification templates
 
 ---
 
-## 4) LV Business (`apps/business`)
+## 4) LV Driver (`apps/driver`)
 
 ### Purpose
-VIP and corporate client management experience.
+Driver operational companion interface.
 
 ### Scope
-- Company account management
-- Team/member role handling
-- Subscription plans
-- Invoice visibility and account billing lifecycle
+- Online/offline mode
+- Acceptance and assignment flow
+- Realtime ride-state updates
+- Activity and earnings/statistics readiness
+- ETA/GPS/navigation integration readiness
+- Reputation/scoring-ready event model
 
 ### Key Dependencies
-- LV API
-- LV Admin (support + account governance)
+- LV API driver + booking services
+- Realtime driver status channels
+- Maps/tracking package hooks
 
 ---
 
-## 5) LV Eats (`apps/eats`)
+## 5) LV Admin Control Tower (`apps/admin`)
 
 ### Purpose
-Food ordering and local delivery workflows (prepared for later phases).
+Central realtime mobility operations center.
 
-### Scope (initial)
-- Module structure readiness
-- Merchant/order/courier data model preparation
-- Delivery lifecycle alignment with driver/admin platform capabilities
+### Scope
+- Live booking and driver monitoring
+- Operational event timeline visibility
+- Dispatch intervention and override tooling readiness
+- Pricing override controls
+- Incident/risk/fraud monitoring foundation
+- Advanced clients management foundation
 
 ### Key Dependencies
-- LV API
-- LV Driver
-- LV Admin
+- LV API orchestration and audit events
+- Realtime booking/driver/admin streams
 
 ---
 
 ## 6) LV API (`apps/api`)
 
 ### Purpose
-Central backend and single source of business truth.
+Central backend control plane for all mobility operations.
 
 ### Scope
-- Authentication and authorization services
-- Booking/driver/business/eats domain endpoints
-- Event, state, and audit persistence
-- Integration layer (email, payments, maps, invoicing)
+- Booking orchestration and lifecycle policy enforcement
+- Driver assignment and status propagation
+- Auth/session handling
+- Payment integration boundaries
+- Notification engine boundaries
+- Pricing engine centralization
+- GPS/tracking-ready endpoints and service layers
 
 ### Key Dependencies
-- Data stores
-- Infrastructure/deployment services
-- All application modules as clients
+- Realtime transport
+- Data persistence
+- Auth providers
+- Payments/maps/notifications integrations
 
 ---
 
-## 7) Main Web (`apps/main-web`)
+## 7) LV Eats Foundation (`apps/eats` + future API module)
 
 ### Purpose
-Public-facing LV Transport website.
+Future multi-service expansion using shared mobility primitives.
 
-### Scope
-- Brand presence
-- Service discovery
-- Marketing and contact funnel
-
-### Key Dependencies
-- Optional API integrations for lead/contact flows
+### Scope (initial)
+- Module scaffolding and domain boundaries
+- Order/courier lifecycle alignment with booking/driver patterns
+- Reuse of realtime, auth, pricing, notifications and admin patterns
 
 ---
 
-## Development Priority Reminder
+## 8) Main Web (`apps/main-web`)
 
-- **Phase 1:** LV Ride + LV Admin + LV Driver + LV API
-- **Phase 2:** login, roles, bookings, tracking, emails
-- **Phase 3:** LV Business/VIP
-- **Phase 4:** LV Eats basic structure
-- **Phase 5:** marketplace expansion
+### Purpose
+Brand and acquisition layer for LV Transport premium positioning.
+
+### Scope
+- Premium brand presentation
+- Service discovery and conversion funnel
+- Optional integration points into Ride/Business booking entry
+
+---
+
+## Priority Evolution Track
+
+1. Stabilize canonical lifecycle + realtime consistency
+2. Harden control tower and driver orchestration metrics
+3. Expand business/VIP operational tooling
+4. Add dispatch automation and predictive analytics
+5. Reuse platform primitives for LV Eats rollout
