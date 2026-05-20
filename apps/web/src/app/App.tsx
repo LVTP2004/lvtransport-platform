@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import type { BookingLifecycleStatus } from '@lvtransport/realtime';
 import { Button } from '@lvtransport/ui';
 
 type Step = 1 | 2 | 3;
@@ -37,6 +38,19 @@ export function App() {
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
 
+  const [bookingCode, setBookingCode] = useState('');
+  const [bookingStatus, setBookingStatus] = useState<BookingLifecycleStatus>('pending');
+
+  const createBooking = async () => {
+    const res = await fetch('/api/v1/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerId: 'customer-web', pickup, destination })});
+    const json = await res.json();
+    if (json?.data) {
+      setBookingCode(json.data.bookingCode);
+      setBookingStatus(json.data.status);
+    }
+  };
+
+
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
     const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
@@ -58,7 +72,7 @@ export function App() {
           <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
             Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
           </p>
-        </header>
+        </header>{bookingCode && <p className='mb-4 text-sm text-lv-champagne'>Booking {bookingCode} • Status: {bookingStatus}</p>}
 
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="glass-panel rounded-3xl p-4 sm:p-6">
@@ -144,7 +158,7 @@ export function App() {
               {step < 3 ? (
                 <Button className="flex-1" onClick={nextStep}>Continue</Button>
               ) : (
-                <Button className="flex-1 shadow-gold-md">Confirm booking UI</Button>
+                <Button className="flex-1 shadow-gold-md" onClick={createBooking}>Confirm booking UI</Button>
               )}
             </div>
           </div>
