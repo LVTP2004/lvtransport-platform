@@ -6,6 +6,7 @@ import trackingRoutes from './tracking.routes.js';
 import notificationRoutes from './notifications.routes.js';
 import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
+import operationsExecutionRoutes from './operations-execution.routes.js';
 import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
 import { listOperationalIncidents } from '../../utils/operational-monitoring.js';
 import { integrationReadinessService } from '../../services/integration-readiness.service.js';
@@ -43,6 +44,7 @@ router.use(trackingRoutes);
 router.use(notificationRoutes);
 router.use(mapsRoutes);
 router.use(bookingRoutes);
+router.use(operationsExecutionRoutes);
 
 router.post('/bookings/:bookingId/assign-driver', (req, res, next) => {
   try { res.json({ booking: realtimeOrchestratorService.assignDriver({ bookingId: req.params.bookingId, ...req.body }) }); }
