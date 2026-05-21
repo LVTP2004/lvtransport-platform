@@ -36,6 +36,7 @@ export const env = {
   payconiqApiKey: process.env.PAYCONIQ_API_KEY,
   mailProviderApiKey: process.env.MAIL_PROVIDER_API_KEY,
   mailFromAddress: process.env.MAIL_FROM_ADDRESS,
+  sqliteDbPath: process.env.SQLITE_DB_PATH ?? '.data/lvtransport.sqlite',
 };
 
 if (env.isProduction && env.corsOrigin === '*') {
