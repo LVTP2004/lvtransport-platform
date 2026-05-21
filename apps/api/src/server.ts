@@ -1,3 +1,4 @@
+import './modules/persistence/index.js';
 import { createApp } from './app.js';
 import { bootstrapHttpAndWebSocketServer } from './websocket/socket.server.js';
 import { realtimeOrchestratorService } from './services/realtime-orchestrator.service.js';
