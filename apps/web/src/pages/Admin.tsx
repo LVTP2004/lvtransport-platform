@@ -6,71 +6,115 @@ const GOLD = '#d4af37'
 
 type Metrics = { total: number; completed: number; cancelled: number; active: number; completionRate: number }
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string; scheduleAt: string; lifecycle: { state: string; version: number } }
-type ServiceConfig = { id: string; name: string; basePrice: number; active: boolean }
+
+type RideHistoryEvent = {
+  id: string
+  rideId: string
+  rideCode?: string
+  actorType: 'customer' | 'driver' | 'admin' | 'moni_assistant' | 'system'
+  actorId?: string
+  eventType: string
+  previousStatus?: string
+  nextStatus?: string
+  message?: string
+  timestamp: string
+}
+
+type AuditEntry = {
+  id: string
+  actor: string
+  action: string
+  previousValue?: string
+  newValue?: string
+  reason?: string
+  timestamp: string
+}
+
+type PaymentHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  status: 'payment_pending' | 'payment_paid' | 'invoice_generated' | 'refund_requested' | 'refund_completed' | string
+  btwReference?: string
+  invoiceReference?: string
+  message?: string
+  timestamp: string
+}
+
+type NotificationHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  channel: 'whatsapp' | 'sms' | 'email' | 'manual'
+  status: 'pending' | 'sent' | 'failed' | 'retrying'
+  failureReason?: string
+  timestamp: string
+}
+
+type MoniRideHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  eventType: 'tracking_lookup' | 'fallback_triggered' | 'customer_support_request' | 'tracking_unavailable' | 'continuity_recovery_event' | 'operational_warning' | string
+  message?: string
+  timestamp: string
+}
 
 export default function Admin() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [error, setError] = useState('')
-  const [visibleText, setVisibleText] = useState('Reserva clara. GPS claro. Operación estable.')
-  const [basePrice, setBasePrice] = useState(24)
-  const [services, setServices] = useState<ServiceConfig[]>([
-    { id: 'standard', name: 'Standard', basePrice: 24, active: true },
-    { id: 'business', name: 'Business', basePrice: 35, active: true },
-    { id: 'van', name: 'Van', basePrice: 42, active: false },
-  ])
+
+  const [rideHistory, setRideHistory] = useState<RideHistoryEvent[]>([])
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryEvent[]>([])
+  const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryEvent[]>([])
+  const [moniRideHistory, setMoniRideHistory] = useState<MoniRideHistoryEvent[]>([])
 
   useEffect(() => {
     void (async () => {
       try {
-        const [metricsRes, bookingsRes] = await Promise.all([
+        const [metricsRes, bookingsRes, rideHistoryRes, paymentsRes, auditRes, notificationsRes, moniRideRes] = await Promise.all([
           fetch(`${API_V1_BASE}/admin/bookings/metrics`),
           fetch(`${API_V1_BASE}/admin/bookings`),
+          fetch(`${API_V1_BASE}/admin/history/rides`),
+          fetch(`${API_V1_BASE}/admin/history/payments`),
+          fetch(`${API_V1_BASE}/admin/history/audit`),
+          fetch(`${API_V1_BASE}/admin/history/notifications`),
+          fetch(`${API_V1_BASE}/admin/history/moniride`),
         ])
-        const metricsJson = await metricsRes.json()
-        const bookingsJson = await bookingsRes.json()
-        if (!metricsRes.ok || !bookingsRes.ok) throw new Error(metricsJson?.message || bookingsJson?.message || 'Admin data ophalen mislukt.')
+
+        const [metricsJson, bookingsJson, rideHistoryJson, paymentsJson, auditJson, notificationsJson, moniRideJson] = await Promise.all([
+          metricsRes.json(),
+          bookingsRes.json(),
+          rideHistoryRes.json().catch(() => ({})),
+          paymentsRes.json().catch(() => ({})),
+          auditRes.json().catch(() => ({})),
+          notificationsRes.json().catch(() => ({})),
+          moniRideRes.json().catch(() => ({})),
+        ])
+
+        if (!metricsRes.ok || !bookingsRes.ok) {
+          throw new Error(metricsJson?.message || bookingsJson?.message || 'Admin data ophalen mislukt.')
+        }
+
         setMetrics(metricsJson.metrics ?? null)
         setBookings(Array.isArray(bookingsJson.bookings) ? bookingsJson.bookings : [])
+        setRideHistory(Array.isArray(rideHistoryJson.history) ? rideHistoryJson.history : [])
+        setPaymentHistory(Array.isArray(paymentsJson.history) ? paymentsJson.history : [])
+        setAuditEntries(Array.isArray(auditJson.history) ? auditJson.history : [])
+        setNotificationHistory(Array.isArray(notificationsJson.history) ? notificationsJson.history : [])
+        setMoniRideHistory(Array.isArray(moniRideJson.history) ? moniRideJson.history : [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Admin data ophalen mislukt.')
       }
     })()
   }, [])
 
-  const logs = [
-    'MoniRide: GPS activo.',
-    'Driver: estado actualizado.',
-    'Founder: supervisión en curso.',
-  ]
-
   return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '30px 16px', fontFamily: 'Arial, sans-serif' }}>
     <section style={{ maxWidth: 980, margin: '0 auto', display: 'grid', gap: 14 }}>
       <h1 style={{ margin: 0, color: GOLD }}>Admin</h1>
-      <p style={{ margin: 0 }}>Intervención mínima. Operación primero.</p>
-
-      <article style={cardStyle}>
-        <h2 style={h2Style}>Textos visibles</h2>
-        <input value={visibleText} onChange={(e) => setVisibleText(e.target.value)} style={inputStyle} />
-      </article>
-
-      <article style={cardStyle}>
-        <h2 style={h2Style}>Precio base</h2>
-        <input type='number' value={basePrice} onChange={(e) => setBasePrice(Number(e.target.value))} style={inputStyle} />
-      </article>
-
-      <article style={cardStyle}>
-        <h2 style={h2Style}>Tipos de servicio</h2>
-        <div style={{ display: 'grid', gap: 8 }}>
-          {services.map((service) => (
-            <div key={service.id} style={{ display: 'grid', gridTemplateColumns: '1.2fr .6fr .7fr', gap: 8 }}>
-              <input value={service.name} onChange={(e) => setServices((prev) => prev.map((item) => item.id === service.id ? { ...item, name: e.target.value } : item))} style={inputStyle} />
-              <input type='number' value={service.basePrice} onChange={(e) => setServices((prev) => prev.map((item) => item.id === service.id ? { ...item, basePrice: Number(e.target.value) } : item))} style={inputStyle} />
-              <button type='button' onClick={() => setServices((prev) => prev.map((item) => item.id === service.id ? { ...item, active: !item.active } : item))} style={service.active ? enabledButton : disabledButton}>{service.active ? 'Activo' : 'Inactivo'}</button>
-            </div>
-          ))}
-        </div>
-      </article>
+      <p style={{ margin: 0 }}>Operational memory. Audit first.</p>
 
       <article style={cardStyle}>
         <h2 style={h2Style}>Reservas y estados</h2>
@@ -82,12 +126,35 @@ export default function Admin() {
       </article>
 
       <article style={cardStyle}>
-        <h2 style={h2Style}>Logs y alertas</h2>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>{logs.map((log) => <li key={log}>{log}</li>)}</ul>
-        <p style={{ color: GOLD, marginBottom: 0 }}>Alerta simple: solo intervenir en emergencia.</p>
+        <h2 style={h2Style}>Ride lifecycle history</h2>
+        {rideHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={rideHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId} · ${event.actorType} · ${event.eventType}${event.previousStatus || event.nextStatus ? ` · ${event.previousStatus ?? '-'} → ${event.nextStatus ?? '-'}` : ''}${event.message ? ` · ${event.message}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Admin audit trail</h2>
+        {auditEntries.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={auditEntries.map((entry) => `${entry.timestamp} · ${entry.actor} · ${entry.action} · ${entry.previousValue ?? '-'} → ${entry.newValue ?? '-'}${entry.reason ? ` · ${entry.reason}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Payment continuity history</h2>
+        {paymentHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={paymentHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.status}${event.btwReference ? ` · BTW ${event.btwReference}` : ''}${event.invoiceReference ? ` · Invoice ${event.invoiceReference}` : ''}${event.message ? ` · ${event.message}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>MoniRide event history</h2>
+        {moniRideHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={moniRideHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.eventType}${event.message ? ` · ${event.message}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Notification history</h2>
+        {notificationHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={notificationHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.channel} · ${event.status}${event.failureReason ? ` · ${event.failureReason}` : ''}`)} />}
       </article>
     </section>
   </main>
+}
+
+function HistoryList({ items }: { items: string[] }) {
+  return <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>{items.map((item) => <li key={item}>{item}</li>)}</ul>
 }
 
 const cardStyle: React.CSSProperties = {
@@ -103,27 +170,7 @@ const h2Style: React.CSSProperties = {
   fontSize: 18,
 }
 
-const inputStyle: React.CSSProperties = {
-  border: '1px solid rgba(255,255,255,.2)',
-  borderRadius: 8,
-  background: '#111214',
-  color: 'white',
-  padding: '9px 10px',
-  width: '100%',
-  boxSizing: 'border-box',
-  fontFamily: 'Arial, sans-serif',
-}
-
-const enabledButton: React.CSSProperties = {
-  border: '1px solid rgba(212,175,55,.4)',
-  background: 'rgba(212,175,55,.2)',
-  color: 'white',
-  borderRadius: 8,
-}
-
-const disabledButton: React.CSSProperties = {
-  border: '1px solid rgba(255,255,255,.2)',
-  background: 'transparent',
-  color: '#d1d5db',
-  borderRadius: 8,
+const emptyStateStyle: React.CSSProperties = {
+  margin: 0,
+  color: '#c5c7cb',
 }
