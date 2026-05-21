@@ -1,65 +1,61 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useState } from 'react'
 
+const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be').replace(/\/$/, '')
+const API_V1_BASE = `${API_BASE}/api/v1`
 const GOLD = '#d4af37'
 
-type DriverStatus = 'idle' | 'accepted' | 'cancelled'
+type DriverHistoryEntry = {
+  id: string
+  rideId: string
+  rideCode?: string
+  eventType: 'accepted' | 'cancelled' | 'completed' | 'gps_activated' | string
+  timestamp: string
+  paymentReference?: string
+}
 
 export default function Driver() {
-  const [tripCode, setTripCode] = useState('')
-  const [status, setStatus] = useState<DriverStatus>('idle')
-  const [message, setMessage] = useState('Esperando viaje')
+  const [history, setHistory] = useState<DriverHistoryEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
 
-  const validCode = useMemo(() => /^\d{5}$/.test(tripCode), [tripCode])
-
-  const acceptRide = () => {
-    if (!validCode) {
-      setMessage('Código inválido. Debe tener 5 dígitos.')
-      return
-    }
-    setStatus('accepted')
-    setMessage('Viaje aceptado. GPS automático activo.')
-  }
-
-  const cancelRide = () => {
-    if (!validCode) {
-      setMessage('Ingresa código válido para anular.')
-      return
-    }
-    setStatus('cancelled')
-    setMessage('Viaje anulado por driver.')
-  }
+  useEffect(() => {
+    void (async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const response = await fetch(`${API_V1_BASE}/driver/history`)
+        const json = await response.json()
+        if (!response.ok) throw new Error(json?.message || 'Drivergeschiedenis ophalen mislukt.')
+        setHistory(Array.isArray(json?.events) ? json.events : [])
+      } catch (err) {
+        setHistory([])
+        setError(err instanceof Error ? err.message : 'Drivergeschiedenis ophalen mislukt.')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
 
   return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '28px 16px', fontFamily: 'Arial, sans-serif' }}>
-    <section style={{ maxWidth: 560, margin: '0 auto', border: '1px solid rgba(212,175,55,.35)', borderRadius: 14, padding: 16 }}>
-      <h1 style={{ marginTop: 0, color: GOLD }}>Driver</h1>
-      <p>Estado: <strong>{status}</strong></p>
-      <input value={tripCode} onChange={(e) => setTripCode(e.target.value)} placeholder='Código de viaje (5 dígitos)' style={inputStyle} />
-      <div style={{ display: 'flex', gap: 8, marginTop: 10 }}>
-        <button type='button' onClick={acceptRide} style={buttonStyle}>Aceptar viaje</button>
-        <button type='button' onClick={cancelRide} style={{ ...buttonStyle, background: 'transparent', color: 'white', border: '1px solid rgba(255,255,255,.25)' }}>Anular viaje</button>
-      </div>
-      <p style={{ marginBottom: 0, color: GOLD }}>{message}</p>
+    <section style={{ maxWidth: 720, margin: '0 auto', border: '1px solid rgba(212,175,55,.35)', borderRadius: 14, padding: 16 }}>
+      <h1 style={{ marginTop: 0, color: GOLD }}>Driver · History</h1>
+      <p style={{ marginTop: 0, color: '#d1d5db' }}>Overzicht van geaccepteerde, geannuleerde en afgewerkte ritten met operationele tijdstempels.</p>
+      {loading ? <p style={mutedStyle}>Geschiedenis laden…</p> : null}
+      {error ? <p style={{ ...mutedStyle, color: '#fca5a5' }}>{error}</p> : null}
+      {!loading && history.length === 0 ? <p style={mutedStyle}>Geen geschiedenis beschikbaar.</p> : null}
+      {history.length > 0 ? <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
+        {history.map((entry) => (
+          <li key={entry.id}>
+            {entry.timestamp} · {entry.rideCode ?? entry.rideId} · {entry.eventType}
+            {entry.paymentReference ? ` · payment ref: ${entry.paymentReference}` : ''}
+          </li>
+        ))}
+      </ul> : null}
     </section>
   </main>
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  borderRadius: 10,
-  border: '1px solid rgba(255,255,255,.2)',
-  padding: '10px 12px',
-  background: '#0b0b0b',
-  color: 'white',
-  fontFamily: 'Arial, sans-serif',
-}
-
-const buttonStyle: React.CSSProperties = {
-  background: GOLD,
-  color: '#111214',
-  border: 'none',
-  borderRadius: 10,
-  padding: '10px 12px',
-  fontWeight: 700,
-  cursor: 'pointer',
+const mutedStyle: React.CSSProperties = {
+  margin: 0,
+  color: '#d1d5db',
 }
