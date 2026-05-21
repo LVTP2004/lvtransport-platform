@@ -7,7 +7,10 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
+    "backup:verify": "bash ../../scripts/backup/lvtp-verify-backup.sh \"$LVTP_BACKUP_SNAPSHOT\"",
+    "restore:validate": "tsx src/runtime/cli.ts restore:validate"
   },
   "dependencies": {
     "cors": "^2.8.5",
