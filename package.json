@@ -19,7 +19,9 @@
     "ops:maturity-simplification": "node scripts/ops/lvtp-operational-maturity-simplification.js",
     "dev:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey dev",
     "build:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey build",
-    "typecheck:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey typecheck"
+    "typecheck:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey typecheck",
+    "memory:continuity": "node tools/memory-engine/continuity-index.mjs",
+    "memory:index": "node tools/memory-engine/continuity-index.mjs"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",
