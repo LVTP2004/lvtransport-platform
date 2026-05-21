@@ -7,7 +7,10 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "recovery:replay:event": "tsx src/scripts/recovery-replay-event.ts",
+    "notifications:retry": "tsx src/scripts/notifications-retry.ts",
+    "messages:replay": "tsx src/scripts/messages-replay.ts"
   },
   "dependencies": {
     "cors": "^2.8.5",
