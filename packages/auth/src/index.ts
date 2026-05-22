@@ -1,3 +1,12 @@
+export * from './enums/auth.enums.js';
+export * from './models/user.models.js';
+export * from './models/session.models.js';
+export * from './models/onboarding.models.js';
+export * from './interfaces/auth-provider.interface.js';
+export * from './rbac/role-permissions.js';
+export * from './security/token-policy.js';
+export * from './services/auth-service.js';
+export * from './providers/firebase-auth.provider.js';
 export * from './enums/auth.enums';
 export * from './models/user.models';
 export * from './models/session.models';
@@ -7,3 +16,6 @@ export * from './rbac/role-permissions';
 export * from './security/token-policy';
 export * from './services/auth-service';
 export * from './providers/firebase-auth.provider';
+
+export * from './security/jwt.service';
+export * from './security/password-hash.service';

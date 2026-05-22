@@ -1,0 +1,30 @@
+{
+  "name": "moni-experimental",
+  "mode": "sandbox",
+  "productionAccess": false,
+  "productionCredentialsAllowed": false,
+  "autoDeploy": false,
+  "languages": ["nl", "en", "es", "fr"],
+  "primaryLanguage": "nl",
+  "scheduler": {
+    "enabled": true,
+    "intervalMinutes": 5
+  },
+  "safety": {
+    "allowExternalIntegrations": false,
+    "requireIntegrationAllowlist": true,
+    "enforceAuditLogs": true,
+    "enableGlobalStopSwitch": true
+  },
+  "phases": [
+    "simulation-core",
+    "memory-foundation",
+    "multi-agent-simulation",
+    "stress-testing",
+    "premium-hospitality",
+    "evaluation-engine",
+    "self-refinement-guardrailed",
+    "strategic-reasoning",
+    "leonidas-class-conceptual-target"
+  ]
+}

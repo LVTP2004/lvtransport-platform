@@ -1,4 +1,6 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
+import { AccountStatus, type AuthState, UserRole } from '@lvtransport/auth';
+import { driverAuthProvider, driverAuthService } from '../modules/auth/services/auth-client.service';
 
 type TripState = 'Pickup' | 'On route' | 'Arrived' | 'Completed';
 
@@ -18,188 +20,172 @@ const rideHistory = [
 ];
 
 const notifications = [
-  { title: 'Priority zone surge', note: 'Las Vegas Strip now +1.7x multiplier', time: '2m ago' },
+  { title: 'Driver assigned: BK-10928', note: 'Pickup at Fontainebleau • customer tracking live', time: 'Just now' },
   { title: 'Performance badge unlocked', note: 'Maintained 4.9+ rating this week', time: '18m ago' },
   { title: 'Vehicle inspection reminder', note: 'Schedule check before May 15', time: '1h ago' }
 ];
+export function App() {
+  const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
+  const [email, setEmail] = useState('driver@lvtransport.dev');
+  const [password, setPassword] = useState('password123');
+  const [allowed, setAllowed] = useState(false);
+  useEffect(() => { driverAuthService.getInitialState().then(setAuthState); }, []);
+  const login = async () => { const t = await driverAuthService.signIn({ email, password }); const u = await driverAuthProvider.getUserProfile(t.accessToken); setAllowed(Boolean(u?.roles.includes(UserRole.DRIVER) && u.status === AccountStatus.ACTIVE)); setAuthState({ isAuthenticated: true, isLoading: false, tokens: t }); };
+  const logout = async () => { localStorage.clear(); setAuthState({ isAuthenticated: false, isLoading: false }); setAllowed(false); };
+  if (!authState.isAuthenticated) return <main className='min-h-screen bg-zinc-950 p-8 text-white'><h1 className='text-3xl mb-4'>Driver Login</h1><input className='text-black p-2 mr-2' value={email} onChange={(e)=>setEmail(e.target.value)} /><input className='text-black p-2 mr-2' type='password' value={password} onChange={(e)=>setPassword(e.target.value)} /><button className='bg-amber-400 text-black px-3 py-2 rounded' onClick={login}>Sign in</button></main>;
+  if (!allowed) return <main className='min-h-screen bg-zinc-950 p-8 text-white'>Access denied<button onClick={logout}>Logout</button></main>;
+  return <main className='min-h-screen bg-zinc-950 text-white p-8'><h1 className='text-3xl text-amber-300'>Driver Console</h1><p>Authenticated driver session ready for trip state modules.</p><button onClick={logout}>Logout</button></main>;
+import {
+  dispatchMvpStore,
+  getDispatchSnapshot,
+  type DispatchBookingStatus,
+  type DriverAvailabilityStatus,
+} from '@lvtransport/realtime';
+
+const DRIVER_ID = 'DRV-100';
+const nextStatuses: DispatchBookingStatus[] = ['driver_arriving', 'passenger_onboard', 'completed'];
 
 export function App() {
-  const [online, setOnline] = useState(true);
-  const [tripStep, setTripStep] = useState<TripState>('Pickup');
+  const [state, setState] = useState(getDispatchSnapshot());
+  const [availability, setAvailability] = useState<DriverAvailabilityStatus>('available');
 
-  const stateIndex = useMemo(() => tripStates.indexOf(tripStep), [tripStep]);
+  useEffect(() => {
+    dispatchMvpStore.setDriverAvailability(DRIVER_ID, availability);
+  }, [availability]);
+
+  useEffect(() => dispatchMvpStore.subscribe(setState), []);
+
+  const activeRide = dispatchMvpStore.getDriverActiveRide(DRIVER_ID);
 
   return (
-    <main className="min-h-screen bg-zinc-950 text-zinc-100">
-      <div className="mx-auto flex w-full max-w-7xl flex-col gap-4 p-4 pb-10 sm:gap-5 sm:p-6 lg:grid lg:grid-cols-[320px_minmax(0,1fr)_320px] lg:gap-6">
-        <aside className="space-y-4 rounded-3xl border border-amber-500/20 bg-zinc-900/90 p-4 shadow-xl shadow-black/30 backdrop-blur transition-all duration-300">
-          <div className="rounded-2xl border border-amber-500/30 bg-gradient-to-br from-amber-500/20 via-zinc-900 to-zinc-800 p-4">
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-300">Driver status</p>
-            <h1 className="mt-2 text-2xl font-semibold">LV Transport</h1>
-            <p className="mt-1 text-sm text-zinc-300">Premium Mobility Console</p>
-            <button
-              type="button"
-              onClick={() => setOnline((prev) => !prev)}
-              className={`mt-4 flex w-full items-center justify-between rounded-xl border px-4 py-3 text-left text-sm font-medium transition-all duration-300 ${
-                online
-                  ? 'border-emerald-400/40 bg-emerald-500/10 text-emerald-200'
-                  : 'border-zinc-700 bg-zinc-800 text-zinc-300'
-              }`}
-            >
-              <span>{online ? 'You are Online' : 'You are Offline'}</span>
-              <span
-                className={`h-5 w-10 rounded-full p-0.5 transition-all ${online ? 'bg-emerald-500/80' : 'bg-zinc-700'}`}
-              >
-                <span
-                  className={`block h-4 w-4 rounded-full bg-white transition-transform ${online ? 'translate-x-5' : ''}`}
-                />
-              </span>
-            </button>
-          </div>
+    <main className="min-h-screen bg-zinc-950 p-6 text-zinc-100">
+      <h1 className="text-2xl font-bold text-amber-300">Driver Console (Dispatch MVP)</h1>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <h2 className="text-sm font-semibold text-amber-200">Earnings Summary</h2>
-            <div className="mt-3 grid grid-cols-2 gap-3 text-sm">
-              <MetricCard label="Today" value="$286.40" />
-              <MetricCard label="Week" value="$1,940" />
-              <MetricCard label="Trips" value="18" />
-              <MetricCard label="Bonus" value="$74" />
-            </div>
-          </section>
+      <section className="mt-5 rounded-2xl border border-zinc-700 p-4">
+        <h2 className="text-amber-200">Availability</h2>
+        <select
+          className="mt-2 rounded bg-zinc-800 p-2"
+          value={availability}
+          onChange={(e) => setAvailability(e.target.value as DriverAvailabilityStatus)}
+        >
+          <option value="offline">offline</option>
+          <option value="available">available</option>
+          <option value="on_assignment">on_assignment</option>
+        </select>
+      </section>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
-            <h2 className="text-sm font-semibold text-amber-200">Performance</h2>
-            <div className="mt-3 space-y-2">
-              {performanceStats.map((item) => (
-                <div key={item.label} className="rounded-xl border border-zinc-800 bg-zinc-950/80 p-3">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-zinc-400">{item.label}</span>
-                    <span className="text-sm font-semibold">{item.value}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-zinc-500">{item.detail}</p>
-                </div>
-              ))}
-            </div>
-          </section>
-        </aside>
-
-        <section className="order-first space-y-4 lg:order-none">
-          <div className="rounded-3xl border border-amber-500/30 bg-zinc-900 p-4 shadow-2xl shadow-black/30 sm:p-5">
-            <div className="flex items-center justify-between">
-              <h2 className="text-base font-semibold text-amber-200">Map-ready Navigation Layout</h2>
-              <span className="rounded-full border border-zinc-700 px-3 py-1 text-xs text-zinc-400">Android Optimized</span>
-            </div>
-            <div className="mt-4 h-56 rounded-2xl border border-dashed border-zinc-700 bg-zinc-950/70 p-4 sm:h-72">
-              <p className="text-sm text-zinc-400">Reserved for future GPS + map canvas.</p>
-              <p className="mt-2 text-xs text-zinc-500">Component structure is prepared for realtime trip coordinate integration.</p>
-            </div>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <button className="rounded-2xl bg-amber-500 px-5 py-4 text-base font-semibold text-zinc-900 transition hover:bg-amber-400 active:scale-[0.99]">
-                Accept Ride
-              </button>
-              <button className="rounded-2xl border border-zinc-600 bg-zinc-800 px-5 py-4 text-base font-semibold transition hover:border-zinc-500 hover:bg-zinc-700 active:scale-[0.99]">
-                Reject Ride
-              </button>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-amber-200">Active Trip State</h3>
-            <div className="mt-4 grid grid-cols-4 gap-2 text-center text-xs">
-              {tripStates.map((state, index) => (
-                <button
-                  key={state}
-                  className={`rounded-xl border px-2 py-3 transition ${
-                    index <= stateIndex ? 'border-amber-400 bg-amber-500/20 text-amber-100' : 'border-zinc-700 bg-zinc-800 text-zinc-400'
-                  }`}
-                  onClick={() => setTripStep(state)}
-                >
-                  {state}
-                </button>
-              ))}
-            </div>
-            <div className="mt-3 rounded-2xl border border-zinc-800 bg-zinc-950/80 p-4">
-              <p className="text-xs text-zinc-400">Current phase</p>
-              <p className="mt-1 text-lg font-semibold text-amber-200">{tripStep}</p>
-              <p className="mt-2 text-sm text-zinc-400">Trip cards, rider ETA, and navigation actions will attach to this state engine.</p>
-            </div>
-          </div>
-
-          <div className="rounded-3xl border border-zinc-800 bg-zinc-900 p-4 sm:p-5">
-            <h3 className="text-sm font-semibold text-amber-200">Ride History</h3>
-            <div className="mt-3 space-y-2">
-              {rideHistory.map((ride) => (
-                <article key={ride.id} className="rounded-2xl border border-zinc-800 bg-zinc-950/80 p-3 transition hover:border-zinc-700">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium">{ride.route}</p>
-                    <span className="text-sm font-semibold text-amber-200">{ride.fare}</span>
-                  </div>
-                  <p className="mt-1 text-xs text-zinc-400">{ride.id} • {ride.rider}</p>
-                  <span className="mt-2 inline-flex rounded-full border border-emerald-600/40 bg-emerald-500/10 px-2 py-1 text-xs text-emerald-300">{ride.status}</span>
-                </article>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        <aside className="space-y-4 rounded-3xl border border-zinc-800 bg-zinc-900/95 p-4 shadow-xl shadow-black/20">
-          <section className="rounded-2xl border border-amber-500/30 bg-zinc-950/80 p-4">
-            <h3 className="text-sm font-semibold text-amber-200">Incoming Ride Request</h3>
-            <p className="mt-1 text-xs text-zinc-400">Sound-ready component structure</p>
-            <div className="mt-3 rounded-xl border border-zinc-700 bg-zinc-900 p-3">
-              <p className="text-sm font-medium">Rider: Olivia K.</p>
-              <p className="mt-1 text-xs text-zinc-400">Pickup: Caesars Palace • 2 min away</p>
-              <p className="mt-1 text-xs text-zinc-400">Dropoff: Resorts World</p>
-              <div className="mt-3 flex gap-2">
-                <button className="flex-1 rounded-xl bg-amber-500 px-3 py-2 text-sm font-semibold text-zinc-900">Accept</button>
-                <button className="flex-1 rounded-xl border border-zinc-600 bg-zinc-800 px-3 py-2 text-sm">Reject</button>
+      <section className="mt-5 rounded-2xl border border-zinc-700 p-4">
+        <h2 className="text-amber-200">Assigned Ride</h2>
+        {activeRide ? (
+          <div className="mt-2 space-y-3">
+            <p>{activeRide.bookingId} • {activeRide.status}</p>
+            {activeRide.status === 'assigned' && (
+              <div className="flex gap-2">
+                <button className="rounded bg-amber-500 px-3 py-2 text-zinc-900" onClick={() => dispatchMvpStore.driverRespond(activeRide.bookingId, DRIVER_ID, 'accept')}>Accept Ride</button>
+                <button className="rounded border border-zinc-600 px-3 py-2" onClick={() => dispatchMvpStore.driverRespond(activeRide.bookingId, DRIVER_ID, 'reject')}>Reject Ride</button>
               </div>
-            </div>
-          </section>
+            )}
+            {activeRide.status === 'driver_accepted' && (
+              <div className="flex gap-2">{nextStatuses.map((status) => <button key={status} className="rounded border border-zinc-600 px-3 py-1" onClick={() => dispatchMvpStore.updateRideStatus(activeRide.bookingId, status, DRIVER_ID)}>{status}</button>)}</div>
+            )}
+          </div>
+        ) : <p className="mt-2 text-zinc-400">No active assignment.</p>}
+      </section>
 
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-            <h3 className="text-sm font-semibold text-amber-200">Vehicle Information</h3>
-            <ul className="mt-3 space-y-2 text-sm text-zinc-300">
-              <li>Model: Tesla Model Y</li>
-              <li>Plate: LVT-2481</li>
-              <li>Color: Black Metallic</li>
-              <li>Fuel/Battery: 82%</li>
-            </ul>
-          </section>
-
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-            <h3 className="text-sm font-semibold text-amber-200">Profile & Settings</h3>
-            <div className="mt-3 space-y-2 text-sm">
-              <button className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left">Driver preferences</button>
-              <button className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left">Shift & availability</button>
-              <button className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-left">Safety toolkit</button>
-            </div>
-          </section>
-
-          <section className="rounded-2xl border border-zinc-800 bg-zinc-950/70 p-4">
-            <h3 className="text-sm font-semibold text-amber-200">Notifications Center</h3>
-            <div className="mt-3 space-y-2">
-              {notifications.map((item) => (
-                <article key={item.title} className="rounded-xl border border-zinc-800 bg-zinc-900 p-3">
-                  <p className="text-sm font-medium">{item.title}</p>
-                  <p className="mt-1 text-xs text-zinc-400">{item.note}</p>
-                  <p className="mt-1 text-[11px] uppercase tracking-wide text-zinc-500">{item.time}</p>
-                </article>
-              ))}
-            </div>
-          </section>
-        </aside>
-      </div>
+      <section className="mt-5 rounded-2xl border border-zinc-700 p-4">
+        <h2 className="text-amber-200">Realtime Feed</h2>
+        <ul className="mt-2 space-y-2 text-sm">{state.bookings.map((b) => <li key={b.bookingId}>{b.bookingId}: {b.status}</li>)}</ul>
+      </section>
     </main>
   );
-}
+import { useEffect, useMemo, useState } from 'react';
+import { BookingLifecycle, canTransitionLifecycle, isImmutableLifecycleStatus, registerLifecycleEvent } from '@lvtransport/realtime';
+import { createDriverGpsService, type GpsSnapshot } from '../modules/tracking/services/driver-gps.service';
 
-function MetricCard({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-xl border border-zinc-800 bg-zinc-950/90 p-3 transition hover:-translate-y-0.5 hover:border-amber-500/40">
-      <p className="text-xs text-zinc-500">{label}</p>
-      <p className="mt-1 text-lg font-semibold text-amber-100">{value}</p>
+type Booking = { id: string; code: string; status: BookingLifecycle; assignedDriverName?: string; version: number; assignedDriverId?: string };
+
+
+const DRIVER_ID = 'drv-101';
+const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
+const API_ORIGIN = new URL(API_BASE).origin;
+
+const stepLabel: Partial<Record<BookingLifecycle, string>> = {
+  assigned: 'Rit accepteren',
+  accepted: 'Onderweg naar klant',
+  en_route: 'Aangekomen',
+  arrived: 'Rit gestart',
+  in_progress: 'Rit afronden'
+};
+
+export function App() {
+  const [bookings, setBookings] = useState<Booking[]>([]);
+  const [liveLocation, setLiveLocation] = useState(false);
+  const [gpsMessage, setGpsMessage] = useState('Locatiedeling staat uit.');
+  const gpsService = useMemo(() => createDriverGpsService({ minUpdateMs: 8000, minDistanceMeters: 25 }), []);
+  const [driverDot, setDriverDot] = useState({ x: 28, y: 72 });
+
+  const refresh = async () => {
+    const response = await fetch(`${API_BASE}/bookings`);
+    const result = await response.json();
+    setBookings(result.bookings.filter((b: Booking) => b.assignedDriverName === 'Marco V.' || b.status === 'assigned'));
+  };
+
+  const activeBookingId = bookings.find((b) => !['completed', 'cancelled', 'failed'].includes(b.status))?.id;
+
+  const sendLocation = async (snapshot: GpsSnapshot) => {
+    await fetch(`${API_BASE}/drivers/${DRIVER_ID}/location`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...snapshot, bookingId: activeBookingId, idempotencyKey: `gps-${DRIVER_ID}-${snapshot.capturedAt}` })
+    });
+    setGpsMessage(`Live locatie bijgewerkt om ${new Date(snapshot.capturedAt).toLocaleTimeString('nl-BE')}.`);
+  };
+
+  useEffect(() => { refresh(); const wsProtocol = API_ORIGIN.startsWith('https') ? 'wss' : 'ws'; const wsHost = API_ORIGIN.replace(/^https?:\/\//, ''); const ws = new WebSocket(`${wsProtocol}://${wsHost}/ws`); ws.onmessage = () => refresh(); return () => ws.close(); }, []);
+  useEffect(() => { if (!liveLocation) { gpsService.stop(); setGpsMessage('Locatiedeling staat uit.'); return; } gpsService.start(sendLocation, setGpsMessage); return () => gpsService.stop(); }, [liveLocation, activeBookingId, gpsService]);
+  useEffect(() => { const t = setInterval(() => setDriverDot((d) => ({ x: d.x > 78 ? 28 : d.x + 2, y: d.y < 34 ? 72 : d.y - 1.3 })), 1300); return () => clearInterval(t); }, []);
+
+  const updateStatus = async (booking: Booking) => {
+    const transitionMap: Partial<Record<BookingLifecycle, BookingLifecycle>> = {
+      [BookingLifecycle.ASSIGNED]: BookingLifecycle.ACCEPTED,
+      [BookingLifecycle.ACCEPTED]: BookingLifecycle.EN_ROUTE,
+      [BookingLifecycle.EN_ROUTE]: BookingLifecycle.ARRIVED,
+      [BookingLifecycle.ARRIVED]: BookingLifecycle.IN_PROGRESS,
+      [BookingLifecycle.IN_PROGRESS]: BookingLifecycle.COMPLETED
+    };
+    const nextStatus = transitionMap[booking.status];
+    if (!nextStatus || !canTransitionLifecycle(booking.status, nextStatus)) return;
+    if (isImmutableLifecycleStatus(booking.status)) return;
+    const eventKey = `driver-${booking.id}-${booking.version}`;
+    if (!registerLifecycleEvent(eventKey)) return;
+    setBookings((prev) => prev.map((b) => b.id === booking.id ? { ...b, status: nextStatus, version: b.version + 1 } : b));
+    const response = await fetch(`${API_BASE}/bookings/${booking.id}/status`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: nextStatus, actor: 'driver', expectedVersion: booking.version, idempotencyKey: eventKey })
+    });
+    if (!response.ok) refresh();
+    if (response.ok && isImmutableLifecycleStatus(nextStatus)) setLiveLocation(false);
+  };
+
+  return <main className="min-h-screen bg-lvtp-obsidian p-4 text-white sm:p-6">
+    <div className="lvtp-network absolute inset-0 pointer-events-none opacity-40" />
+    <div className="relative mx-auto max-w-3xl space-y-4">
+      <header className="lvtp-shell rounded-3xl p-5">
+        <div className="flex items-center gap-3"><img src="/brand/lv-logo-primary.svg" alt="LV Transport" className="h-10 w-auto rounded-md border border-amber-400/30 bg-black/80 p-1" /><h1 className="text-xl font-semibold text-amber-200">LV Driver</h1></div>
+        <p className="mt-2 text-sm text-zinc-300">Snelle lifecycle-controle voor professionele, veilige rituitvoering.</p>
+      <button className="lvtp-btn-primary mt-3" onClick={() => (window as any).__lvPwa?.promptInstall?.()}>Install app</button></header>
+      <section className="lvtp-card rounded-2xl p-4">
+        <button className="lvtp-btn-primary w-full" onClick={() => setLiveLocation((v) => !v)}>{liveLocation ? 'Locatiedeling stoppen' : 'Locatiedeling starten'}</button>
+        <p className="mt-2 text-sm text-zinc-300">{gpsMessage}</p>
+      </section>
+      <section className="lvtp-card overflow-hidden rounded-2xl p-0"><div className="relative h-[52vh] min-h-[340px] bg-[#06070a]"><div className="absolute inset-0 opacity-40" style={{backgroundImage:'linear-gradient(rgba(245,191,73,.08) 1px, transparent 1px),linear-gradient(90deg, rgba(245,191,73,.08) 1px, transparent 1px)',backgroundSize:'34px 34px'}} /><div className="absolute left-[12%] top-[62%] rounded-full border border-amber-300/40 bg-black/70 px-2 py-1 text-xs text-amber-100">Pickup</div><div className="absolute right-[14%] top-[20%] rounded-full border border-amber-300/40 bg-black/70 px-2 py-1 text-xs text-amber-100">Dropoff</div><div className="absolute left-[13%] top-[64%] h-[2px] w-[72%] -rotate-[29deg] bg-amber-300/70" /><div className="absolute z-20 h-4 w-4 rounded-full bg-amber-300 shadow-[0_0_16px_rgba(245,191,73,.8)] transition-all duration-1000" style={{left:`${driverDot.x}%`, top:`${driverDot.y}%`}} /></div></section>
+      <section className="grid gap-3">
+        {bookings.map((booking) => <article key={booking.id} className="lvtp-card rounded-2xl p-4">
+          <p className="font-semibold text-amber-100">{booking.code}</p>
+          <p className="text-sm text-zinc-300">Status: {booking.status}</p>
+          {stepLabel[booking.status] && <button className="lvtp-btn-primary mt-3 w-full" onClick={() => updateStatus(booking)}>{stepLabel[booking.status]}</button>}
+          {booking.status === 'completed' && <p className="mt-2 text-sm text-emerald-300">Rit correct afgerond.</p>}
+        </article>)}
+      </section>
     </div>
-  );
+  </main>;
 }

@@ -1,5 +1,5 @@
-import { realtimeEvents } from "../events/names";
-import { BookingLifecycle } from "../models/enums";
+import { realtimeEvents } from "../events/names.js";
+import { BookingLifecycle } from "../models/enums.js";
 
 export const bookingRealtimeArchitecture = {
   lifecycleEnum: BookingLifecycle,

@@ -11,3 +11,7 @@ build/
 Thumbs.db
 *.log
 coverage/
+
+# Backup artifacts
+backups/snapshot-*
+backups/*.tar.gz
