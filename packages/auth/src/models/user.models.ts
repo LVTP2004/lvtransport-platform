@@ -1,4 +1,4 @@
-import { AccountStatus, AccountType, OnboardingStep, Permission, UserRole } from '../enums/auth.enums';
+import { AccountStatus, AccountType, OnboardingStep, Permission, UserRole } from '../enums/auth.enums.js';
 
 export interface UserProfile { firstName: string; lastName: string; phone?: string; timezone?: string; }
 export interface BusinessCustomerProfile { companyName: string; travelPolicyId?: string; costCenter?: string; }

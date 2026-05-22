@@ -1,5 +1,5 @@
-import type { FirebaseAppHandle } from "../core/firebase-app";
-import { firestoreCollections } from "./collections";
+import type { FirebaseAppHandle } from "../core/firebase-app.js";
+import { firestoreCollections } from "./collections.js";
 
 export interface FirestorePreparation {
   app: FirebaseAppHandle;

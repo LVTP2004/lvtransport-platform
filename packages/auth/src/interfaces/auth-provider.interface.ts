@@ -1,4 +1,4 @@
-import type { AuthState, AuthTokens, SessionContext } from '../models/session.models';
+import type { AuthState, AuthTokens, SessionContext } from '../models/session.models.js';
 export interface LoginInput { email?: string; password?: string; oauthToken?: string; }
 export interface AuthProviderAdapter {
   signIn(input: LoginInput): Promise<AuthTokens>;
