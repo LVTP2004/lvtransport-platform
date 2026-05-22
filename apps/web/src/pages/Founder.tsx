@@ -27,7 +27,7 @@ const governanceLanes: GovernanceLane[] = [
   {
     lane: 'Replay Intelligence',
     source: 'deterministic-adapter',
-    narrative: 'Deterministic placeholder narrative for audit replay pipeline readiness.',
+    narrative: 'Deterministic readiness lane for audit replay pipeline state.',
     checkpoint: 'Adapter stays static until replay service emits runtime events.',
     visibility: 'adapter-stable',
     auditVisibility: 'Replay lineage shown as adapter-owned readiness state.',
@@ -44,16 +44,17 @@ const governanceLanes: GovernanceLane[] = [
 
 export default function Founder() {
   return (
-    <main className="min-h-screen bg-[#07090d] p-5 text-zinc-100 sm:p-8">
+    <main className="min-h-screen bg-[#05070b] p-5 text-zinc-100 sm:p-8">
       <div className="mx-auto grid max-w-6xl gap-4">
-        <header className="rounded-2xl border border-amber-400/25 bg-black/45 p-5">
+        <header className="rounded-2xl border border-amber-300/30 bg-[#0a0d13]/95 p-5">
           <p className="text-xs uppercase tracking-[0.2em] text-amber-300">Founder Surface</p>
           <h1 className="mt-2 text-2xl font-semibold">Governance & Intelligence OS</h1>
+          <p className="mt-2 text-sm text-zinc-400">Executive visibility remains constrained to backend contracts and deterministic runtime adapters.</p>
         </header>
 
         <section className="grid gap-4 md:grid-cols-2">
           {governanceLanes.map((item) => (
-            <article key={item.lane} className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
+            <article key={item.lane} className="rounded-2xl border border-amber-300/20 bg-[#0d1118]/90 p-4">
               <div className="flex items-start justify-between gap-3">
                 <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
                 <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{item.visibility}</span>
