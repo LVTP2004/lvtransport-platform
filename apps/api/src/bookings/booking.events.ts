@@ -1,24 +1,26 @@
 import { eventBus } from '../events/event-bus.js';
-import { WS_EVENTS } from '../constants/app.constants.js';
 
-export type BookingEventPayload = {
-  bookingId: string;
-  customerId: string;
-  driverId?: string;
-  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
-  occurredAt: string;
-};
-
-export const emitBookingEvent = (payload: BookingEventPayload): void => {
-  eventBus.emit(WS_EVENTS.BOOKING_UPDATED, payload);
-};
-import { BOOKING_EVENTS } from '../constants/index.js';
-
-export type BookingEventName = (typeof BOOKING_EVENTS)[keyof typeof BOOKING_EVENTS];
+export type DispatchBookingStatus =
+  | 'pending'
+  | 'assigned'
+  | 'driver_accepted'
+  | 'driver_rejected'
+  | 'driver_arriving'
+  | 'passenger_onboard'
+  | 'completed'
+  | 'cancelled';
 
 export interface BookingEventPayload {
   bookingId: string;
-  customerId?: string;
+  customerId: string;
   driverId?: string;
+  status: DispatchBookingStatus;
+  occurredAt: string;
   metadata?: Record<string, unknown>;
 }
+
+export const BOOKING_UPDATED_EVENT = 'booking.updated' as const;
+
+export const emitBookingEvent = (payload: BookingEventPayload): void => {
+  eventBus.emit(BOOKING_UPDATED_EVENT, payload);
+};

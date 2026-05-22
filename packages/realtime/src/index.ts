@@ -17,3 +17,5 @@ export * from "./tracking/customer-tracking";
 export * from "./notifications/notification";
 export * from "./transport/event-bus";
 export * from "./transport/firebase-websocket-bridge";
+
+export * from "./dispatch/mvp";
