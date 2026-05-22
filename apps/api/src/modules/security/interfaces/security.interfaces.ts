@@ -1,4 +1,4 @@
-import { ActorRole, AuditActionType } from '../enums/security.enums';
+import { ActorRole, ApprovalBoundary, AuditActionType, DenialReasonCode } from '../enums/security.enums';
 
 export interface AuthSessionContext {
   subjectId: string;
@@ -33,4 +33,44 @@ export interface SecureAdminActionPolicy {
   requiresStepUpAuth: boolean;
   requiresReasonCode: boolean;
   dualApprovalThresholdMinor?: number;
+}
+
+export interface ApprovalRequirement {
+  boundary: ApprovalBoundary;
+  minApprovers: number;
+  approverRoles: ActorRole[];
+}
+
+export interface RoleExecutionPolicy {
+  role: ActorRole;
+  canExecute: boolean;
+  approvalBoundaries: ApprovalBoundary[];
+  requiresHumanSupervision: boolean;
+}
+
+export interface ExecutionPermissionRequest {
+  actorId: string;
+  role: ActorRole;
+  boundary: ApprovalBoundary;
+  requestedApproverRoles: ActorRole[];
+  humanSupervised: boolean;
+  correlationId: string;
+  targetType: string;
+  targetId: string;
+}
+
+export interface ExecutionPermissionDecision {
+  allowed: boolean;
+  reasonCode?: DenialReasonCode;
+  deterministicKey: string;
+  requiredApprovers: ActorRole[];
+}
+
+export interface RoleAuditLineageEntry {
+  lineageId: string;
+  role: ActorRole;
+  assignedByActorId: string;
+  assignedAt: string;
+  assignmentReason: string;
+  immutable: true;
 }

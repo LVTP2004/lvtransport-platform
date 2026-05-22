@@ -11,6 +11,23 @@
     "memory:index": "tsx src/operational-memory/cli.ts index",
     "memory:timeline": "tsx src/operational-memory/cli.ts timeline",
     "memory:continuity": "tsx src/operational-memory/cli.ts continuity"
+    "execution:validate": "tsx src/scripts/execution-validate.ts",
+    "execution:history": "tsx src/scripts/execution-history.ts"
+    "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
+    "backup:verify": "bash ../../scripts/backup/lvtp-verify-backup.sh \"$LVTP_BACKUP_SNAPSHOT\"",
+    "restore:validate": "tsx src/runtime/cli.ts restore:validate"
+    "incident:cognition": "tsx src/cli/ops-cli.ts incident:cognition",
+    "incident:explain": "tsx src/cli/ops-cli.ts incident:explain",
+    "snapshot:create": "tsx src/cli/ops-cli.ts snapshot:create",
+    "snapshot:list": "tsx src/cli/ops-cli.ts snapshot:list",
+    "snapshot:verify": "tsx src/cli/ops-cli.ts snapshot:verify",
+    "snapshot:restore-dry-run": "tsx src/cli/ops-cli.ts snapshot:restore-dry-run",
+    "anomaly:scan": "tsx src/cli/ops-cli.ts incident:explain",
+    "anomaly:report": "tsx src/cli/ops-cli.ts incident:explain",
+    "lineage:verify": "tsx src/cli/ops-cli.ts incident:explain",
+    "lineage:audit": "tsx src/cli/ops-cli.ts incident:explain",
+    "constitution:verify": "tsx src/cli/ops-cli.ts incident:explain",
+    "narrative:generate": "tsx src/cli/ops-cli.ts incident:explain"
   },
   "dependencies": {
     "cors": "^2.8.5",
