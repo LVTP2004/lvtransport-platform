@@ -296,6 +296,51 @@ const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
 
 
 export function App() {
+  const [step, setStep] = useState<Step>(1);
+  const [pickup, setPickup] = useState('');
+  const [destination, setDestination] = useState('');
+  const [dateTime, setDateTime] = useState('');
+  const [passengers, setPassengers] = useState(1);
+  const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
+  const [airportTransfer, setAirportTransfer] = useState(false);
+  const [businessVip, setBusinessVip] = useState(true);
+
+  const [trackingCode, setTrackingCode] = useState('');
+  const trackingLink = trackingCode ? `/track/${trackingCode.toUpperCase()}` : '/track/{CODE}';
+
+  const baseFare = useMemo(() => {
+    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
+    const airportFee = airportTransfer ? 18 : 0;
+    const vipFee = businessVip ? 24 : 0;
+    const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
+    return Math.round(total);
+  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1>
+          <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
+            Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
+          </p>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="glass-panel rounded-3xl p-4 sm:p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-lv-mist">Step {step} of 3</p>
+              <div className="flex w-32 gap-2">
+                {[1, 2, 3].map((i) => (
+                  <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />
+                ))}
+              </div>
+            </div>
   const [booting, setBooting] = useState(true);
   const [route, setRoute] = useState<RouteKey>(() => routeMap[window.location.pathname] ?? 'home');
   const [menuOpen, setMenuOpen] = useState(false);
@@ -568,6 +613,42 @@ export function App() {
               {utilityNavItems.map((item) => <button key={item.label} className='nav-btn nav-btn--utility' onClick={() => item.intent ? requireIdentity(item.intent, () => navigate(item.path, item.section)) : navigate(item.path, item.section)}>{item.label}</button>)}
               {installReady && <button className='nav-btn nav-btn--utility' onClick={installEcosystemApp}>Install app</button>}
             </div>
+          </div>
+
+          <aside className="space-y-6">
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p>
+              <p className="mt-3 text-4xl font-semibold">${baseFare}</p>
+              <p className="mt-1 text-sm text-lv-mist">Estimated fare • final pricing from future API integrations.</p>
+              <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+                Includes base transfer, selected vehicle class, and service options.
+              </div>
+            </article>
+
+
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Tracking link (MVP)</p>
+              <label className="field-wrap mt-3">
+                <span>Public tracking code</span>
+                <input value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} placeholder="e.g. A1B2C3D4" />
+              </label>
+              <p className="mt-3 text-sm text-lv-mist">Customer tracking route prepared: <span className="text-white">{trackingLink}</span></p>
+            </article>
+
+            <article className="glass-panel rounded-3xl p-5 sm:p-6">
+              <p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Booking summary</p>
+              <ul className="mt-4 space-y-3 text-sm">
+                <li><span className="text-lv-mist">Pickup:</span> {pickup || 'Not set'}</li>
+                <li><span className="text-lv-mist">Destination:</span> {destination || 'Not set'}</li>
+                <li><span className="text-lv-mist">Schedule:</span> {formatDateTime(dateTime)}</li>
+                <li><span className="text-lv-mist">Passengers:</span> {passengers}</li>
+                <li><span className="text-lv-mist">Vehicle:</span> {vehicle.name}</li>
+                <li><span className="text-lv-mist">Options:</span> {airportTransfer ? 'Airport' : 'Standard'} • {businessVip ? 'VIP' : 'Classic'}</li>
+              </ul>
+            </article>
+          </aside>
+        </section>
+      </div>
           </nav>
         </div>
         <div className={`mobile-menu-overlay ${menuOpen ? 'mobile-menu-overlay--open' : ''}`} onClick={() => setMenuOpen(false)} />
