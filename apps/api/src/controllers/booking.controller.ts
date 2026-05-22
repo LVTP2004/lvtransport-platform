@@ -71,3 +71,28 @@ export const bookingMetricsController = async (_req: Request, res: Response) => 
   const metrics = await bookingFlowService.getOperationalMetrics();
   return res.status(200).json({ success: true, metrics });
 };
+
+export const bookingAirportIntelligenceController = async (req: Request, res: Response) => {
+  try {
+    const snapshot = await bookingFlowService.getAirportIntelligence(req.params.bookingId);
+    return res.status(200).json({ success: true, snapshot });
+  } catch (error) {
+    if (isDomainError(error)) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: {
+          code: error.code,
+          message: error.message,
+          details: error.details ?? {},
+        },
+      });
+    }
+    return res.status(500).json({
+      success: false,
+      error: {
+        code: 'MANUAL_INTERVENTION_REQUIRED',
+        message: 'Operationele fout bij airport intelligence inspectie.',
+      },
+    });
+  }
+};
