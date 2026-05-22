@@ -8,6 +8,8 @@ import { TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from 
 import { validateLifecycleTransition } from './lifecycle-validation.js';
 import { logger } from '../../utils/logger.js';
 import { DomainError } from '../../errors/domain-error.js';
+import { airportIntelligenceService } from '../airport-intelligence/service.js';
+import { lvMessengerService } from '../lv-messenger/service.js';
 
 const pricingEngine = new PricingEngineService();
 
@@ -78,7 +80,18 @@ export const bookingFlowService = {
         version: 1,
         transitions: [{ from: null, to: 'pending', occurredAt: now, actor: 'system', reason: 'booking_created' }],
       },
+      airportIntelligence: airportIntelligenceService.createInitialState(input.airportIntel),
+      lvMessenger: lvMessengerService.initializeThread(),
     };
+
+    if (booking.airportIntelligence?.enabled) {
+      const airportMessages = airportIntelligenceService.applyFlightSignal(booking, {
+        delayMin: 0,
+        terminal: input.airportIntel?.terminal,
+        source: 'booking_init'
+      });
+      lvMessengerService.appendBatch(booking, airportMessages);
+    }
 
     return hydrateRealtimeLifecycle(await bookingRepository.create(booking));
   },
@@ -128,6 +141,15 @@ export const bookingFlowService = {
     booking.lifecycle.state = nextState;
     booking.lifecycle.version += 1;
     booking.lifecycle.transitions.push({ from: currentState, to: nextState, occurredAt: now, actor, reason, metadata });
+    lvMessengerService.append(booking, {
+      id: randomUUID(),
+      at: now,
+      channel: actor === 'driver' ? 'customer' : 'admin',
+      messageType: 'lifecycle_update',
+      tone: 'operational',
+      content: `Ride status updated to ${nextState}.`,
+      metadata: { actor, reason }
+    });
     logger.info('booking.lifecycle.transition', { bookingId, from: currentState, to: nextState, actor, version: booking.lifecycle.version });
     return bookingRepository.update(booking);
   },
