@@ -8,6 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "db:integrity": "tsx scripts/db-integrity.ts",
+    "db:backup": "tsx scripts/db-backup.ts"
     "db:inspect:audit": "node scripts/db-ops.mjs inspect-audit",
     "db:inspect:recovery": "node scripts/db-ops.mjs inspect-recovery",
     "db:inspect:messages": "node scripts/db-ops.mjs inspect-messages",
