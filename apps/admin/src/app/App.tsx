@@ -47,6 +47,7 @@ const navItems = [
 ];
 
 const bookings = [
+  ['BK-10928', 'Executive Sedan', 'New', 'Unassigned', 'ASAP'],
   ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40'],
   ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55'],
   ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10'],
@@ -155,6 +156,7 @@ export function App() {
 
                 <Panel title="Alerts & Incidents" icon={<span>⚠</span>}>
                   <ul className="space-y-2 text-sm text-zinc-300">
+                    <li className="rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2">New booking alert • BK-10928 received</li>
                     <li className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2">Engine anomaly • Unit DV-14</li>
                     <li className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">Late pickup cluster • Sector West</li>
                     <li className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-2">Road closure • Strip Blvd</li>

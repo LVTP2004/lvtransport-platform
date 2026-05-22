@@ -27,6 +27,23 @@ const formatDateTime = (value: string) => {
   });
 };
 
+
+function TrackingPage() {
+  const trackingCode = window.location.pathname.split('/').filter(Boolean).at(-1) ?? '';
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-3xl glass-panel rounded-3xl p-6">
+        <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">Public tracking</p>
+        <h1 className="mt-3 text-3xl font-semibold">Track your ride</h1>
+        <p className="mt-3 text-sm text-lv-mist">Tracking code lookup flow is prepared for API integration.</p>
+        <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+          Tracking code: <strong className="text-white">{trackingCode || 'missing code'}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function App() {
   const [step, setStep] = useState<Step>(1);
   const [pickup, setPickup] = useState('');
@@ -36,6 +53,10 @@ export function App() {
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
+
+  if (window.location.pathname.startsWith('/tracking')) {
+    return <TrackingPage />;
+  }
 
   const baseFare = useMemo(() => {
     const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);

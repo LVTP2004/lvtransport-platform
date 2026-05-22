@@ -18,7 +18,7 @@ const rideHistory = [
 ];
 
 const notifications = [
-  { title: 'Priority zone surge', note: 'Las Vegas Strip now +1.7x multiplier', time: '2m ago' },
+  { title: 'Driver assigned: BK-10928', note: 'Pickup at Fontainebleau • customer tracking live', time: 'Just now' },
   { title: 'Performance badge unlocked', note: 'Maintained 4.9+ rating this week', time: '18m ago' },
   { title: 'Vehicle inspection reminder', note: 'Schedule check before May 15', time: '1h ago' }
 ];
