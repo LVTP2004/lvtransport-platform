@@ -4,6 +4,59 @@ import { useMemo, useState } from 'react'
 const GOLD = '#d4af37'
 
 type Metrics = { total: number; completed: number; cancelled: number; active: number; completionRate: number }
+type Booking = { id: string; referenceCode: string; pickup: string; destination: string; scheduleAt: string; lifecycle: { state: string; version: number } }
+
+type RideHistoryEvent = {
+  id: string
+  rideId: string
+  rideCode?: string
+  actorType: 'customer' | 'driver' | 'admin' | 'moni_assistant' | 'system'
+  actorId?: string
+  eventType: string
+  previousStatus?: string
+  nextStatus?: string
+  message?: string
+  timestamp: string
+}
+
+type AuditEntry = {
+  id: string
+  actor: string
+  action: string
+  previousValue?: string
+  newValue?: string
+  reason?: string
+  timestamp: string
+}
+
+type PaymentHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  status: 'payment_pending' | 'payment_paid' | 'invoice_generated' | 'refund_requested' | 'refund_completed' | string
+  btwReference?: string
+  invoiceReference?: string
+  message?: string
+  timestamp: string
+}
+
+type NotificationHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  channel: 'whatsapp' | 'sms' | 'email' | 'manual'
+  status: 'pending' | 'sent' | 'failed' | 'retrying'
+  failureReason?: string
+  timestamp: string
+}
+
+type MoniRideHistoryEvent = {
+  id: string
+  rideId?: string
+  rideCode?: string
+  eventType: 'tracking_lookup' | 'fallback_triggered' | 'customer_support_request' | 'tracking_unavailable' | 'continuity_recovery_event' | 'operational_warning' | string
+  message?: string
+  timestamp: string
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string; scheduleAt: string; lifecycle: { state: string; version: number }; [key: string]: unknown }
 type ServiceConfig = { id: string; name: string; basePrice: number; active: boolean }
 type Booking = {
@@ -443,6 +496,12 @@ export default function Admin() {
   const [metrics, setMetrics] = useState<Metrics | null>(null)
   const [bookings, setBookings] = useState<Booking[]>([])
   const [error, setError] = useState('')
+
+  const [rideHistory, setRideHistory] = useState<RideHistoryEvent[]>([])
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>([])
+  const [paymentHistory, setPaymentHistory] = useState<PaymentHistoryEvent[]>([])
+  const [notificationHistory, setNotificationHistory] = useState<NotificationHistoryEvent[]>([])
+  const [moniRideHistory, setMoniRideHistory] = useState<MoniRideHistoryEvent[]>([])
   const [visibleText, setVisibleText] = useState('Reserva clara. GPS claro. Operación estable.')
   const [basePrice, setBasePrice] = useState(24)
   const [services, setServices] = useState<ServiceConfig[]>([
@@ -455,21 +514,60 @@ export default function Admin() {
   useEffect(() => {
     void (async () => {
       try {
-        const [metricsRes, bookingsRes] = await Promise.all([
+        const [metricsRes, bookingsRes, rideHistoryRes, paymentsRes, auditRes, notificationsRes, moniRideRes] = await Promise.all([
           fetch(`${API_V1_BASE}/admin/bookings/metrics`),
           fetch(`${API_V1_BASE}/admin/bookings`),
+          fetch(`${API_V1_BASE}/admin/history/rides`),
+          fetch(`${API_V1_BASE}/admin/history/payments`),
+          fetch(`${API_V1_BASE}/admin/history/audit`),
+          fetch(`${API_V1_BASE}/admin/history/notifications`),
+          fetch(`${API_V1_BASE}/admin/history/moniride`),
         ])
-        const metricsJson = await metricsRes.json()
-        const bookingsJson = await bookingsRes.json()
-        if (!metricsRes.ok || !bookingsRes.ok) throw new Error(metricsJson?.message || bookingsJson?.message || 'Admin data ophalen mislukt.')
+
+        const [metricsJson, bookingsJson, rideHistoryJson, paymentsJson, auditJson, notificationsJson, moniRideJson] = await Promise.all([
+          metricsRes.json(),
+          bookingsRes.json(),
+          rideHistoryRes.json().catch(() => ({})),
+          paymentsRes.json().catch(() => ({})),
+          auditRes.json().catch(() => ({})),
+          notificationsRes.json().catch(() => ({})),
+          moniRideRes.json().catch(() => ({})),
+        ])
+
+        if (!metricsRes.ok || !bookingsRes.ok) {
+          throw new Error(metricsJson?.message || bookingsJson?.message || 'Admin data ophalen mislukt.')
+        }
+
         setMetrics(metricsJson.metrics ?? null)
         setBookings(Array.isArray(bookingsJson.bookings) ? bookingsJson.bookings : [])
+        setRideHistory(Array.isArray(rideHistoryJson.history) ? rideHistoryJson.history : [])
+        setPaymentHistory(Array.isArray(paymentsJson.history) ? paymentsJson.history : [])
+        setAuditEntries(Array.isArray(auditJson.history) ? auditJson.history : [])
+        setNotificationHistory(Array.isArray(notificationsJson.history) ? notificationsJson.history : [])
+        setMoniRideHistory(Array.isArray(moniRideJson.history) ? moniRideJson.history : [])
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Admin data ophalen mislukt.')
       }
     })()
   }, [])
 
+  return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '30px 16px', fontFamily: 'Arial, sans-serif' }}>
+    <section style={{ maxWidth: 980, margin: '0 auto', display: 'grid', gap: 14 }}>
+      <h1 style={{ margin: 0, color: GOLD }}>Admin</h1>
+      <p style={{ margin: 0 }}>Operational memory. Audit first.</p>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Reservas y estados</h2>
+        {error && <p style={{ color: '#fca5a5' }}>{error}</p>}
+        {metrics && <p>T: {metrics.total} · A: {metrics.active} · C: {metrics.completed} · X: {metrics.cancelled} · {(metrics.completionRate * 100).toFixed(1)}%</p>}
+        <ul style={{ margin: 0, paddingLeft: 18 }}>
+          {bookings.slice(0, 15).map((booking) => <li key={booking.id}>{booking.referenceCode} · {booking.lifecycle.state} · {booking.pickup} → {booking.destination}</li>)}
+        </ul>
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Ride lifecycle history</h2>
+        {rideHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={rideHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId} · ${event.actorType} · ${event.eventType}${event.previousStatus || event.nextStatus ? ` · ${event.previousStatus ?? '-'} → ${event.nextStatus ?? '-'}` : ''}${event.message ? ` · ${event.message}` : ''}`)} />}
   const evidenceNodes = useMemo(() => buildBookingNodes(bookings), [bookings])
   const evidenceRelationships = useMemo(() => createRelationships(evidenceNodes), [evidenceNodes])
 
@@ -847,6 +945,13 @@ export default function Admin() {
       <article style={cardStyle}><h2 style={h2Style}>Precio base</h2><input type='number' value={basePrice} onChange={(e) => setBasePrice(Number(e.target.value))} style={inputStyle} /></article>
 
       <article style={cardStyle}>
+        <h2 style={h2Style}>Admin audit trail</h2>
+        {auditEntries.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={auditEntries.map((entry) => `${entry.timestamp} · ${entry.actor} · ${entry.action} · ${entry.previousValue ?? '-'} → ${entry.newValue ?? '-'}${entry.reason ? ` · ${entry.reason}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Payment continuity history</h2>
+        {paymentHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={paymentHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.status}${event.btwReference ? ` · BTW ${event.btwReference}` : ''}${event.invoiceReference ? ` · Invoice ${event.invoiceReference}` : ''}${event.message ? ` · ${event.message}` : ''}`)} />}
         <h2 style={h2Style}>Approvals, execution history, dry-run lineage and operator accountability</h2>
         <ul style={{ margin: 0, paddingLeft: 18 }}>
           {immutableExecutionRecords.map((record) => (
@@ -952,9 +1057,13 @@ export default function Admin() {
       </article>
 
       <article style={cardStyle}>
-        <h2 style={h2Style}>Logs y alertas</h2>
-        <ul style={{ margin: 0, paddingLeft: 18 }}>{logs.map((log) => <li key={log}>{log}</li>)}</ul>
-        <p style={{ color: GOLD, marginBottom: 0 }}>Alerta simple: solo intervenir en emergencia.</p>
+        <h2 style={h2Style}>MoniRide event history</h2>
+        {moniRideHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={moniRideHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.eventType}${event.message ? ` · ${event.message}` : ''}`)} />}
+      </article>
+
+      <article style={cardStyle}>
+        <h2 style={h2Style}>Notification history</h2>
+        {notificationHistory.length === 0 ? <p style={emptyStateStyle}>Geen geschiedenis beschikbaar.</p> : <HistoryList items={notificationHistory.map((event) => `${event.timestamp} · ${event.rideCode ?? event.rideId ?? '—'} · ${event.channel} · ${event.status}${event.failureReason ? ` · ${event.failureReason}` : ''}`)} />}
       </article>
       <article style={cardStyle}><h2 style={h2Style}>Logs y alertas</h2><ul style={{ margin: 0, paddingLeft: 18 }}>{logs.map((log) => <li key={log}>{log}</li>)}</ul><p style={{ color: GOLD, marginBottom: 0 }}>Alerta simple: solo intervenir en emergencia.</p></article>
         <article style={cardStyle}>
@@ -983,6 +1092,15 @@ export default function Admin() {
   </main>
 }
 
+function HistoryList({ items }: { items: string[] }) {
+  return <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 6 }}>{items.map((item) => <li key={item}>{item}</li>)}</ul>
+}
+
+const cardStyle: React.CSSProperties = {
+  border: '1px solid rgba(255,255,255,.15)',
+  borderRadius: 12,
+  padding: 14,
+  background: '#0f1011',
 function MetaRow({ label, value }: { label: string; value: string }) {
   return <div style={{ display: 'grid', gap: 2 }}><span style={{ fontSize: 12, color: '#9ca3af' }}>{label}</span><span>{value}</span></div>
 }
@@ -1031,6 +1149,9 @@ const thStyle: React.CSSProperties = {
   color: GOLD,
 }
 
+const emptyStateStyle: React.CSSProperties = {
+  margin: 0,
+  color: '#c5c7cb',
 const tdStyle: React.CSSProperties = {
   borderBottom: '1px solid rgba(255,255,255,.1)',
   padding: 8,
