@@ -1,4 +1,5 @@
 import dotenv from 'dotenv';
+import { startupSecretValidation } from './secrets-governance.js';
 
 dotenv.config();
 
@@ -21,6 +22,12 @@ const requiredWhenProduction = (name: string): string | undefined => {
 };
 
 const nodeEnv = process.env.NODE_ENV ?? 'development';
+const secretValidation = startupSecretValidation.validate(nodeEnv);
+
+if (secretValidation.status === 'blocked') {
+  const blockingKeys = secretValidation.checks.filter((check) => check.status === 'fail' && check.severity === 'critical').map((check) => check.key);
+  throw new Error(`Critical runtime secrets validation failed: ${blockingKeys.join(', ')}`);
+}
 
 export const env = {
   nodeEnv,
@@ -36,6 +43,7 @@ export const env = {
   payconiqApiKey: process.env.PAYCONIQ_API_KEY,
   mailProviderApiKey: process.env.MAIL_PROVIDER_API_KEY,
   mailFromAddress: process.env.MAIL_FROM_ADDRESS,
+  secretValidation,
 };
 
 if (env.isProduction && env.corsOrigin === '*') {
