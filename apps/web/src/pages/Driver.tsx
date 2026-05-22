@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 
 const API_BASE = (import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be').replace(/\/$/, '')
@@ -9,6 +10,8 @@ type DriverHistoryEntry = {
   id: string
   rideId: string
   rideCode?: string
+  eventType: 'accepted' | 'cancelled' | 'completed' | 'gps_activated' | string
+  timestamp: string
   status: 'accepted' | 'cancelled' | 'completed' | string
   acceptedAt?: string
   cancelledAt?: string
@@ -18,6 +21,43 @@ type DriverHistoryEntry = {
 }
 
 export default function Driver() {
+  const [history, setHistory] = useState<DriverHistoryEntry[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    void (async () => {
+      setLoading(true)
+      setError('')
+      try {
+        const response = await fetch(`${API_V1_BASE}/driver/history`)
+        const json = await response.json()
+        if (!response.ok) throw new Error(json?.message || 'Drivergeschiedenis ophalen mislukt.')
+        setHistory(Array.isArray(json?.events) ? json.events : [])
+      } catch (err) {
+        setHistory([])
+        setError(err instanceof Error ? err.message : 'Drivergeschiedenis ophalen mislukt.')
+      } finally {
+        setLoading(false)
+      }
+    })()
+  }, [])
+
+  return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '28px 16px', fontFamily: 'Arial, sans-serif' }}>
+    <section style={{ maxWidth: 720, margin: '0 auto', border: '1px solid rgba(212,175,55,.35)', borderRadius: 14, padding: 16 }}>
+      <h1 style={{ marginTop: 0, color: GOLD }}>Driver · History</h1>
+      <p style={{ marginTop: 0, color: '#d1d5db' }}>Overzicht van geaccepteerde, geannuleerde en afgewerkte ritten met operationele tijdstempels.</p>
+      {loading ? <p style={mutedStyle}>Geschiedenis laden…</p> : null}
+      {error ? <p style={{ ...mutedStyle, color: '#fca5a5' }}>{error}</p> : null}
+      {!loading && history.length === 0 ? <p style={mutedStyle}>Geen geschiedenis beschikbaar.</p> : null}
+      {history.length > 0 ? <ul style={{ margin: 0, paddingLeft: 18, display: 'grid', gap: 8 }}>
+        {history.map((entry) => (
+          <li key={entry.id}>
+            {entry.timestamp} · {entry.rideCode ?? entry.rideId} · {entry.eventType}
+            {entry.paymentReference ? ` · payment ref: ${entry.paymentReference}` : ''}
+          </li>
+        ))}
+      </ul> : null}
   const [tripCode, setTripCode] = useState('')
   const [status, setStatus] = useState<DriverStatus>('idle')
   const [message, setMessage] = useState('Esperando viaje')
@@ -79,25 +119,9 @@ export default function Driver() {
   </main>
 }
 
-const inputStyle: React.CSSProperties = {
-  width: '100%',
-  boxSizing: 'border-box',
-  borderRadius: 10,
-  border: '1px solid rgba(255,255,255,.2)',
-  padding: '10px 12px',
-  background: '#0b0b0b',
-  color: 'white',
-  fontFamily: 'Arial, sans-serif',
-}
-
-const buttonStyle: React.CSSProperties = {
-  background: GOLD,
-  color: '#111214',
-  border: 'none',
-  borderRadius: 10,
-  padding: '10px 12px',
-  fontWeight: 700,
-  cursor: 'pointer',
+const mutedStyle: React.CSSProperties = {
+  margin: 0,
+  color: '#d1d5db',
 }
 
 const historyCardStyle: React.CSSProperties = {
