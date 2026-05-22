@@ -16,6 +16,10 @@ import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js
 import { basicRateLimitMiddleware } from './middleware/basic-rate-limit.middleware.js';
 import { apiSecurityMiddleware, requestValidationMiddleware } from './modules/security/middleware/security.middleware.js';
 import apiRoutes from './routes/index.js';
+import { authenticate } from './auth/middleware/authenticate.js';
+
+export function createApp() {
+  const app = express();
 
 export const createApp = () => {
   const app = express();
@@ -38,6 +42,7 @@ export const createApp = () => {
   app.use(requestValidationMiddleware);
   app.use(basicRateLimitMiddleware);
   app.use(requestLoggerMiddleware);
+  app.use(authenticate);
 
   app.get('/health', (_req, res) => {
     res.redirect(307, `${API_PREFIX}/v1/health`);
