@@ -100,6 +100,25 @@ const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
   return map[String(status).toLowerCase()] ?? null;
 };
 
+const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
+  const map: Record<string, BookingLifecycle> = {
+    draft: BookingLifecycle.PENDING,
+    submitted: BookingLifecycle.PENDING,
+    confirmed: BookingLifecycle.ASSIGNED,
+    assigned: BookingLifecycle.ASSIGNED,
+    accepted: BookingLifecycle.ACCEPTED,
+    en_route: BookingLifecycle.EN_ROUTE,
+    arrived: BookingLifecycle.ARRIVED,
+    in_progress: BookingLifecycle.IN_PROGRESS,
+    completed: BookingLifecycle.COMPLETED,
+    cancelled: BookingLifecycle.CANCELLED,
+    failed: BookingLifecycle.FAILED,
+    pending: BookingLifecycle.PENDING
+  };
+  return map[String(status).toLowerCase()] ?? null;
+};
+
+
 export function App() {
   const [booting, setBooting] = useState(true);
   const [route, setRoute] = useState<RouteKey>(() => routeMap[window.location.pathname] ?? 'home');
@@ -206,6 +225,15 @@ export function App() {
       return;
     }
     const code = createRideCode();
+    const payload: BookingRecord = { ...form, code, createdAt: new Date().toISOString(), status: 'submitted' };
+    const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
+    const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+    if (sessionStorage.getItem(dedupeKey)) {
+      setConfirm('Dubbele verzending geblokkeerd. Uw eerdere boeking werd al verwerkt.');
+      return;
+    }
+    localStorage.setItem('lvtransport_bookings', JSON.stringify([payload, ...existing].slice(0, 50)));
+    sessionStorage.setItem(dedupeKey, payload.code);
     const payload: BookingRecord = { ...form, name: identity.name, phone: identity.phone || form.phone, code, createdAt: new Date().toISOString(), status: 'submitted' };
     const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
     if (sessionStorage.getItem(dedupeKey)) {
@@ -241,6 +269,14 @@ export function App() {
     if (!identity) return startIntent('tracking');
     setTrackingLoading(true);
     const normalized = trackingInput.trim().toUpperCase();
+    if (!/^LV\d{5}$/.test(normalized)) return setTrackingResult('Ongeldige code. Gebruik formaat LV12345.');
+    const records = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+    const ride = records.find((r) => r.code === normalized);
+    if (!ride) return setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
+    const lifecycle = normalizeLifecycle(ride.status);
+    if (!lifecycle) return setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+    const immutable = isImmutableLifecycleStatus(lifecycle);
+    setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
     if (!normalized) {
       setTrackingResult('Voer een trackingcode in uit uw bevestiging.');
       setTrackingLoading(false);
