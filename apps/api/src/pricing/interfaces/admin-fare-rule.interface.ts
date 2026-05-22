@@ -1,4 +1,4 @@
-import { FareRuleType, PricingTier } from '../enums/fare-rule.enum';
+import { FareRuleType, PricingTier } from '../enums/fare-rule.enum.js';
 
 export interface AdminFareRule {
   id: string;

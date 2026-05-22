@@ -21,6 +21,21 @@ Exit criteria:
 - Security baseline mapped to Phase 1 objectives.
 - Deployment and environment structure ready for implementation start.
 
+### Immediate Next Step (Execution Kickoff)
+
+To move from planning to delivery, start with a thin end-to-end slice that validates core platform plumbing:
+
+1. Define a minimal booking lifecycle (`requested -> assigned -> in_progress -> completed`).
+2. Expose a first API contract for booking creation and status updates.
+3. Wire driver availability + assignment as a mocked service behind a stable interface.
+4. Add baseline operational observability (request logging + health endpoint + error envelope).
+
+Suggested deliverables for this kickoff:
+
+- API contract draft (OpenAPI or equivalent) for booking + assignment.
+- Module boundary note for `LV API`, `LV Driver`, and `LV Admin`.
+- One demo flow runnable in local dev showing booking state transitions.
+
 ## Phase 2 — Platform Account & Transaction Core
 
 **Priority capabilities:** login, roles, bookings, tracking, emails
@@ -76,3 +91,32 @@ Exit criteria:
 
 - Cross-module governance model formalized.
 - Expansion prioritization framework approved.
+
+## Conceptual Branch — LV Tech Operations (Future)
+
+**Status:** Conceptual roadmap only (non-production).
+
+Purpose:
+
+- Establish a future AI-powered operational technology and business solutions branch for SMBs in Belgium.
+
+Scope preparation:
+
+- premium websites, booking systems, operational dashboards
+- AI assistants, realtime coordination/tracking, automation workflows
+- VPS deployment preparation, PM2/Nginx operational readiness
+- reusable SaaS modules and multilingual support
+
+Guardrails:
+
+- No interference with LV Ride active operations.
+- No production API behavior changes.
+- No live billing implementation in conceptual stage.
+
+Reference architecture document:
+
+- `docs/LV-TECH-OPERATIONS-CONCEPTUAL-BRANCH.md`
+## Future Concept Branch (2026-05-12)
+
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-ROADMAP.md` for long-term ecosystem planning.
+- See `docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-DIAGRAMS.md` for conceptual architecture diagrams.
