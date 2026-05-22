@@ -3,6 +3,7 @@ type GovernanceLane = {
   source: 'backend-contract' | 'deterministic-adapter' | 'integration-seam'
   narrative: string
   checkpoint: string
+  visibility: 'audit-safe' | 'contract-pending' | 'adapter-stable'
 }
 
 const governanceLanes: GovernanceLane[] = [
@@ -11,24 +12,28 @@ const governanceLanes: GovernanceLane[] = [
     source: 'backend-contract',
     narrative: 'Summarizes verified operational indicators emitted by runtime services.',
     checkpoint: 'No synthetic KPI expansion permitted.',
+    visibility: 'audit-safe',
   },
   {
     lane: 'Governance & Compliance',
     source: 'integration-seam',
     narrative: 'Reserved integration seam for policy and compliance event ingestion.',
     checkpoint: 'Waiting for policy service contract binding.',
+    visibility: 'contract-pending',
   },
   {
     lane: 'Replay Intelligence',
     source: 'deterministic-adapter',
     narrative: 'Deterministic placeholder narrative for audit replay pipeline readiness.',
     checkpoint: 'Adapter stays static until replay service emits runtime events.',
+    visibility: 'adapter-stable',
   },
   {
     lane: 'System Health',
     source: 'backend-contract',
     narrative: 'Uses existing runtime health contract to keep founder visibility operational.',
     checkpoint: 'Contract-only health states shown.',
+    visibility: 'audit-safe',
   },
 ]
 
@@ -44,7 +49,10 @@ export default function Founder() {
         <section className="grid gap-4 md:grid-cols-2">
           {governanceLanes.map((item) => (
             <article key={item.lane} className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
-              <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
+                <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{item.visibility}</span>
+              </div>
               <p className="mt-2 text-sm text-zinc-300">{item.narrative}</p>
               <p className="mt-2 text-sm text-zinc-400">{item.checkpoint}</p>
               <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Source: {item.source}</p>
