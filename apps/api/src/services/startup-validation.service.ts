@@ -28,6 +28,13 @@ export const startupValidationService = {
 
     const checks: StartupValidationCheck[] = [
       asCheck({
+        id: 'secrets.runtime-governance',
+        status: env.secretValidation.status === 'blocked' ? 'fail' : 'pass',
+        severity: 'critical',
+        message: env.secretValidation.status === 'blocked' ? 'Critical runtime secret validation failed.' : 'Runtime secret validation passed for startup continuity.',
+        details: env.secretValidation,
+      }),
+      asCheck({
         id: 'env.cors-production-safety',
         status: env.isProduction && env.corsOrigin === '*' ? 'fail' : 'pass',
         severity: 'critical',

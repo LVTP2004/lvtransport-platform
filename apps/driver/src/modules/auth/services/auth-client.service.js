@@ -1,3 +1,3 @@
-// @ts-nocheck
 import { AuthService, FirebaseAuthProvider } from '@lvtransport/auth';
-export const authService = new AuthService(new FirebaseAuthProvider());
+export const driverAuthProvider = new FirebaseAuthProvider();
+export const driverAuthService = new AuthService(driverAuthProvider);
