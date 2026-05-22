@@ -100,6 +100,28 @@ export const bookingFlowService = {
     return bookingRepository.list();
   },
 
+  async getAirportIntelligence(bookingId: string): Promise<{
+    bookingId: string;
+    referenceCode: string;
+    airportIntel?: BookingRecord['airportIntel'];
+    airportIntelligence?: BookingRecord['airportIntelligence'];
+    generatedLVMessages: BookingRecord['lvMessenger']['messages'];
+  }> {
+    const booking = await bookingRepository.getById(bookingId);
+    if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
+    return {
+      bookingId: booking.id,
+      referenceCode: booking.referenceCode,
+      airportIntel: booking.airportIntel,
+      airportIntelligence: booking.airportIntelligence,
+      generatedLVMessages: booking.lvMessenger.messages.filter((message) => (
+        message.messageType === 'flight_delay_detected'
+        || message.messageType === 'pickup_timing_adjusted'
+        || message.messageType === 'airport_instruction'
+      )),
+    };
+  },
+
   async updateBookingLifecycle(
     bookingId: string,
     nextState: CanonicalBookingLifecycleStatus,

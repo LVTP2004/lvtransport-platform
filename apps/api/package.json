@@ -28,6 +28,7 @@
     "execution:validate": "tsx src/scripts/execution-validate.ts",
     "execution:history": "tsx src/scripts/execution-history.ts",
     "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
+    "runtime:verify:airport-intelligence": "tsx src/scripts/airport-intelligence-runtime-verify.ts",
     "backup:verify": "bash ../../scripts/backup/lvtp-verify-backup.sh \"$LVTP_BACKUP_SNAPSHOT\"",
     "restore:validate": "tsx src/runtime/cli.ts restore:validate",
     "incident:cognition": "tsx src/cli/ops-cli.ts incident:cognition",
