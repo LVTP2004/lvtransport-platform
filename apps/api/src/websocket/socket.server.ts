@@ -41,8 +41,16 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
     broadcast({ type: WS_EVENTS.BOOKING_UPDATED, payload: snapshot });
   });
 
+  const broadcast = (event: string, payload: unknown) => {
+    const message = JSON.stringify({ event, payload, emittedAt: new Date().toISOString() });
+    wss.clients.forEach((client) => client.send(message));
+  };
+
+  eventBus.on(WS_EVENTS.BOOKING_UPDATED, (payload) => broadcast(WS_EVENTS.BOOKING_UPDATED, payload));
+
   wss.on('connection', (socket) => {
     logger.info('WebSocket client connected');
+    socket.send(JSON.stringify({ event: WS_EVENTS.CONNECTION, payload: { ok: true } }));
     clientHeartbeats.set(socket, Date.now());
     socket.send(JSON.stringify({
       type: 'connection.ack',
