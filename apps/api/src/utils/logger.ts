@@ -1,9 +1,14 @@
-const redactKeys = new Set(['authorization', 'cookie', 'set-cookie', 'x-api-key', 'password', 'token', 'secret']);
+const redactTokens = ['authorization', 'cookie', 'set-cookie', 'x-api-key', 'password', 'token', 'secret', 'apikey', 'jwt'];
+
+const shouldRedactKey = (key: string): boolean => {
+  const normalized = key.toLowerCase();
+  return redactTokens.some((token) => normalized.includes(token));
+};
 
 const safeStringify = (value: unknown): string => {
   try {
     return JSON.stringify(value, (_key, currentValue) => {
-      if (typeof _key === 'string' && redactKeys.has(_key.toLowerCase())) {
+      if (typeof _key === 'string' && shouldRedactKey(_key)) {
         return '[REDACTED]';
       }
       return currentValue;

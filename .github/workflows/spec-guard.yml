@@ -1,0 +1,19 @@
+name: Spec Guard
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  spec-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Run LVTransport spec guard
+        run: |
+          git fetch origin main
+          BASE_REF=origin/main bash scripts/spec-guard.sh
