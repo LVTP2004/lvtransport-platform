@@ -1,3 +1,5 @@
+import { useMemo, useState } from 'react';
+import type { BookingLifecycleStatus } from '@lvtransport/realtime';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
 import { mapsClient } from '../modules/maps/services/maps-client.service';
@@ -32,6 +34,18 @@ export function App() {
   const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
+
+  const [bookingCode, setBookingCode] = useState('');
+  const [bookingStatus, setBookingStatus] = useState<BookingLifecycleStatus>('pending');
+
+  const createBooking = async () => {
+    const res = await fetch('/api/v1/bookings', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ customerId: 'customer-web', pickup, destination })});
+    const json = await res.json();
+    if (json?.data) {
+      setBookingCode(json.data.bookingCode);
+      setBookingStatus(json.data.status);
+    }
+  };
 
   useEffect(() => { const t = setTimeout(async () => setPickupPredictions(await mapsClient.autocomplete(pickup)), 250); return () => clearTimeout(t); }, [pickup]);
   useEffect(() => { const t = setTimeout(async () => setDestinationPredictions(await mapsClient.autocomplete(destination)), 250); return () => clearTimeout(t); }, [destination]);
@@ -255,7 +269,7 @@ export function App() {
           <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
             Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
           </p>
-        </header>
+        </header>{bookingCode && <p className='mb-4 text-sm text-lv-champagne'>Booking {bookingCode} • Status: {bookingStatus}</p>}
 
         <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <div className="glass-panel rounded-3xl p-4 sm:p-6">
@@ -526,6 +540,15 @@ export function App() {
     setBookingSubmitting(false);
   };
 
+            <div className="mt-6 flex gap-3">
+              <Button variant="secondary" className="flex-1" onClick={prevStep}>
+                Back
+              </Button>
+              {step < 3 ? (
+                <Button className="flex-1" onClick={nextStep}>Continue</Button>
+              ) : (
+                <Button className="flex-1 shadow-gold-md" onClick={createBooking}>Confirm booking UI</Button>
+              )}
   const setConfirmedReviewSeed = (rideCode: string) => {
     setVerifiedReviews((existing) => Array.from(new Set([`Verified Ride Review unlocked for ${rideCode}`, ...existing])).slice(0, 5));
   };

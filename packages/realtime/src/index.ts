@@ -18,6 +18,7 @@ export * from "./notifications/notification";
 export * from "./transport/event-bus";
 export * from "./transport/firebase-websocket-bridge";
 
+export * from "./bookings/lifecycle";
 export * from "./dispatch/mvp";
 export * from "./config/env.js";
 export * from "./core/firebase-app.js";

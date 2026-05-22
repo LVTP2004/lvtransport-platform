@@ -1,3 +1,5 @@
+import { BOOKING_EVENTS } from '../constants/index.js';
+import type { BookingLifecycleStatus, BookingTimelineEntry } from '@lvtransport/realtime';
 import { eventBus } from '../events/event-bus.js';
 
 export type DispatchBookingStatus =
@@ -31,6 +33,11 @@ export type BookingEventName = (typeof BOOKING_EVENTS)[keyof typeof BOOKING_EVEN
 
 export interface BookingEventPayload {
   bookingId: string;
+  bookingCode: string;
+  customerId: string;
+  driverId?: string;
+  status: BookingLifecycleStatus;
+  timelineEntry: BookingTimelineEntry;
   customerId: string;
   driverId?: string;
   status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
