@@ -20,7 +20,8 @@ const initialForm: BookingFormData = {
   notes: '',
 };
 
-const WHATSAPP_PLACEHOLDER = '000000000000';
+const WHATSAPP_NUMBER_E164 = '32466487936';
+const WHATSAPP_DISPLAY = '+32 466 48 79 36';
 
 export default function App() {
   const [formData, setFormData] = useState<BookingFormData>(initialForm);
@@ -75,7 +76,7 @@ export default function App() {
             <a className="btn btn-gold" href="#reservar">
               Reservar
             </a>
-            <a className="btn btn-outline" href={`https://wa.me/${WHATSAPP_PLACEHOLDER}`}>
+            <a className="btn btn-outline" href={`https://wa.me/${WHATSAPP_NUMBER_E164}`}>
               WhatsApp
             </a>
           </div>
@@ -154,6 +155,9 @@ export default function App() {
               Phone / WhatsApp
               <input
                 required
+                type="tel"
+                inputMode="tel"
+                placeholder="+32 4XX XX XX XX"
                 value={formData.phone}
                 onChange={(event) => setFormData({ ...formData, phone: event.target.value })}
               />
@@ -184,7 +188,7 @@ export default function App() {
       </main>
 
       <footer id="contacto" className="footer">
-        <p>Contact: WhatsApp placeholder +{WHATSAPP_PLACEHOLDER}</p>
+        <p>Contact: WhatsApp {WHATSAPP_DISPLAY}</p>
         <p>LV Transport • Belgium</p>
       </footer>
     </div>
