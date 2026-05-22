@@ -3,6 +3,7 @@ type AdminRuntimeModule = {
   source: 'backend-contract' | 'deterministic-adapter' | 'integration-seam'
   status: 'operational' | 'degraded' | 'standby'
   detail: string
+  auditRule: string
   attribution?: string
 }
 
@@ -12,6 +13,7 @@ const adminModules: AdminRuntimeModule[] = [
     source: 'backend-contract',
     status: 'operational',
     detail: 'Bound to API dispatch lifecycle without synthetic queue injection.',
+    auditRule: 'Queue visibility must match runtime status transitions only.',
     attribution: 'Dispatch supervisor ownership lane',
   },
   {
@@ -19,6 +21,7 @@ const adminModules: AdminRuntimeModule[] = [
     source: 'integration-seam',
     status: 'standby',
     detail: 'Schema boundary reserved for incident service, no decorative KPIs rendered.',
+    auditRule: 'Incident panel remains seam-only until contract is signed.',
     attribution: 'Incident commander role contract',
   },
   {
@@ -26,6 +29,7 @@ const adminModules: AdminRuntimeModule[] = [
     source: 'deterministic-adapter',
     status: 'operational',
     detail: 'Deterministic adapter keeps UI stable until telemetry endpoint is attached.',
+    auditRule: 'Adapter uses explicit stable states: operational, degraded or standby.',
     attribution: 'Fleet sentinel adapter ownership',
   },
   {
@@ -33,6 +37,7 @@ const adminModules: AdminRuntimeModule[] = [
     source: 'integration-seam',
     status: 'standby',
     detail: 'Operational continuity lane retained for event replay integration.',
+    auditRule: 'No fabricated replay evidence is displayed in this lane.',
     attribution: 'Replay steward integration seam',
   },
 ]
@@ -54,6 +59,7 @@ export default function Admin() {
                 <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{module.status}</span>
               </div>
               <p className="mt-2 text-sm text-zinc-300">{module.detail}</p>
+              <p className="mt-2 text-sm text-zinc-400">{module.auditRule}</p>
               <p className="mt-2 text-sm text-zinc-400">Attribution: {module.attribution}</p>
               <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Source: {module.source}</p>
             </article>

@@ -3,6 +3,7 @@ type GovernanceLane = {
   source: 'backend-contract' | 'deterministic-adapter' | 'integration-seam'
   narrative: string
   checkpoint: string
+  visibility: 'audit-safe' | 'contract-pending' | 'adapter-stable'
   auditVisibility: string
 }
 
@@ -12,6 +13,7 @@ const governanceLanes: GovernanceLane[] = [
     source: 'backend-contract',
     narrative: 'Summarizes verified operational indicators emitted by runtime services.',
     checkpoint: 'No synthetic KPI expansion permitted.',
+    visibility: 'audit-safe',
     auditVisibility: 'Contract metrics only; no inferred executive KPI overlays.',
   },
   {
@@ -19,6 +21,7 @@ const governanceLanes: GovernanceLane[] = [
     source: 'integration-seam',
     narrative: 'Reserved integration seam for policy and compliance event ingestion.',
     checkpoint: 'Waiting for policy service contract binding.',
+    visibility: 'contract-pending',
     auditVisibility: 'Lane visible as standby until policy event contract attaches.',
   },
   {
@@ -26,6 +29,7 @@ const governanceLanes: GovernanceLane[] = [
     source: 'deterministic-adapter',
     narrative: 'Deterministic placeholder narrative for audit replay pipeline readiness.',
     checkpoint: 'Adapter stays static until replay service emits runtime events.',
+    visibility: 'adapter-stable',
     auditVisibility: 'Replay lineage shown as adapter-owned readiness state.',
   },
   {
@@ -33,6 +37,7 @@ const governanceLanes: GovernanceLane[] = [
     source: 'backend-contract',
     narrative: 'Uses existing runtime health contract to keep founder visibility operational.',
     checkpoint: 'Contract-only health states shown.',
+    visibility: 'audit-safe',
     auditVisibility: 'Health evidence remains traceable to runtime health contract fields.',
   },
 ]
@@ -49,7 +54,10 @@ export default function Founder() {
         <section className="grid gap-4 md:grid-cols-2">
           {governanceLanes.map((item) => (
             <article key={item.lane} className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
-              <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
+              <div className="flex items-start justify-between gap-3">
+                <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
+                <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{item.visibility}</span>
+              </div>
               <p className="mt-2 text-sm text-zinc-300">{item.narrative}</p>
               <p className="mt-2 text-sm text-zinc-400">{item.checkpoint}</p>
               <p className="mt-2 text-xs text-zinc-500">Audit visibility: {item.auditVisibility}</p>
