@@ -22,6 +22,17 @@
     "typecheck:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey typecheck",
     "memory:continuity": "node tools/memory-engine/continuity-index.mjs",
     "memory:index": "node tools/memory-engine/continuity-index.mjs"
+    "graph:build": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:build",
+    "graph:verify": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:verify",
+    "graph:query": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:query",
+    "simulation:run": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts simulation:run",
+    "simulation:verify": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts simulation:verify",
+    "integrity:score": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts integrity:score",
+    "forecast:generate": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts forecast:generate",
+    "archive:create": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts archive:create",
+    "archive:verify": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts archive:verify",
+    "policy:lookup": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts policy:lookup",
+    "policy:explain": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts policy:explain"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

@@ -1,3 +1,4 @@
+import { BookingLifecycle } from '../models/enums.js';
 import { BookingLifecycle, CanonicalBookingLifecycle } from '../models/enums.js';
 import type { BookingActor, BookingRecord, BookingTimelineEntry } from '../models/realtime.js';
 
