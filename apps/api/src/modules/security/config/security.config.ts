@@ -1,3 +1,5 @@
+import { ActorRole, ApprovalBoundary } from '../enums/security.enums';
+
 export const securityArchitectureConfig = {
   helmet: {
     enabled: true,
@@ -25,5 +27,47 @@ export const securityArchitectureConfig = {
   },
   bruteForceProtection: {
     mode: 'rate-limit-and-progressive-delay',
+  },
+  governance: {
+    approvalRequirements: {
+      [ApprovalBoundary.PLATFORM_CONFIGURATION]: {
+        minApprovers: 1,
+        approverRoles: [ActorRole.FOUNDER, ActorRole.OPERATOR],
+      },
+      [ApprovalBoundary.FINANCIAL_DISBURSEMENT]: {
+        minApprovers: 2,
+        approverRoles: [ActorRole.FOUNDER, ActorRole.OPERATOR, ActorRole.AUDITOR],
+      },
+      [ApprovalBoundary.CUSTOMER_DATA_EXPORT]: {
+        minApprovers: 2,
+        approverRoles: [ActorRole.FOUNDER, ActorRole.AUDITOR],
+      },
+      [ApprovalBoundary.PRODUCTION_EXECUTION]: {
+        minApprovers: 1,
+        approverRoles: [ActorRole.FOUNDER, ActorRole.OPERATOR],
+      },
+    },
+    roleExecutionPolicies: {
+      [ActorRole.FOUNDER]: {
+        canExecute: true,
+        approvalBoundaries: Object.values(ApprovalBoundary),
+        requiresHumanSupervision: true,
+      },
+      [ActorRole.OPERATOR]: {
+        canExecute: true,
+        approvalBoundaries: [ApprovalBoundary.PLATFORM_CONFIGURATION, ApprovalBoundary.PRODUCTION_EXECUTION],
+        requiresHumanSupervision: true,
+      },
+      [ActorRole.AUDITOR]: {
+        canExecute: false,
+        approvalBoundaries: [ApprovalBoundary.CUSTOMER_DATA_EXPORT, ApprovalBoundary.FINANCIAL_DISBURSEMENT],
+        requiresHumanSupervision: true,
+      },
+      [ActorRole.OBSERVER]: {
+        canExecute: false,
+        approvalBoundaries: [],
+        requiresHumanSupervision: true,
+      },
+    },
   },
 } as const;
