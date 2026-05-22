@@ -24,6 +24,17 @@ export type LifecycleEventEntry = {
   metadata?: Record<string, unknown>;
 };
 
+export type SynchronizationAuditRecord = {
+  id: string;
+  type: 'snapshot_refresh' | 'deterministic_sync_window';
+  at: string;
+  windowStartAt: string;
+  windowEndAt: string;
+  bookingCount: number;
+  versions: number[];
+  lineagePreserved: boolean;
+};
+
 export type BookingRecord = {
   id: string;
   code: string;
@@ -122,6 +133,7 @@ const assignmentAttemptLedger = new Map<string, string>();
 const assignmentInFlight = new Set<string>();
 const telemetryIngestLedger = new Map<string, { at: number; lat: number; lng: number }>();
 const assignmentPreparationCache = new Map<string, { expiresAt: number; payload: { bookingId: string; candidates: AssignmentCandidate[] } }>();
+const synchronizationAuditLog: SynchronizationAuditRecord[] = [];
 let eventSequence = 0;
 let heartbeatInterval: NodeJS.Timeout | undefined;
 let lastAnalyticsPushAt = 0;
@@ -129,6 +141,8 @@ let lastAnalyticsPushAt = 0;
 type RealtimeSocket = WebSocket & { isAlive?: boolean };
 
 const allowedTransitions = CANONICAL_ALLOWED_TRANSITIONS;
+const SYNCHRONIZATION_WINDOW_MS = 60_000;
+const MAX_SYNCHRONIZATION_BOOKINGS = 200;
 
 const toRadians = (value: number) => (value * Math.PI) / 180;
 const calculateDistanceKm = (from: { lat: number; lng: number }, to: { lat: number; lng: number }) => {
@@ -257,6 +271,24 @@ const transitionBySystemRule = (booking: BookingRecord, nextStatus: BookingLifec
   emit('booking.lifecycle.changed', booking);
   emit('automation.trigger.executed', { bookingId: booking.id, from: previousStatus, to: nextStatus, note, at: now });
   return true;
+};
+
+const snapshotByDeterministicWindow = (windowStartAt: string, windowEndAt: string, limit = MAX_SYNCHRONIZATION_BOOKINGS): BookingRecord[] => {
+  const startMs = new Date(windowStartAt).getTime();
+  const endMs = new Date(windowEndAt).getTime();
+  if (!Number.isFinite(startMs) || !Number.isFinite(endMs) || startMs > endMs) throw new Error('INVALID_SYNC_WINDOW');
+  return Array.from(bookings.values())
+    .filter((booking) => {
+      const updatedAtMs = new Date(booking.updatedAt).getTime();
+      return updatedAtMs >= startMs && updatedAtMs <= endMs;
+    })
+    .sort((a, b) => a.updatedAt.localeCompare(b.updatedAt) || a.id.localeCompare(b.id))
+    .slice(0, Math.max(1, Math.min(limit, MAX_SYNCHRONIZATION_BOOKINGS)));
+};
+
+const appendSynchronizationAudit = (record: Omit<SynchronizationAuditRecord, 'id'>) => {
+  synchronizationAuditLog.push({ id: randomUUID(), ...record });
+  if (synchronizationAuditLog.length > 500) synchronizationAuditLog.splice(0, synchronizationAuditLog.length - 500);
 };
 
 export const realtimeOrchestratorService = {
@@ -586,6 +618,47 @@ export const realtimeOrchestratorService = {
     operationalAnalyticsService.rebuildFromSnapshots(Array.from(bookings.values()), Array.from(driverStates.values()));
     emit('dispatch.recovery.completed', { driverId, recoveredBookings: recovered.map((booking) => booking.id), at: new Date().toISOString() });
     return { recoveredBookings: recovered, driverState: driverStates.get(driverId) ?? null };
+  },
+
+  refreshControlledSnapshot(params?: { nowAt?: string; windowMs?: number; limit?: number }): { windowStartAt: string; windowEndAt: string; bookings: BookingRecord[]; audit: SynchronizationAuditRecord } {
+    const nowMs = params?.nowAt ? new Date(params.nowAt).getTime() : Date.now();
+    if (!Number.isFinite(nowMs)) throw new Error('INVALID_SYNC_REFERENCE_TIME');
+    const windowMs = Math.max(1_000, Math.min(params?.windowMs ?? SYNCHRONIZATION_WINDOW_MS, 15 * 60_000));
+    const windowEndAt = new Date(nowMs).toISOString();
+    const windowStartAt = new Date(nowMs - windowMs).toISOString();
+    const windowBookings = snapshotByDeterministicWindow(windowStartAt, windowEndAt, params?.limit);
+    const audit: SynchronizationAuditRecord = {
+      id: randomUUID(),
+      type: 'snapshot_refresh',
+      at: new Date().toISOString(),
+      windowStartAt,
+      windowEndAt,
+      bookingCount: windowBookings.length,
+      versions: windowBookings.map((booking) => booking.version),
+      lineagePreserved: windowBookings.every((booking) => booking.timeline.length >= 1 && booking.lifecycleEventLog.length >= 1)
+    };
+    appendSynchronizationAudit(audit);
+    return { windowStartAt, windowEndAt, bookings: windowBookings, audit };
+  },
+
+  synchronizeDeterministically(params: { windowStartAt: string; windowEndAt: string; limit?: number }): { bookings: BookingRecord[]; audit: SynchronizationAuditRecord } {
+    const windowBookings = snapshotByDeterministicWindow(params.windowStartAt, params.windowEndAt, params.limit);
+    const audit: SynchronizationAuditRecord = {
+      id: randomUUID(),
+      type: 'deterministic_sync_window',
+      at: new Date().toISOString(),
+      windowStartAt: params.windowStartAt,
+      windowEndAt: params.windowEndAt,
+      bookingCount: windowBookings.length,
+      versions: windowBookings.map((booking) => booking.version),
+      lineagePreserved: windowBookings.every((booking) => booking.timeline.length >= 1 && booking.lifecycleEventLog.length >= 1)
+    };
+    appendSynchronizationAudit(audit);
+    return { bookings: windowBookings, audit };
+  },
+
+  listSynchronizationAudits(limit = 50): SynchronizationAuditRecord[] {
+    return synchronizationAuditLog.slice(-Math.max(1, Math.min(limit, 500)));
   },
 
   updateDriverLocation(params: DriverLocationUpdate) {

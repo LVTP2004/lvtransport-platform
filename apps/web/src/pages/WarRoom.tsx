@@ -1,0 +1,1 @@
+export function WarRoom() { return <section className='glass-panel rounded-3xl p-6'><h2 className='text-2xl font-semibold'>Operational War Room</h2><p>Deterministic coordination cockpit, append-only and read-only controls.</p></section>; }

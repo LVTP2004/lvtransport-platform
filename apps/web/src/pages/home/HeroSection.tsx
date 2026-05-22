@@ -9,6 +9,26 @@ const serviceTypes = [
   { key: 'van', label: 'Mercedes Van', base: 42, perKm: 2.8 },
 ]
 
+type TrackingStatus = 'confirmed' | 'en_route' | 'nearby' | 'arrived' | 'completed' | 'cancelled'
+
+type TrackingResponse = {
+  code: string
+  status: TrackingStatus
+  message?: string
+  updatedAt?: string
+}
+
+type TrackingPanelState = 'idle' | 'loading' | 'success' | 'fallback'
+
+const statusContent: Record<TrackingStatus, { label: string; message: string }> = {
+  confirmed: { label: 'Bevestigd', message: 'Uw rit is bevestigd. Tracking beschikbaar zodra uw rit bevestigd is.' },
+  en_route: { label: 'Onderweg', message: 'Uw chauffeur is onderweg.' },
+  nearby: { label: 'Bij u in de buurt', message: 'Uw chauffeur is in de buurt van uw ophaallocatie.' },
+  arrived: { label: 'Aangekomen', message: 'Uw chauffeur is aangekomen op de ophaallocatie.' },
+  completed: { label: 'Rit voltooid', message: 'Uw rit is succesvol voltooid.' },
+  cancelled: { label: 'Geannuleerd', message: 'Deze rit is geannuleerd. Neem contact op als u hulp nodig heeft.' },
+}
+
 const sectionWrap: React.CSSProperties = {
   maxWidth: 1180,
   margin: '0 auto',
@@ -49,6 +69,9 @@ export default function HeroSection() {
   const [trackingLoading, setTrackingLoading] = useState(false)
   const [trackingResult, setTrackingResult] = useState<TrackingResult | null>(null)
   const [trackingTried, setTrackingTried] = useState(false)
+  const [trackingValidation, setTrackingValidation] = useState('')
+  const [trackingState, setTrackingState] = useState<TrackingPanelState>('idle')
+  const [trackingResult, setTrackingResult] = useState<TrackingResponse | null>(null)
 
   const estimate = useMemo(() => {
     const service = serviceTypes.find((item) => item.key === calc.service) ?? serviceTypes[0]
@@ -79,6 +102,38 @@ export default function HeroSection() {
       setTrackingResult(null)
     } finally {
       setTrackingLoading(false)
+  const onTrackingCodeChange = (value: string) => {
+    const numericOnly = value.replace(/\D/g, '').slice(0, 5)
+    setTrackingCode(numericOnly)
+    setTrackingValidation('')
+  }
+
+  const loadTracking = async () => {
+    if (!trackingCode) {
+      setTrackingValidation('Voer een geldige ritcode in om tracking te openen.')
+      return
+    }
+
+    setTrackingState('loading')
+    setTrackingResult(null)
+
+    try {
+      const response = await fetch(`/api/v1/tracking/${trackingCode}`)
+
+      if (!response.ok) {
+        throw new Error('Tracking unavailable')
+      }
+
+      const data = (await response.json()) as TrackingResponse
+
+      if (!data?.code || !data?.status || !(data.status in statusContent)) {
+        throw new Error('Invalid tracking payload')
+      }
+
+      setTrackingResult(data)
+      setTrackingState('success')
+    } catch {
+      setTrackingState('fallback')
     }
   }
 
@@ -199,6 +254,70 @@ export default function HeroSection() {
               </div>
             </div>
           </div>
+        <div style={{ borderRadius: 28, overflow: 'hidden', border: '1px solid rgba(212,175,55,.18)', background: 'rgba(12,13,16,.95)', padding: 24 }}>
+          <h2 style={{ marginTop: 0, marginBottom: 10 }}>MoniRide tracking</h2>
+          <p style={{ color: '#cfcfcf', marginTop: 0 }}>Volg uw rit veilig en eenvoudig met uw ritcode.</p>
+
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 10, marginBottom: trackingValidation ? 8 : 18 }}>
+            <input
+              inputMode="numeric"
+              pattern="[0-9]*"
+              maxLength={5}
+              placeholder="Voer uw ritcode in"
+              aria-label="Ritcode"
+              value={trackingCode}
+              onChange={(e) => onTrackingCodeChange(e.target.value)}
+              style={{ ...inputStyle, maxWidth: 260 }}
+            />
+            <button
+              type="button"
+              onClick={loadTracking}
+              style={{ background: gold, color: charcoal, padding: '14px 20px', borderRadius: 14, border: 0, fontWeight: 800, cursor: 'pointer' }}
+            >
+              Tracking openen
+            </button>
+          </div>
+
+          {trackingValidation ? <p style={{ color: '#f0d484', marginTop: 0 }}>{trackingValidation}</p> : null}
+
+          {(trackingState !== 'idle' || trackingResult) ? (
+            <div style={{ marginTop: 18, borderRadius: 20, border: '1px solid rgba(212,175,55,.25)', background: 'linear-gradient(145deg, rgba(20,22,28,.94), rgba(14,15,20,.98))', padding: 18 }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 14, flexWrap: 'wrap' }}>
+                <div style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: gold, boxShadow: '0 0 14px rgba(212,175,55,.8)' }} />
+                  <span style={{ color: '#f3d98b', fontSize: 12, letterSpacing: '.08em', textTransform: 'uppercase' }}>MoniRide operationeel</span>
+                </div>
+                <span style={{ color: '#e2e2e2', fontSize: 14 }}>Ritcode: {trackingCode}</span>
+              </div>
+
+              <div style={{ height: 1, background: 'linear-gradient(90deg, rgba(212,175,55,.6), rgba(212,175,55,.05))', marginBottom: 14 }} />
+
+              {trackingState === 'loading' && (
+                <>
+                  <p style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 700 }}>Uw ritstatus wordt opgehaald.</p>
+                  <p style={{ margin: 0, color: '#cbced4' }}>Even geduld terwijl MoniRide uw ritinformatie controleert.</p>
+                </>
+              )}
+
+              {trackingState === 'success' && trackingResult && (
+                <>
+                  <p style={{ margin: '0 0 8px', fontSize: 26, fontWeight: 700 }}>{statusContent[trackingResult.status].label}</p>
+                  <p style={{ margin: 0, color: '#cbced4' }}>{statusContent[trackingResult.status].message}</p>
+                </>
+              )}
+
+              {trackingState === 'fallback' && (
+                <>
+                  <p style={{ margin: '0 0 8px', fontSize: 22, fontWeight: 700 }}>We kunnen uw rit tijdelijk niet automatisch ophalen.</p>
+                  <p style={{ marginTop: 0, color: '#cbced4' }}>Neem contact op via WhatsApp of telefoon met uw ritcode.</p>
+                  <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                    <a href="tel:+32466487936" style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '10px 14px', borderRadius: 12, textDecoration: 'none', background: 'rgba(255,255,255,.05)' }}>Bel nu</a>
+                    <a href="https://wa.me/32466487936" target="_blank" rel="noreferrer" style={{ border: '1px solid rgba(212,175,55,.34)', color: 'white', padding: '10px 14px', borderRadius: 12, textDecoration: 'none', background: 'rgba(255,255,255,.05)' }}>WhatsApp</a>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : null}
         </div>
       </section>
     </main>
