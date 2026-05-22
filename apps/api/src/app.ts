@@ -1,4 +1,11 @@
 import express from 'express';
+import { API_PREFIX } from './constants/index.js';
+import { corsMiddleware } from './config/cors.js';
+import { requestLogger } from './middleware/requestLogger.js';
+import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
+import apiRoutes from './routes/index.js';
+
+export function createApp() {
 import { randomUUID } from 'node:crypto';
 import { API_PREFIX } from './constants/app.constants.js';
 import { corsMiddleware } from './config/cors.js';
@@ -27,6 +34,8 @@ export const createApp = () => {
 
   app.use(apiSecurityMiddleware);
   app.use(corsMiddleware);
+  app.use(express.json());
+  app.use(requestLogger);
   app.use(express.json({ limit: '1mb' }));
   app.use(requestValidationMiddleware);
   app.use(basicRateLimitMiddleware);
