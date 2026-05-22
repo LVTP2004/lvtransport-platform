@@ -1,3 +1,18 @@
+import { useEffect, useMemo, useState } from 'react';
+import { Button } from '@lvtransport/ui';
+import { ProtectedRoute } from '../modules/auth/route-guards/protected-route';
+import { webAuthProvider, webAuthService } from '../modules/auth/services/auth-client.service';
+import { AccountStatus, type AuthState, type UserAccount, UserRole } from '@lvtransport/auth';
+
+type Step = 1 | 2 | 3;
+type Vehicle = { name: string; eta: string; priceMultiplier: number; seats: number };
+const vehicles: Vehicle[] = [
+  { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3 },
+  { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6 },
+  { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10 }
+];
+
+const formatDateTime = (value: string) => (!value ? 'Select schedule' : new Date(value).toLocaleString('en-US'));
 import { FormEvent, useEffect, useMemo, useState } from 'react';
 import { getInstallPromptState } from '../pwa';
 import { Button } from '@lvtransport/ui';
@@ -5,6 +20,9 @@ import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realt
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
 
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'replay-theater' | 'governance' | 'topology';
+type Step = 1 | 2 | 3;
+type Provider = 'stripe' | 'payconiq';
+type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
 type BookingStatus = 'draft' | 'submitted' | 'confirmed' | BookingLifecycle;
 type AuthMode = 'signin' | 'register';
 type InteractionIntent = 'booking' | 'tracking' | 'vip' | 'business' | 'driver' | 'admin' | 'reviews' | 'expansion';
@@ -42,6 +60,22 @@ const routeMap: Record<string, RouteKey> = {
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/replay-theater': 'replay-theater', '/governance': 'governance', '/topology': 'topology'
 };
 
+
+function TrackingPage() {
+  const trackingCode = window.location.pathname.split('/').filter(Boolean).at(-1) ?? '';
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-3xl glass-panel rounded-3xl p-6">
+        <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">Public tracking</p>
+        <h1 className="mt-3 text-3xl font-semibold">Track your ride</h1>
+        <p className="mt-3 text-sm text-lv-mist">Tracking code lookup flow is prepared for API integration.</p>
+        <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+          Tracking code: <strong className="text-white">{trackingCode || 'missing code'}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
 const primaryNavItems = [
   { label: 'Home', path: '/', section: 'hero' },
   { label: 'Booking', path: '/booking', section: 'booking', intent: 'booking' as InteractionIntent },
@@ -85,6 +119,86 @@ const customerMapStates: Array<{ key: BookingLifecycle | 'searching' | 'booking_
   { key: BookingLifecycle.COMPLETED, label: 'Completed', tone: 'bg-lv-gold/25 text-lv-champagne border-lv-gold/40' }
 ];
 
+export function App() {
+  const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
+  const [user, setUser] = useState<UserAccount | undefined>();
+  const [email, setEmail] = useState('customer@lvtransport.dev');
+  const [password, setPassword] = useState('password123');
+  const [step, setStep] = useState<Step>(1);
+  const [pickup, setPickup] = useState('');
+  const [destination, setDestination] = useState('');
+  const [passengers, setPassengers] = useState(1);
+  const [vehicle, setVehicle] = useState<Vehicle>(vehicles[0]);
+  const [airportTransfer, setAirportTransfer] = useState(false);
+  const [businessVip, setBusinessVip] = useState(true);
+
+  if (window.location.pathname.startsWith('/tracking')) {
+    return <TrackingPage />;
+  }
+
+  const baseFare = useMemo(() => {
+    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
+    const airportFee = airportTransfer ? 18 : 0;
+    const vipFee = businessVip ? 24 : 0;
+    const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
+    return Math.round(total);
+  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1>
+          <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
+            Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
+          </p>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="glass-panel rounded-3xl p-4 sm:p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-lv-mist">Step {step} of 3</p>
+              <div className="flex w-32 gap-2">
+                {[1, 2, 3].map((i) => (
+                  <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />
+                ))}
+              </div>
+            </div>
+  useEffect(() => { webAuthService.getInitialState().then(setAuthState); }, []);
+
+  const baseFare = useMemo(() => Math.round((Math.max(14, (pickup.length + destination.length) * 0.8) + (passengers > 3 ? (passengers - 3) * 6 : 0) + (airportTransfer ? 18 : 0) + (businessVip ? 24 : 0)) * vehicle.priceMultiplier), [pickup.length, destination.length, passengers, airportTransfer, businessVip, vehicle.priceMultiplier]);
+
+  const login = async () => {
+    const tokens = await webAuthService.signIn({ email, password });
+    const session = await webAuthProvider.getSession(tokens.accessToken);
+    const profile = await webAuthProvider.getUserProfile(tokens.accessToken);
+    setAuthState({ isAuthenticated: true, isLoading: false, tokens, session });
+    setUser(profile);
+  };
+  const logout = async () => { if (authState.session) await webAuthService.signOut(authState.session.sessionId); setAuthState({ isAuthenticated: false, isLoading: false }); setUser(undefined); };
+
+  const canAccess = authState.isAuthenticated && user?.status === AccountStatus.ACTIVE && user.roles.includes(UserRole.CUSTOMER);
+
+  if (!authState.isAuthenticated) return <div className="min-h-screen bg-lv-black text-white p-8"><h1 className="text-2xl mb-4">Customer Login</h1><input className="text-black p-2 mr-2" value={email} onChange={(e)=>setEmail(e.target.value)} /><input className="text-black p-2 mr-2" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} /><Button onClick={login}>Sign in</Button></div>;
+
+  return <ProtectedRoute allowed={canAccess} fallback={<div className="min-h-screen bg-lv-black text-white p-8">Account not active for customer booking.<Button onClick={logout}>Logout</Button></div>}><div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><Button variant="secondary" onClick={logout}>Logout</Button><p className='mt-2 text-sm'>Onboarding: {user?.onboardingStep}</p><p>{user?.profile.firstName} {user?.profile.lastName}</p><div className="mx-auto w-full max-w-6xl"><header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1></header><section><label><input value={pickup} onChange={(e)=>setPickup(e.target.value)} /></label><label><input value={destination} onChange={(e)=>setDestination(e.target.value)} /></label><label><input type='datetime-local' value={dateTime} onChange={(e)=>setDateTime(e.target.value)} /></label><p>${baseFare} {formatDateTime(dateTime)}</p></section></div></div></ProtectedRoute>;
+  const [provider, setProvider] = useState<Provider>('stripe');
+  const [paymentState, setPaymentState] = useState<'idle' | 'checkout_prepared' | 'session_created' | 'confirmed'>('idle');
+
+  const baseFare = useMemo(() => Math.round(Math.max(14, (pickup.length + destination.length) * 0.8) * vehicle.priceMultiplier + (passengers > 3 ? (passengers - 3) * 6 : 0)), [destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const confirmFlow = () => {
+    setPaymentState('checkout_prepared');
+    setTimeout(() => setPaymentState('session_created'), 200);
+    setTimeout(() => setPaymentState('confirmed'), 450);
+  };
+
+  return <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8"><div className="mx-auto w-full max-w-6xl"><header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7"><p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p><h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1></header><section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]"><div className="glass-panel rounded-3xl p-4 sm:p-6"><div className="mb-6 flex items-center justify-between"><p className="text-sm text-lv-mist">Step {step} of 3</p></div>{step===1&&<div className="space-y-4"><label className="field-wrap"><span>Pickup</span><input value={pickup} onChange={(e)=>setPickup(e.target.value)} /></label><label className="field-wrap"><span>Destination</span><input value={destination} onChange={(e)=>setDestination(e.target.value)} /></label></div>}{step===2&&<div className="space-y-4"><div className="field-wrap"><span>Passengers</span><div className="mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3"><button className="control-btn" onClick={()=>setPassengers((v)=>Math.max(1,v-1))}>−</button><strong className="text-lg">{passengers}</strong><button className="control-btn" onClick={()=>setPassengers((v)=>Math.min(12,v+1))}>+</button></div></div>{vehicles.map((item)=><button key={item.name} onClick={()=>setVehicle(item)} className={`vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`}>{item.name}</button>)}</div>}{step===3&&<div className="space-y-4"><p className="text-sm text-lv-mist">Payment provider (test mode)</p><div className="grid grid-cols-2 gap-3"><button onClick={()=>setProvider('stripe')} className={`vehicle-card ${provider==='stripe' ? 'vehicle-card--active' : ''}`}>Stripe Test</button><button onClick={()=>setProvider('payconiq')} className={`vehicle-card ${provider==='payconiq' ? 'vehicle-card--active' : ''}`}>Payconiq Placeholder</button></div><div className="rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">No real card charge. No card data stored. Session IDs are test placeholders only.</div></div>}<div className="mt-6 flex gap-3"><Button variant="secondary" className="flex-1" onClick={() => setStep((v) => (v > 1 ? ((v - 1) as Step) : v))}>Back</Button>{step<3?<Button className="flex-1" onClick={() => setStep((v) => (v < 3 ? ((v + 1) as Step) : v))}>Continue</Button>:<Button className="flex-1 shadow-gold-md" onClick={confirmFlow}>Confirm booking + test pay</Button>}</div></div><aside className="space-y-6"><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Price estimate</p><p className="mt-3 text-4xl font-semibold">${baseFare}</p><p className="mt-1 text-sm text-lv-mist">Provider: {provider}</p></article><article className="glass-panel rounded-3xl p-5 sm:p-6"><p className="text-xs uppercase tracking-[0.2em] text-lv-champagne">Payment confirmation</p><p className="mt-3 text-sm text-lv-mist">State: {paymentState}</p>{paymentState==='confirmed'&&<div className="mt-3 rounded-2xl border border-emerald-400/30 bg-emerald-500/10 p-3 text-sm">Payment captured in test mode. Booking lifecycle remains compatible.</div>}</article></aside></section></div></div>;
 const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
   const map: Record<string, BookingLifecycle> = {
     draft: BookingLifecycle.PENDING,
@@ -102,6 +216,25 @@ const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
   };
   return map[String(status).toLowerCase()] ?? null;
 };
+
+const normalizeLifecycle = (status: BookingStatus): BookingLifecycle | null => {
+  const map: Record<string, BookingLifecycle> = {
+    draft: BookingLifecycle.PENDING,
+    submitted: BookingLifecycle.PENDING,
+    confirmed: BookingLifecycle.ASSIGNED,
+    assigned: BookingLifecycle.ASSIGNED,
+    accepted: BookingLifecycle.ACCEPTED,
+    en_route: BookingLifecycle.EN_ROUTE,
+    arrived: BookingLifecycle.ARRIVED,
+    in_progress: BookingLifecycle.IN_PROGRESS,
+    completed: BookingLifecycle.COMPLETED,
+    cancelled: BookingLifecycle.CANCELLED,
+    failed: BookingLifecycle.FAILED,
+    pending: BookingLifecycle.PENDING
+  };
+  return map[String(status).toLowerCase()] ?? null;
+};
+
 
 export function App() {
   const [booting, setBooting] = useState(true);
@@ -209,6 +342,15 @@ export function App() {
       return;
     }
     const code = createRideCode();
+    const payload: BookingRecord = { ...form, code, createdAt: new Date().toISOString(), status: 'submitted' };
+    const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
+    const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+    if (sessionStorage.getItem(dedupeKey)) {
+      setConfirm('Dubbele verzending geblokkeerd. Uw eerdere boeking werd al verwerkt.');
+      return;
+    }
+    localStorage.setItem('lvtransport_bookings', JSON.stringify([payload, ...existing].slice(0, 50)));
+    sessionStorage.setItem(dedupeKey, payload.code);
     const payload: BookingRecord = { ...form, name: identity.name, phone: identity.phone || form.phone, code, createdAt: new Date().toISOString(), status: 'submitted' };
     const dedupeKey = `web-booking-${payload.phone}-${payload.date}-${payload.time}-${payload.pickup}`;
     if (sessionStorage.getItem(dedupeKey)) {
@@ -244,6 +386,14 @@ export function App() {
     if (!identity) return startIntent('tracking');
     setTrackingLoading(true);
     const normalized = trackingInput.trim().toUpperCase();
+    if (!/^LV\d{5}$/.test(normalized)) return setTrackingResult('Ongeldige code. Gebruik formaat LV12345.');
+    const records = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+    const ride = records.find((r) => r.code === normalized);
+    if (!ride) return setTrackingResult(`Rit ${normalized} niet gevonden. Controleer uw bevestigingsbericht.`);
+    const lifecycle = normalizeLifecycle(ride.status);
+    if (!lifecycle) return setTrackingResult(`Rit ${ride.code}: status onbekend, neem contact op met dispatch.`);
+    const immutable = isImmutableLifecycleStatus(lifecycle);
+    setTrackingResult(`Rit ${ride.code}: status ${lifecycle.toUpperCase()} • ${immutable ? 'immutable' : 'actief'} lifecycle.`);
     if (!normalized) {
       setTrackingResult('Voer een trackingcode in uit uw bevestiging.');
       setTrackingLoading(false);

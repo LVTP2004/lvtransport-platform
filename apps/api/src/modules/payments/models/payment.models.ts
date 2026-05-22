@@ -1,5 +1,5 @@
-import { PaymentSessionStatus } from '../enums/payment.enums';
-import { MoneyAmount } from '../interfaces/payment.interfaces';
+import { PaymentSessionStatus } from '../enums/payment.enums.js';
+import { MoneyAmount } from '../interfaces/payment.interfaces.js';
 
 export interface TransactionHistoryEntry {
   id: string;
