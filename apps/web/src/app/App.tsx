@@ -59,6 +59,22 @@ const routeMap: Record<string, RouteKey> = {
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin'
 };
 
+
+function TrackingPage() {
+  const trackingCode = window.location.pathname.split('/').filter(Boolean).at(-1) ?? '';
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-3xl glass-panel rounded-3xl p-6">
+        <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">Public tracking</p>
+        <h1 className="mt-3 text-3xl font-semibold">Track your ride</h1>
+        <p className="mt-3 text-sm text-lv-mist">Tracking code lookup flow is prepared for API integration.</p>
+        <div className="mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist">
+          Tracking code: <strong className="text-white">{trackingCode || 'missing code'}</strong>
+        </div>
+      </div>
+    </div>
+  );
+}
 const primaryNavItems = [
   { label: 'Home', path: '/', section: 'hero' },
   { label: 'Booking', path: '/booking', section: 'booking', intent: 'booking' as InteractionIntent },
@@ -112,6 +128,43 @@ export function App() {
   const [airportTransfer, setAirportTransfer] = useState(false);
   const [businessVip, setBusinessVip] = useState(true);
 
+  if (window.location.pathname.startsWith('/tracking')) {
+    return <TrackingPage />;
+  }
+
+  const baseFare = useMemo(() => {
+    const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
+    const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
+    const airportFee = airportTransfer ? 18 : 0;
+    const vipFee = businessVip ? 24 : 0;
+    const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
+    return Math.round(total);
+  }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
+
+  const nextStep = () => setStep((v) => (v < 3 ? ((v + 1) as Step) : v));
+  const prevStep = () => setStep((v) => (v > 1 ? ((v - 1) as Step) : v));
+
+  return (
+    <div className="min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8">
+      <div className="mx-auto w-full max-w-6xl">
+        <header className="glass-panel mb-6 rounded-3xl p-5 sm:p-7">
+          <p className="text-xs uppercase tracking-[0.24em] text-lv-champagne">LV Transport Booking</p>
+          <h1 className="mt-3 text-3xl font-semibold sm:text-5xl">Premium ride booking, built for enterprise pace.</h1>
+          <p className="mt-3 max-w-2xl text-sm text-lv-mist sm:text-base">
+            Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs.
+          </p>
+        </header>
+
+        <section className="grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <div className="glass-panel rounded-3xl p-4 sm:p-6">
+            <div className="mb-6 flex items-center justify-between">
+              <p className="text-sm text-lv-mist">Step {step} of 3</p>
+              <div className="flex w-32 gap-2">
+                {[1, 2, 3].map((i) => (
+                  <span key={i} className={`h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}`} />
+                ))}
+              </div>
+            </div>
   useEffect(() => { webAuthService.getInitialState().then(setAuthState); }, []);
 
   const baseFare = useMemo(() => Math.round((Math.max(14, (pickup.length + destination.length) * 0.8) + (passengers > 3 ? (passengers - 3) * 6 : 0) + (airportTransfer ? 18 : 0) + (businessVip ? 24 : 0)) * vehicle.priceMultiplier), [pickup.length, destination.length, passengers, airportTransfer, businessVip, vehicle.priceMultiplier]);

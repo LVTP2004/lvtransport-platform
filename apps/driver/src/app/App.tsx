@@ -2,6 +2,28 @@ import { useEffect, useState } from 'react';
 import { AccountStatus, type AuthState, UserRole } from '@lvtransport/auth';
 import { driverAuthProvider, driverAuthService } from '../modules/auth/services/auth-client.service';
 
+type TripState = 'Pickup' | 'On route' | 'Arrived' | 'Completed';
+
+const tripStates: TripState[] = ['Pickup', 'On route', 'Arrived', 'Completed'];
+
+const performanceStats = [
+  { label: 'Acceptance rate', value: '96%', detail: 'Top 10% today' },
+  { label: 'Cancellation', value: '1.2%', detail: 'Excellent consistency' },
+  { label: 'Avg. rating', value: '4.96', detail: 'From 248 riders' },
+  { label: 'On-time pickup', value: '94%', detail: 'Strong punctuality' }
+];
+
+const rideHistory = [
+  { id: 'LV-9012', rider: 'Ava M.', route: 'Bellagio → The Venetian', fare: '$24.80', status: 'Completed' },
+  { id: 'LV-9011', rider: 'Noah P.', route: 'Wynn → Airport T1', fare: '$31.20', status: 'Completed' },
+  { id: 'LV-9010', rider: 'Sophia R.', route: 'Aria → Fremont Street', fare: '$19.30', status: 'Completed' }
+];
+
+const notifications = [
+  { title: 'Driver assigned: BK-10928', note: 'Pickup at Fontainebleau • customer tracking live', time: 'Just now' },
+  { title: 'Performance badge unlocked', note: 'Maintained 4.9+ rating this week', time: '18m ago' },
+  { title: 'Vehicle inspection reminder', note: 'Schedule check before May 15', time: '1h ago' }
+];
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
   const [email, setEmail] = useState('driver@lvtransport.dev');
