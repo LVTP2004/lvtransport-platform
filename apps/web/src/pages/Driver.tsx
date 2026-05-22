@@ -59,6 +59,7 @@ const driverState: DriverRuntimeState = {
       state: 'standby',
       detail: 'Identity confirmation seam present without synthetic rider profile injection.',
     },
+  ],
   source: 'deterministic-adapter',
   rideStateMachine: [
     { state: 'queued', visibility: 'visible', source: 'backend-contract' },
@@ -69,17 +70,22 @@ const driverState: DriverRuntimeState = {
   ],
 }
 
+const renderValue = (value: string | number | null, fallback: string) => (value === null ? fallback : value)
+
 export default function Driver() {
   return (
-    <main className="min-h-screen bg-[#07090d] p-5 text-zinc-100 sm:p-8">
+    <main className="min-h-screen bg-[#05070b] p-5 text-zinc-100 sm:p-8">
       <div className="mx-auto grid w-full max-w-6xl gap-4">
-        <header className="rounded-2xl border border-amber-400/25 bg-black/45 p-5">
+        <header className="rounded-2xl border border-amber-300/30 bg-[#0a0d13]/95 p-5 shadow-[0_0_0_1px_rgba(245,158,11,0.06)]">
           <p className="text-xs uppercase tracking-[0.2em] text-amber-300">Driver Surface</p>
           <h1 className="mt-2 text-2xl font-semibold">Operational Cockpit</h1>
+          <p className="mt-2 text-sm text-zinc-400">
+            All blocks are contract-bound, adapter-backed, or explicit integration seams. Realtime telemetry is never fabricated.
+          </p>
         </header>
 
         <section className="grid gap-4 lg:grid-cols-[1.2fr_1fr]">
-          <article className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
+          <article className="rounded-2xl border border-amber-300/20 bg-[#0d1118]/90 p-4">
             <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">Active Ride Binding</h2>
             <dl className="mt-3 grid gap-2 text-sm text-zinc-300">
               <div className="flex justify-between gap-4"><dt>Ride ID</dt><dd>{driverState.assignment.rideId}</dd></div>
@@ -87,13 +93,14 @@ export default function Driver() {
               <div className="flex justify-between gap-4"><dt>Dropoff</dt><dd>{driverState.assignment.dropoff}</dd></div>
               <div className="flex justify-between gap-4"><dt>Passenger</dt><dd>{driverState.assignment.passengerName}</dd></div>
               <div className="flex justify-between gap-4"><dt>Tier</dt><dd>{driverState.assignment.tier}</dd></div>
-              <div className="flex justify-between gap-4"><dt>ETA</dt><dd>{driverState.assignment.etaMinutes ? `${driverState.assignment.etaMinutes} min` : 'Awaiting runtime contract value'}</dd></div>
-              <div className="flex justify-between gap-4"><dt>Route Distance</dt><dd>{driverState.route.distanceKm ? `${driverState.route.distanceKm} km` : 'Pending route engine contract'}</dd></div>
+              <div className="flex justify-between gap-4"><dt>ETA</dt><dd>{renderValue(driverState.assignment.etaMinutes, 'Awaiting runtime contract value')}</dd></div>
+              <div className="flex justify-between gap-4"><dt>Route Distance</dt><dd>{renderValue(driverState.route.distanceKm, 'Pending route engine contract')}</dd></div>
               <div className="flex justify-between gap-4"><dt>Traffic</dt><dd>{driverState.route.traffic}</dd></div>
             </dl>
+            <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Surface source owner: {driverState.source}</p>
           </article>
 
-          <article className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
+          <article className="rounded-2xl border border-amber-300/20 bg-[#0d1118]/90 p-4">
             <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">Runtime Panels</h2>
             <ul className="mt-3 space-y-2 text-sm">
               {driverState.panels.map((panel) => (
@@ -110,7 +117,7 @@ export default function Driver() {
           </article>
         </section>
 
-        <section className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
+        <section className="rounded-2xl border border-amber-300/20 bg-[#0d1118]/90 p-4">
           <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">Ride State Machine Visibility</h2>
           <ul className="mt-3 grid gap-2 text-sm">
             {driverState.rideStateMachine.map((node) => (
@@ -121,7 +128,9 @@ export default function Driver() {
               </li>
             ))}
           </ul>
-          <p className="mt-3 text-xs text-zinc-500">Realtime contract binding seam: driver websocket transport/event contracts are declared but not simulated.</p>
+          <p className="mt-3 text-xs text-zinc-500">
+            Realtime event seam declared: websocket transport and dispatch events remain runtime-owned and non-simulated.
+          </p>
         </section>
       </div>
     </main>
