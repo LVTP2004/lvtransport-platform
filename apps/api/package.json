@@ -8,6 +8,8 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "execution:validate": "tsx src/scripts/execution-validate.ts",
+    "execution:history": "tsx src/scripts/execution-history.ts"
     "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
     "backup:verify": "bash ../../scripts/backup/lvtp-verify-backup.sh \"$LVTP_BACKUP_SNAPSHOT\"",
     "restore:validate": "tsx src/runtime/cli.ts restore:validate"
