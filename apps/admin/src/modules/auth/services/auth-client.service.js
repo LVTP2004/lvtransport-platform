@@ -1,4 +1,3 @@
-// @ts-nocheck
-// @ts-nocheck
 import { AuthService, FirebaseAuthProvider } from '@lvtransport/auth';
-export const authService = new AuthService(new FirebaseAuthProvider());
+export const adminAuthProvider = new FirebaseAuthProvider();
+export const adminAuthService = new AuthService(adminAuthProvider);
