@@ -1,0 +1,15 @@
+* @leovargas-max
+
+/AGENTS.md @leovargas-max
+/docs/LVTRANSPORT_SPEC_LOCK.md @leovargas-max
+/.github/ @leovargas-max
+
+/apps/web/src/pages/Admin.tsx @leovargas-max
+/apps/web/src/pages/Driver.tsx @leovargas-max
+/apps/web/src/app/App.tsx @leovargas-max
+
+/apps/api/ @leovargas-max
+/apps/admin/ @leovargas-max
+
+/package.json @leovargas-max
+/pnpm-lock.yaml @leovargas-max
