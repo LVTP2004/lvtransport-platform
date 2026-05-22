@@ -9,6 +9,7 @@ import trackingRoutes from './tracking.routes.js';
 import notificationRoutes from './notifications.routes.js';
 import mapsRoutes from './maps.routes.js';
 import bookingRoutes from './booking.routes.js';
+import persistenceRoutes from './persistence.routes.js';
 import executionRoutes from './execution.routes.js';
 import operationsExecutionRoutes from './operations-execution.routes.js';
 import { operationalAnalyticsService } from '../../services/operational-analytics.service.js';
@@ -48,6 +49,7 @@ router.use(trackingRoutes);
 router.use(notificationRoutes);
 router.use(mapsRoutes);
 router.use(bookingRoutes);
+router.use(persistenceRoutes);
 router.use(executionRoutes);
 router.use(operationsExecutionRoutes);
 
