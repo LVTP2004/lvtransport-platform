@@ -6,9 +6,20 @@
   "scripts": {
     "dev:web": "pnpm --filter @lvtransport/web dev",
     "dev:admin": "pnpm --filter @lvtransport/admin dev",
+    "dev:admin:https": "pnpm --filter @lvtransport/admin dev --host 0.0.0.0 --https",
     "dev:driver": "pnpm --filter @lvtransport/driver dev",
-    "build": "pnpm -r --filter './apps/*' build",
-    "typecheck": "pnpm -r --filter './apps/*' typecheck"
+    "build": "pnpm --filter @lvtransport/web build && pnpm --filter @lvtransport/admin build && pnpm --filter @lvtransport/driver build && pnpm --filter @lvtransport/business build",
+    "typecheck": "pnpm -r --filter './apps/*' typecheck",
+    "ops:validate": "pnpm -r typecheck && pnpm -r build",
+    "ops:endurance": "node scripts/ops/lvtp-phase1-stress-sim.js",
+    "dev:business": "pnpm --filter @lvtransport/business dev",
+    "ops:final-scorecard": "node scripts/ops/lvtp-final-runtime-scorecard.js",
+    "ops:loop-report": "node scripts/ops/lvtp-final-runtime-scorecard.js",
+    "ops:matrix-evolution": "node scripts/ops/lvtp-matrix-evolution-extended-loop.js",
+    "ops:maturity-simplification": "node scripts/ops/lvtp-operational-maturity-simplification.js",
+    "dev:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey dev",
+    "build:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey build",
+    "typecheck:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey typecheck"
   },
   "devDependencies": {
     "@types/react": "^18.3.12",

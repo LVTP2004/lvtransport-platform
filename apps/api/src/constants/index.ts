@@ -25,3 +25,9 @@ export const NOTIFICATION_CHANNELS = {
   PUSH: 'push',
   IN_APP: 'in_app'
 } as const;
+
+
+export const WS_EVENTS = {
+  BOOKING_UPDATED: 'ws.booking.updated',
+  DRIVER_UPDATED: 'ws.driver.updated'
+} as const;

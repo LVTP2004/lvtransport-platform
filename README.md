@@ -54,6 +54,12 @@ This repository is the central workspace for planning and implementing:
 - **Phase 4:** LV Eats basic structure
 - **Phase 5:** marketplace expansion
 
+## Founder Vision
+
+The founder vision statement is documented in:
+
+- `docs/FOUNDER_VISION_STATEMENT.md`
+
 Detailed planning is documented in:
 
 - `docs/PROJECT-MASTERPLAN.md`
@@ -73,3 +79,11 @@ Current focus is **documentation-first**:
 - Define phased implementation roadmap
 
 No frontend or backend implementation is introduced at this stage.
+
+## Backup and Recovery
+
+Operational backup/disaster recovery protocol and scripts are in:
+
+- `docs/operations/LVTP_BACKUP_AND_DISASTER_RECOVERY_PROTOCOL.md`
+- `scripts/backup/lvtp-backup.sh`
+- `scripts/backup/lvtp-restore-check.sh`
