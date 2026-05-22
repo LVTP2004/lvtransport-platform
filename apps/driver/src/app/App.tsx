@@ -4,6 +4,7 @@ import { createDriverGpsService, type GpsSnapshot } from '../modules/tracking/se
 
 type Booking = { id: string; code: string; status: BookingLifecycle; assignedDriverName?: string; version: number; assignedDriverId?: string };
 
+
 const DRIVER_ID = 'drv-101';
 const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:4000/api/v1';
 const API_ORIGIN = new URL(API_BASE).origin;
