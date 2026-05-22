@@ -1,5 +1,7 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
+
+const router = Router();
 import paymentRoutes from '../../modules/payments/payment.routes.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
 import trackingRoutes from './tracking.routes.js';
