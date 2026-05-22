@@ -3,6 +3,7 @@ type GovernanceLane = {
   source: 'backend-contract' | 'deterministic-adapter' | 'integration-seam'
   narrative: string
   checkpoint: string
+  auditVisibility: string
 }
 
 const governanceLanes: GovernanceLane[] = [
@@ -11,24 +12,28 @@ const governanceLanes: GovernanceLane[] = [
     source: 'backend-contract',
     narrative: 'Summarizes verified operational indicators emitted by runtime services.',
     checkpoint: 'No synthetic KPI expansion permitted.',
+    auditVisibility: 'Contract metrics only; no inferred executive KPI overlays.',
   },
   {
     lane: 'Governance & Compliance',
     source: 'integration-seam',
     narrative: 'Reserved integration seam for policy and compliance event ingestion.',
     checkpoint: 'Waiting for policy service contract binding.',
+    auditVisibility: 'Lane visible as standby until policy event contract attaches.',
   },
   {
     lane: 'Replay Intelligence',
     source: 'deterministic-adapter',
     narrative: 'Deterministic placeholder narrative for audit replay pipeline readiness.',
     checkpoint: 'Adapter stays static until replay service emits runtime events.',
+    auditVisibility: 'Replay lineage shown as adapter-owned readiness state.',
   },
   {
     lane: 'System Health',
     source: 'backend-contract',
     narrative: 'Uses existing runtime health contract to keep founder visibility operational.',
     checkpoint: 'Contract-only health states shown.',
+    auditVisibility: 'Health evidence remains traceable to runtime health contract fields.',
   },
 ]
 
@@ -47,6 +52,7 @@ export default function Founder() {
               <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">{item.lane}</h2>
               <p className="mt-2 text-sm text-zinc-300">{item.narrative}</p>
               <p className="mt-2 text-sm text-zinc-400">{item.checkpoint}</p>
+              <p className="mt-2 text-xs text-zinc-500">Audit visibility: {item.auditVisibility}</p>
               <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Source: {item.source}</p>
             </article>
           ))}

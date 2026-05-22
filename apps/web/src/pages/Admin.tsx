@@ -3,6 +3,7 @@ type AdminRuntimeModule = {
   source: 'backend-contract' | 'deterministic-adapter' | 'integration-seam'
   status: 'operational' | 'degraded' | 'standby'
   detail: string
+  attribution?: string
 }
 
 const adminModules: AdminRuntimeModule[] = [
@@ -11,24 +12,28 @@ const adminModules: AdminRuntimeModule[] = [
     source: 'backend-contract',
     status: 'operational',
     detail: 'Bound to API dispatch lifecycle without synthetic queue injection.',
+    attribution: 'Dispatch supervisor ownership lane',
   },
   {
     name: 'Incident Oversight',
     source: 'integration-seam',
     status: 'standby',
     detail: 'Schema boundary reserved for incident service, no decorative KPIs rendered.',
+    attribution: 'Incident commander role contract',
   },
   {
     name: 'Fleet Runtime Health',
     source: 'deterministic-adapter',
     status: 'operational',
     detail: 'Deterministic adapter keeps UI stable until telemetry endpoint is attached.',
+    attribution: 'Fleet sentinel adapter ownership',
   },
   {
     name: 'Replay & Continuity',
     source: 'integration-seam',
     status: 'standby',
     detail: 'Operational continuity lane retained for event replay integration.',
+    attribution: 'Replay steward integration seam',
   },
 ]
 
@@ -49,9 +54,19 @@ export default function Admin() {
                 <span className="rounded-full border border-zinc-700 px-2 py-1 text-xs text-zinc-300">{module.status}</span>
               </div>
               <p className="mt-2 text-sm text-zinc-300">{module.detail}</p>
+              <p className="mt-2 text-sm text-zinc-400">Attribution: {module.attribution}</p>
               <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Source: {module.source}</p>
             </article>
           ))}
+        </section>
+
+        <section className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4 text-sm text-zinc-300">
+          <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">Integration Seams</h2>
+          <ul className="mt-3 list-disc space-y-1 pl-5">
+            <li>incident/replay ingest contract: standby until backend service exposure</li>
+            <li>continuity handoff contract: deterministic placeholder, no synthetic telemetry</li>
+            <li>operational attribution ledger: module-to-owner mapping visible and auditable</li>
+          </ul>
         </section>
       </div>
     </main>
