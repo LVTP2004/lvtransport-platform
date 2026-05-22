@@ -9,6 +9,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "memory:index": "tsx src/operational-memory/cli.ts index",
+    "memory:query": "tsx src/operational-memory/cli.ts query",
+    "memory:summary": "tsx src/operational-memory/cli.ts summary"
     "memory:timeline": "tsx src/operational-memory/cli.ts timeline",
     "memory:continuity": "tsx src/operational-memory/cli.ts continuity"
     "execution:validate": "tsx src/scripts/execution-validate.ts",
