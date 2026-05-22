@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>LV Transport OS</title>
+<style>
+:root{--bg:#050807;--panel:#0b1110;--panel2:#111a18;--gold:#d8a94f;--green:#4ade80;--muted:#8b9a95;--line:#22312d}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 30% 0,#17211f,#050807 45%);color:#f5ead8;font-family:Inter,Arial,sans-serif}
+.shell{padding:22px;display:grid;gap:18px}
+.top{display:flex;justify-content:space-between;align-items:center}.brand{font-weight:800;letter-spacing:.12em}.live{color:var(--green)}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:linear-gradient(180deg,var(--panel2),var(--panel));border:1px solid var(--line);border-radius:22px;padding:18px;box-shadow:0 24px 70px #0009;min-height:310px;position:relative;overflow:hidden}
+.card:before{content:"";position:absolute;inset:-60px;background:radial-gradient(circle at 80% 20%,#d8a94f22,transparent 34%);pointer-events:none}
+h2{margin:0 0 8px;font-size:13px;color:var(--gold);letter-spacing:.08em}h1{margin:8px 0;font-size:32px;line-height:1.05}
+p{color:var(--muted);font-size:13px}.btn{display:inline-block;background:var(--gold);color:#130f07;padding:11px 16px;border-radius:10px;font-weight:800;margin-top:10px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:18px}.k{background:#070b0a;border:1px solid var(--line);border-radius:14px;padding:12px}.v{font-size:24px;font-weight:900}.l{font-size:11px;color:var(--muted)}
+.map{height:165px;border-radius:16px;background:linear-gradient(135deg,#091210,#15211f);border:1px solid var(--line);position:relative;margin-top:15px}
+.car{position:absolute;left:55%;top:48%;font-size:28px}.pin{position:absolute;left:32%;top:28%;color:var(--gold);font-size:24px}.route{position:absolute;left:35%;top:42%;width:42%;height:2px;background:var(--gold);transform:rotate(28deg)}
+.feed{margin-top:12px;height:130px;overflow:auto;background:#060908;border:1px solid var(--line);border-radius:14px;padding:10px;color:#aab8b2;font-size:12px}
+.side{display:grid;grid-template-columns:160px 1fr;gap:14px}.nav{background:#070b0a;border:1px solid var(--line);border-radius:14px;padding:12px;color:var(--muted);font-size:12px}.nav div{padding:8px;border-radius:8px}.nav div:first-child{background:#2a2112;color:var(--gold)}
+.ring{width:86px;height:86px;border-radius:50%;border:12px solid #293532;border-top-color:var(--gold);display:grid;place-items:center;font-weight:900}
+@media(max-width:900px){.grid{grid-template-columns:1fr}.kpis{grid-template-columns:repeat(2,1fr)}.side{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<div class="shell">
+  <div class="top"><div class="brand">LV TRANSPORT OS</div><div class="live">● Online</div></div>
+  <div class="grid">
+    <section class="card">
+      <h2>1. CLIENT — PREMIUM EXPERIENCE</h2>
+      <h1>Betrouwbaar.<br>Comfortabel.<br>Altijd op tijd.</h1>
+      <p>Premium vervoer in Antwerpen en België met realtime booking lifecycle, ETA en airport intelligence.</p>
+      <div class="btn">Reserveer nu →</div>
+      <div class="kpis">
+        <div class="k"><div class="v">24/7</div><div class="l">Service</div></div>
+        <div class="k"><div class="v">96%</div><div class="l">Continuity</div></div>
+        <div class="k"><div class="v">BRU</div><div class="l">Airport</div></div>
+        <div class="k"><div class="v">Live</div><div class="l">ETA</div></div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>2. DRIVER — OPERATIONAL COCKPIT</h2>
+      <div class="map"><div class="pin">⌖</div><div class="route"></div><div class="car">🚕</div></div>
+      <div class="kpis">
+        <div class="k"><div class="v">€320</div><div class="l">Vandaag</div></div>
+        <div class="k"><div class="v">6</div><div class="l">Ritten</div></div>
+        <div class="k"><div class="v">5u45</div><div class="l">Online</div></div>
+        <div class="k"><div class="v">4.9★</div><div class="l">Rating</div></div>
+      </div>
+      <div class="feed" id="driverFeed"></div>
+    </section>
+
+    <section class="card">
+      <h2>3. ADMIN — OPERATIONAL CONTROL TOWER</h2>
+      <div class="side">
+        <div class="nav"><div>Control Tower</div><div>Overzicht</div><div>Operaties</div><div>Ritten</div><div>Dispatch</div></div>
+        <div>
+          <div class="map"><div class="pin">⌖</div><div class="route"></div><div class="car">🚕</div></div>
+          <div class="kpis">
+            <div class="k"><div class="v" id="bookings">17</div><div class="l">Ritten</div></div>
+            <div class="k"><div class="v">98.6%</div><div class="l">Continuity</div></div>
+            <div class="k"><div class="v">&lt;2m</div><div class="l">ETA sync</div></div>
+            <div class="k"><div class="v">100%</div><div class="l">Operational</div></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>4. FOUNDER — GOVERNANCE & INTELLIGENCE OS</h2>
+      <div class="kpis">
+        <div class="k"><div class="v">1,248</div><div class="l">Runtime events</div></div>
+        <div class="k"><div class="v">€186k</div><div class="l">Revenue runtime</div></div>
+        <div class="k"><div class="v">98.6%</div><div class="l">System continuity</div></div>
+        <div class="k"><div class="v">100%</div><div class="l">Backend</div></div>
+      </div>
+      <div style="display:flex;gap:18px;margin-top:18px;align-items:center"><div class="ring">100%</div><div><h1 style="font-size:24px">Operational Continuity</h1><p>Redis, WebSocket, replay engine, airport runtime and governance OS online.</p></div></div>
+      <div class="feed" id="founderFeed"></div>
+    </section>
+  </div>
+</div>
+<script>
+const driverFeed=document.getElementById('driverFeed'), founderFeed=document.getElementById('founderFeed');
+function add(el,msg){el.innerHTML='<div>'+new Date().toLocaleTimeString()+' — '+msg+'</div>'+el.innerHTML}
+async function refresh(){
+ try{
+  const r=await fetch('/runtime/status'); const d=await r.json();
+  document.getElementById('bookings').textContent=d.health?.bookings ?? d.health?.dashboard?.total ?? '17';
+  add(founderFeed,'Runtime continuity '+(d.founder?.operationalContinuity||100)+'%');
+  add(driverFeed,'Dispatch runtime synchronized');
+ }catch(e){add(founderFeed,'waiting runtime')}
+}
+refresh(); setInterval(refresh,4000);
+try{
+ const ws=new WebSocket((location.protocol==='https:'?'wss://':'ws://')+location.host);
+ ws.onmessage=e=>{add(founderFeed,'WS '+e.data.slice(0,90));add(driverFeed,'Live event received')}
+}catch{}
+</script>
+</body>
+</html>
