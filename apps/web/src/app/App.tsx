@@ -19,6 +19,7 @@ import { Button } from '@lvtransport/ui';
 import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
 
+type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'replay-theater' | 'governance' | 'topology';
 type Step = 1 | 2 | 3;
 type Provider = 'stripe' | 'payconiq';
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
@@ -56,7 +57,7 @@ const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? '/driver';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? '/admin';
 
 const routeMap: Record<string, RouteKey> = {
-  '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin'
+  '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/replay-theater': 'replay-theater', '/governance': 'governance', '/topology': 'topology'
 };
 
 
@@ -85,6 +86,9 @@ const primaryNavItems = [
 const secondaryItems: Array<{ label: string; path?: '/driver' | '/admin'; section?: 'tracking-map' }> = [{ label: 'Maps', section: 'tracking-map' }, { label: 'Driver', path: '/driver' }, { label: 'Admin', path: '/admin' }];
 
 const utilityNavItems = [
+  { label: 'Replay Theater', path: '/replay-theater' },
+  { label: 'Governance', path: '/governance' },
+  { label: 'Topology', path: '/topology' },
   { label: 'Driver', path: '/driver', intent: 'driver' as InteractionIntent },
   { label: 'Admin', path: '/admin', intent: 'admin' as InteractionIntent },
   { label: 'Maps', path: '/tracking-map', section: 'tracking-map' },
@@ -525,6 +529,10 @@ export function App() {
       <section id='tracking' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Tracking Tower</h3><div className='mt-3 flex flex-col gap-3 sm:flex-row'><input className='estimate-input estimate-input--tracking' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button className='tracking-cta' onClick={checkTracking} disabled={trackingLoading}>{trackingLoading ? 'Synchronisatie...' : 'Controleer status'}</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>Verified Ride Reviews</h3><p className='text-sm text-lv-mist'>Alle reviews zijn gekoppeld aan completed rides en verified identities.</p><ul className='mt-3 space-y-2'>{verifiedReviews.length ? verifiedReviews.map((review) => <li key={review} className='status-line status-line--active'>{review}</li>) : <li className='status-line'>Nog geen eligible verified reviews.</li>}</ul><Button variant='secondary' className='mt-3' onClick={() => requireIdentity('reviews', () => setTrackingResult('Verified review flow geactiveerd na completed ride lifecycle.'))}>Open review flow</Button></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>LV Business Expansion</h3><p className='text-lv-mist text-sm'>U brengt operationele capaciteit. LVTP levert verified dispatch, realtime lifecycle controle en premium klanttoegang.</p><Button className='mt-3' onClick={() => requireIdentity('expansion', () => setTrackingResult('Expansion onboarding geopend voor verified operator intake.'))}>Start Expansion Onboarding</Button></section>
+
+      <section id='replay-theater' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Deterministic Replay Theater</h3><p className='text-sm text-lv-mist'>Immutable playback navigation, evidence snapshots, lineage overlays, governance markers.</p><ul className='mt-3 space-y-2 text-sm'><li>Sequence A-001 → A-002 → A-003</li><li>Execution chain is append-only and ordered by immutable event index.</li><li>Degraded mode: renders cached snapshot-only playback.</li></ul></section>
+      <section id='governance' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Executive Governance Cockpit</h3><p className='text-sm text-lv-mist'>Read-only governance invariants, approval boundaries, runtime health, cognition limitations, replay governance.</p><ul className='mt-3 space-y-2 text-sm'><li>Integrity warnings are evidence-linked.</li><li>Immutable governance logs only.</li><li>No override controls or mutation authority.</li></ul></section>
+      <section id='topology' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Topology Explorer</h3><p className='text-sm text-lv-mist'>Evidence-first relationship maps for entities, replay chains, synchronization paths, governance dependencies, and incident lineage.</p><p className='mt-2 text-sm'>No inferred edges. No speculative topology streams.</p></section>
       <footer id='contact' className='glass-panel rounded-3xl p-6 text-sm'>info@lvtransport.be • +32 466 48 79 36 • Antwerpen • België</footer>
       <MoniAssistant />
       {authOpen && <div className='auth-overlay'><div className='auth-card glass-panel'><p className='text-xs uppercase tracking-[0.2em] text-lv-champagne'>Premium Operational Onboarding</p><h3 className='mt-2 text-2xl font-semibold'>Aanmelden / Registreren</h3><p className='mt-2 text-sm text-lv-mist'>{interactionCopy[authIntent]}</p><div className='mt-3 flex gap-2'><button className='surface-btn' onClick={() => setAuthMode('signin')}>Aanmelden</button><button className='surface-btn' onClick={() => setAuthMode('register')}>Registreren</button><button className='surface-btn' disabled={authLoading} onClick={() => activateIdentity('google')}>{authLoading ? 'Verifiëren...' : 'Google Sign-In'}</button></div><div className='mt-3 grid gap-2'>{['name', 'email', 'phone', 'password', 'company'].map((key) => <input key={key} className='estimate-input' type={key === 'password' ? 'password' : 'text'} placeholder={key} value={authForm[key as keyof typeof authForm]} onChange={(e) => setAuthForm({ ...authForm, [key]: e.target.value })} />)}<input className='estimate-input' placeholder='Operational role intent' value={authForm.roleIntent} onChange={(e) => setAuthForm({ ...authForm, roleIntent: e.target.value })} /></div><div className='mt-3 flex gap-2'><Button disabled={authLoading} onClick={() => activateIdentity('email')}>{authLoading ? 'Verifiëren...' : authMode === 'signin' ? 'Verifieer en ga verder' : 'Account creëren'}</Button><button className='surface-btn' onClick={() => setAuthOpen(false)}>Sluiten</button></div>{authStatus && <p className='status-line status-line--active mt-3'>{authStatus}</p>}</div></div>}
