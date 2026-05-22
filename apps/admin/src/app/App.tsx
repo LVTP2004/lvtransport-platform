@@ -47,10 +47,10 @@ const navItems = [
 ];
 
 const bookings = [
-  ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40'],
-  ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55'],
-  ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10'],
-  ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30'],
+  ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40', 'paid'],
+  ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55', 'requires_action'],
+  ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10', 'payment_failed_retrying'],
+  ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30', 'refunded_pending_approval'],
 ];
 
 export function App() {
@@ -107,7 +107,7 @@ export function App() {
                     <table className="w-full min-w-[620px] text-left text-sm">
                       <thead className="text-xs uppercase tracking-[0.16em] text-zinc-400">
                         <tr>
-                          {['ID', 'Service', 'Status', 'Driver', 'ETA'].map((h) => (
+                          {['ID', 'Service', 'Status', 'Driver', 'ETA', 'Payment'].map((h) => (
                             <th key={h} className="px-2 py-2">{h}</th>
                           ))}
                         </tr>
@@ -171,7 +171,7 @@ export function App() {
 
             <section className="grid gap-5 lg:grid-cols-2">
               <Panel title="Customer Activity" icon={<span>◎</span>}><p className="text-sm text-zinc-300">Bookings/hour peak: 94 • Repeat customer ratio: 47% • App satisfaction: 4.8/5.</p></Panel>
-              <Panel title="Audit / Activity Log" icon={<span>◷</span>}><p className="text-sm text-zinc-300">10:32 Dispatch reassigned R-8821 • 10:29 Fare override approved • 10:25 Driver status updated.</p></Panel>
+              <Panel title="Audit / Activity Log" icon={<span>◷</span>}><p className="text-sm text-zinc-300">10:32 Dispatch reassigned R-8821 • 10:29 Refund prepared (manual approval) • 10:25 Stripe test webhook accepted.</p></Panel>
             </section>
           </div>
         </div>

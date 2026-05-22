@@ -1,4 +1,4 @@
-import { BookingPaymentState, PaymentProvider, PaymentSessionStatus, PayoutState, RefundState } from '../enums/payment.enums';
+import { BookingPaymentState, PaymentProvider, PaymentSessionStatus, PayoutState, RefundState } from '../enums/payment.enums.js';
 
 export interface MoneyAmount {
   currency: string;

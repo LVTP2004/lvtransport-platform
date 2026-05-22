@@ -1,4 +1,4 @@
-import { PaymentProvider } from '../enums/payment.enums';
+import { PaymentProvider } from '../enums/payment.enums.js';
 
 export interface PaymentWebhookEnvelope<TData = unknown> {
   id: string;
