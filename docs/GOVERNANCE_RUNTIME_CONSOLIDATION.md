@@ -13,3 +13,16 @@ Consolidate append-only governance with immutable approvals and explicit rejecti
 - Replay-safe policy checks on each governance decision.
 - Approval chain continuity verification.
 - Immutable approval/rejection records.
+## Governance Guarantees
+- immutable approvals
+- append-only governance events
+- deterministic rejection semantics
+- replay-safe enforcement
+
+## Prohibitions
+- hidden overrides
+- silent approvals
+- autonomous governance mutation
+
+## Required Metadata
+Approval/rejection records include actor, timestamp, rationale, lineage, and continuity references.

@@ -14,3 +14,15 @@ Operate realtime synchronization within deterministic, pressure-safe boundaries.
 - Uncontrolled flooding
 - Fake realtime indicators
 - Speculative synchronization states
+## Realtime Orchestration Contract
+- deterministic websocket lifecycle
+- replay-safe synchronization
+- bounded reconnect handling
+- continuity-preserving degradation
+- synchronization lineage tracking
+
+## Prohibitions
+- uncontrolled flooding
+- fake realtime signals
+- speculative synchronization
+- hidden realtime mutations
