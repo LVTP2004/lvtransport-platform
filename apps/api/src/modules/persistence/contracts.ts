@@ -9,6 +9,14 @@ export interface RideRecord {
   customerId: string;
   status: RideStatus;
   assignedDriverId: string | null;
+export type RideStatus = string;
+export type PaymentStatus = string;
+
+export interface RideRecord {
+  id: string;
+  rideCode: string | null;
+  status: RideStatus;
+  payloadJson: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -20,6 +28,9 @@ export interface PaymentRecord {
   currency: string;
   status: PaymentStatus;
   invoiceReference: string | null;
+  rideId: string | null;
+  status: PaymentStatus;
+  payloadJson: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -32,6 +43,11 @@ export interface AuditEventRecord {
   actorId: string | null;
   payload: string | null;
   createdAt: string;
+  entityType: string | null;
+  entityId: string | null;
+  eventType: string;
+  payloadJson: string;
+  timestamp: string;
 }
 
 export interface MessageEventRecord {
@@ -41,16 +57,22 @@ export interface MessageEventRecord {
   direction: 'inbound' | 'outbound';
   content: string;
   createdAt: string;
+  eventType: string;
+  payloadJson: string;
+  timestamp: string;
 }
 
 export interface NotificationAttemptRecord {
   id: string;
-  notificationType: string;
+*  notificationType: string;
   recipient: string;
   status: NotificationStatus;
   errorMessage: string | null;
   createdAt: string;
   updatedAt: string;
+  status: string;
+  payloadJson: string;
+  timestamp: string;
 }
 
 export interface RecoveryEventRecord {
@@ -97,4 +119,7 @@ export interface RecoveryRepository {
   createRecoveryEvent(event: RecoveryEventRecord): Promise<RecoveryEventRecord>;
   listRecoveryEvents(status?: RecoveryStatus): Promise<RecoveryEventRecord[]>;
   updateRecoveryStatus(id: string, status: RecoveryStatus, notes: string | null, updatedAt: string): Promise<RecoveryEventRecord | null>;
+  status: string;
+  payloadJson: string;
+  timestamp: string;
 }

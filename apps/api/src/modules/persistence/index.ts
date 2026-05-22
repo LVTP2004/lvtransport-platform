@@ -7,3 +7,4 @@ export {
   notificationRepository,
   recoveryRepository,
 } from './sqlite.repositories.js';
+export * from './sqlite.repositories.js';
