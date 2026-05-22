@@ -1,45 +1,77 @@
 import { Link } from 'react-router-dom'
 
-const panel = 'rounded-2xl border border-amber-400/25 bg-[#111318]/85 p-5 shadow-[0_0_0_1px_rgba(0,0,0,.4)]'
+const surface =
+  'rounded-2xl border border-[#c9a24a]/25 bg-[linear-gradient(180deg,rgba(11,14,20,.92),rgba(8,10,14,.95))] p-5 shadow-[0_0_0_1px_rgba(9,10,14,.8),0_24px_60px_rgba(0,0,0,.45)]'
+
+const modules = [
+  {
+    id: '1. Client',
+    title: 'Premium Experience',
+    description:
+      'Booking lifecycle entrypoint for premium rides, airport transfers, pricing estimation, customer state and tracking access.',
+    to: '/booking',
+    cta: 'Open reservation flow',
+  },
+  {
+    id: '2. Driver',
+    title: 'Operational Cockpit',
+    description:
+      'Ride acceptance, pickup and destination workflows connected to runtime progression and dispatch coordination.',
+    to: '/driver',
+    cta: 'Open driver cockpit',
+  },
+  {
+    id: '3. Admin',
+    title: 'Operational Control Tower',
+    description:
+      'Fleet supervision, SLA visibility, incident monitoring and continuity state across active operations.',
+    to: '/admin',
+    cta: 'Open admin tower',
+  },
+  {
+    id: '4. Founder',
+    title: 'Governance & Intelligence OS',
+    description:
+      'Deterministic governance, replay lineage, audit status and trust-state overview for executive control.',
+    to: '/founder',
+    cta: 'Open founder OS',
+  },
+]
 
 export default function HeroSection() {
   return (
-    <main className="min-h-screen bg-[#07090d] text-zinc-100">
+    <main className="min-h-screen bg-[#06080c] text-zinc-100">
       <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6">
-        <header className="rounded-2xl border border-amber-400/25 bg-black/50 px-5 py-4">
-          <p className="text-xs uppercase tracking-[0.24em] text-amber-300">LV Transport Premium Operating System</p>
-          <h1 className="mt-3 text-3xl font-semibold text-zinc-100 sm:text-4xl">Betrouwbaar. Comfortabel. Altijd op tijd.</h1>
-          <p className="mt-3 max-w-3xl text-sm text-zinc-300">Founder-approved operating baseline across client premium experience, driver operational cockpit, admin control tower, and founder governance surface.</p>
+        <header className="relative overflow-hidden rounded-3xl border border-[#c9a24a]/30 bg-[radial-gradient(circle_at_20%_20%,rgba(201,162,74,.18),transparent_42%),linear-gradient(135deg,#091019_0%,#0c1320_55%,#080c13_100%)] px-5 py-6 sm:px-8 sm:py-8">
+          <p className="text-xs uppercase tracking-[0.28em] text-[#d9b666]">LV Transport Premium Operating System</p>
+          <h1 className="mt-4 max-w-3xl text-3xl font-semibold leading-tight text-[#f4f1ea] sm:text-5xl">
+            Betrouwbaar. Comfortabel. Altijd op tijd.
+          </h1>
+          <p className="mt-4 max-w-3xl text-sm leading-relaxed text-zinc-300 sm:text-base">
+            Founder-approved convergence baseline across client premium experience, driver operational cockpit,
+            admin control tower, and founder governance surface.
+          </p>
+          <div className="mt-6 flex flex-wrap gap-2 text-xs text-zinc-300">
+            <span className="rounded-full border border-[#c9a24a]/35 px-3 py-1">Dark graphite runtime UI</span>
+            <span className="rounded-full border border-[#c9a24a]/35 px-3 py-1">Restrained gold accents</span>
+            <span className="rounded-full border border-[#c9a24a]/35 px-3 py-1">Operational mission-control clarity</span>
+          </div>
         </header>
 
         <section className="mt-6 grid gap-4 md:grid-cols-2">
-          <article className={panel}>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-300">1. Client</p>
-            <h2 className="mt-2 text-xl font-semibold">Premium Experience</h2>
-            <p className="mt-2 text-sm text-zinc-300">Reservation and route-intent entry point with operational tone and restrained luxury UI.</p>
-            <Link className="mt-4 inline-flex rounded-lg border border-amber-400/40 px-3 py-2 text-sm text-amber-100 hover:bg-amber-400/10" to="/booking">Open reservation flow</Link>
-          </article>
-
-          <article className={panel}>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-300">2. Driver</p>
-            <h2 className="mt-2 text-xl font-semibold">Operational Cockpit</h2>
-            <p className="mt-2 text-sm text-zinc-300">Driver-specific cockpit for lifecycle execution. No simulated telemetry is introduced in this surface.</p>
-            <Link className="mt-4 inline-flex rounded-lg border border-amber-400/40 px-3 py-2 text-sm text-amber-100 hover:bg-amber-400/10" to="/driver">Open driver cockpit</Link>
-          </article>
-
-          <article className={panel}>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-300">3. Admin</p>
-            <h2 className="mt-2 text-xl font-semibold">Operational Control Tower</h2>
-            <p className="mt-2 text-sm text-zinc-300">Dispatch and operations control surface with governance-safe visual language.</p>
-            <Link className="mt-4 inline-flex rounded-lg border border-amber-400/40 px-3 py-2 text-sm text-amber-100 hover:bg-amber-400/10" to="/admin">Open admin tower</Link>
-          </article>
-
-          <article className={panel}>
-            <p className="text-xs uppercase tracking-[0.2em] text-amber-300">4. Founder</p>
-            <h2 className="mt-2 text-xl font-semibold">Governance & Intelligence OS</h2>
-            <p className="mt-2 text-sm text-zinc-300">Read-only governance overview for executive control and evidence review pathways.</p>
-            <Link className="mt-4 inline-flex rounded-lg border border-amber-400/40 px-3 py-2 text-sm text-amber-100 hover:bg-amber-400/10" to="/founder">Open founder OS</Link>
-          </article>
+          {modules.map((module) => (
+            <article className={surface} key={module.id}>
+              <p className="text-xs uppercase tracking-[0.2em] text-[#d9b666]">{module.id}</p>
+              <h2 className="mt-2 text-xl font-semibold text-[#f4f1ea]">{module.title}</h2>
+              <p className="mt-2 text-sm leading-relaxed text-zinc-300">{module.description}</p>
+              <Link
+                className="mt-4 inline-flex rounded-lg border border-[#c9a24a]/40 bg-[#0d121a]/80 px-3 py-2 text-sm text-[#f1d793] transition hover:bg-[#141d29]"
+                to={module.to}
+              >
+                {module.cta}
+              </Link>
+            </article>
+          ))}
         </section>
       </div>
     </main>
