@@ -151,7 +151,17 @@ export const bookingFlowService = {
       metadata: { actor, reason }
     });
     logger.info('booking.lifecycle.transition', { bookingId, from: currentState, to: nextState, actor, version: booking.lifecycle.version });
-    return bookingRepository.update(booking);
+    const updatedBooking = await bookingRepository.update(booking);
+    realtimeOrchestratorService.upsertExternalBooking({
+      id: updatedBooking.id,
+      referenceCode: updatedBooking.referenceCode,
+      pickup: updatedBooking.pickup,
+      destination: updatedBooking.destination,
+      serviceType: updatedBooking.serviceType,
+      scheduledAt: updatedBooking.scheduleAt,
+      status: updatedBooking.lifecycle.state,
+    });
+    return updatedBooking;
   },
 
   async getOperationalMetrics(): Promise<{ total: number; completed: number; cancelled: number; active: number; completionRate: number }> {
