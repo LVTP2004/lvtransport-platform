@@ -1,23 +1,20 @@
-import { jsx as _jsx, jsxs as _jsxs, Fragment as _Fragment } from "react/jsx-runtime";
-import { useMemo, useState } from 'react';
+import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
+import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@lvtransport/ui';
+import { ProtectedRoute } from '../modules/auth/route-guards/protected-route';
+import { webAuthProvider, webAuthService } from '../modules/auth/services/auth-client.service';
+import { AccountStatus, UserRole } from '@lvtransport/auth';
 const vehicles = [
     { name: 'Executive Sedan', eta: '3 min', priceMultiplier: 1, seats: 3 },
     { name: 'Business SUV', eta: '5 min', priceMultiplier: 1.35, seats: 6 },
     { name: 'VIP Sprinter', eta: '10 min', priceMultiplier: 1.8, seats: 10 }
 ];
-const formatDateTime = (value) => {
-    if (!value)
-        return 'Select schedule';
-    return new Date(value).toLocaleString('en-US', {
-        weekday: 'short',
-        month: 'short',
-        day: 'numeric',
-        hour: 'numeric',
-        minute: '2-digit'
-    });
-};
+const formatDateTime = (value) => (!value ? 'Select schedule' : new Date(value).toLocaleString('en-US'));
 export function App() {
+    const [authState, setAuthState] = useState({ isAuthenticated: false, isLoading: true });
+    const [user, setUser] = useState();
+    const [email, setEmail] = useState('customer@lvtransport.dev');
+    const [password, setPassword] = useState('password123');
     const [step, setStep] = useState(1);
     const [pickup, setPickup] = useState('');
     const [destination, setDestination] = useState('');
@@ -26,15 +23,19 @@ export function App() {
     const [vehicle, setVehicle] = useState(vehicles[0]);
     const [airportTransfer, setAirportTransfer] = useState(false);
     const [businessVip, setBusinessVip] = useState(true);
-    const baseFare = useMemo(() => {
-        const distanceFactor = Math.max(14, (pickup.length + destination.length) * 0.8);
-        const passengerFactor = passengers > 3 ? (passengers - 3) * 6 : 0;
-        const airportFee = airportTransfer ? 18 : 0;
-        const vipFee = businessVip ? 24 : 0;
-        const total = (distanceFactor + passengerFactor + airportFee + vipFee) * vehicle.priceMultiplier;
-        return Math.round(total);
-    }, [airportTransfer, businessVip, destination.length, passengers, pickup.length, vehicle.priceMultiplier]);
-    const nextStep = () => setStep((v) => (v < 3 ? (v + 1) : v));
-    const prevStep = () => setStep((v) => (v > 1 ? (v - 1) : v));
-    return (_jsx("div", { className: "min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8", children: _jsxs("div", { className: "mx-auto w-full max-w-6xl", children: [_jsxs("header", { className: "glass-panel mb-6 rounded-3xl p-5 sm:p-7", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.24em] text-lv-champagne", children: "LV Transport Booking" }), _jsx("h1", { className: "mt-3 text-3xl font-semibold sm:text-5xl", children: "Premium ride booking, built for enterprise pace." }), _jsx("p", { className: "mt-3 max-w-2xl text-sm text-lv-mist sm:text-base", children: "Smart routing-ready UI prepared for future maps, places autocomplete, and dispatch APIs." })] }), _jsxs("section", { className: "grid gap-6 lg:grid-cols-[1.2fr_0.8fr]", children: [_jsxs("div", { className: "glass-panel rounded-3xl p-4 sm:p-6", children: [_jsxs("div", { className: "mb-6 flex items-center justify-between", children: [_jsxs("p", { className: "text-sm text-lv-mist", children: ["Step ", step, " of 3"] }), _jsx("div", { className: "flex w-32 gap-2", children: [1, 2, 3].map((i) => (_jsx("span", { className: `h-2 flex-1 rounded-full transition-all ${i <= step ? 'bg-lv-gold' : 'bg-white/15'}` }, i))) })] }), _jsxs("div", { className: "booking-step-fade space-y-4", children: [step === 1 && (_jsxs(_Fragment, { children: [_jsxs("label", { className: "field-wrap", children: [_jsx("span", { children: "Pickup" }), _jsx("input", { value: pickup, onChange: (e) => setPickup(e.target.value), placeholder: "Hotel, office, terminal..." })] }), _jsxs("label", { className: "field-wrap", children: [_jsx("span", { children: "Destination" }), _jsx("input", { value: destination, onChange: (e) => setDestination(e.target.value), placeholder: "Airport, venue, client site..." })] }), _jsxs("label", { className: "field-wrap", children: [_jsx("span", { children: "Date & time" }), _jsx("input", { type: "datetime-local", value: dateTime, onChange: (e) => setDateTime(e.target.value) })] })] })), step === 2 && (_jsxs(_Fragment, { children: [_jsxs("div", { className: "field-wrap", children: [_jsx("span", { children: "Passengers" }), _jsxs("div", { className: "mt-2 flex items-center justify-between rounded-2xl border border-lv-gold/20 bg-white/5 px-4 py-3", children: [_jsx("button", { className: "control-btn", onClick: () => setPassengers((v) => Math.max(1, v - 1)), children: "\u2212" }), _jsx("strong", { className: "text-lg", children: passengers }), _jsx("button", { className: "control-btn", onClick: () => setPassengers((v) => Math.min(12, v + 1)), children: "+" })] })] }), _jsxs("div", { children: [_jsx("p", { className: "mb-2 text-sm text-lv-mist", children: "Vehicle" }), _jsx("div", { className: "grid gap-3", children: vehicles.map((item) => (_jsxs("button", { onClick: () => setVehicle(item), className: `vehicle-card ${vehicle.name === item.name ? 'vehicle-card--active' : ''}`, children: [_jsxs("div", { children: [_jsx("p", { className: "font-medium", children: item.name }), _jsxs("p", { className: "text-xs text-lv-mist", children: ["ETA ", item.eta, " \u2022 up to ", item.seats, " passengers"] })] }), _jsxs("p", { className: "text-lv-champagne", children: ["x", item.priceMultiplier.toFixed(2)] })] }, item.name))) })] })] })), step === 3 && (_jsxs(_Fragment, { children: [_jsxs("button", { className: `toggle-card ${airportTransfer ? 'toggle-card--active' : ''}`, onClick: () => setAirportTransfer((v) => !v), children: [_jsxs("div", { children: [_jsx("p", { className: "font-medium", children: "Airport transfer" }), _jsx("p", { className: "text-xs text-lv-mist", children: "Terminal-aware handoff and buffer timing prep." })] }), _jsx("span", { children: airportTransfer ? 'On' : 'Off' })] }), _jsxs("button", { className: `toggle-card ${businessVip ? 'toggle-card--active' : ''}`, onClick: () => setBusinessVip((v) => !v), children: [_jsxs("div", { children: [_jsx("p", { className: "font-medium", children: "Business / VIP" }), _jsx("p", { className: "text-xs text-lv-mist", children: "Priority allocation, premium chauffeur protocol." })] }), _jsx("span", { children: businessVip ? 'On' : 'Off' })] })] }))] }, step), _jsxs("div", { className: "mt-6 flex gap-3", children: [_jsx(Button, { variant: "secondary", className: "flex-1", onClick: prevStep, children: "Back" }), step < 3 ? (_jsx(Button, { className: "flex-1", onClick: nextStep, children: "Continue" })) : (_jsx(Button, { className: "flex-1 shadow-gold-md", children: "Confirm booking UI" }))] })] }), _jsxs("aside", { className: "space-y-6", children: [_jsxs("article", { className: "glass-panel rounded-3xl p-5 sm:p-6", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-lv-champagne", children: "Price estimate" }), _jsxs("p", { className: "mt-3 text-4xl font-semibold", children: ["$", baseFare] }), _jsx("p", { className: "mt-1 text-sm text-lv-mist", children: "Estimated fare \u2022 final pricing from future API integrations." }), _jsx("div", { className: "mt-4 rounded-2xl border border-lv-gold/20 bg-black/30 p-4 text-sm text-lv-mist", children: "Includes base transfer, selected vehicle class, and service options." })] }), _jsxs("article", { className: "glass-panel rounded-3xl p-5 sm:p-6", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.2em] text-lv-champagne", children: "Booking summary" }), _jsxs("ul", { className: "mt-4 space-y-3 text-sm", children: [_jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Pickup:" }), " ", pickup || 'Not set'] }), _jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Destination:" }), " ", destination || 'Not set'] }), _jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Schedule:" }), " ", formatDateTime(dateTime)] }), _jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Passengers:" }), " ", passengers] }), _jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Vehicle:" }), " ", vehicle.name] }), _jsxs("li", { children: [_jsx("span", { className: "text-lv-mist", children: "Options:" }), " ", airportTransfer ? 'Airport' : 'Standard', " \u2022 ", businessVip ? 'VIP' : 'Classic'] })] })] })] })] })] }) }));
+    useEffect(() => { webAuthService.getInitialState().then(setAuthState); }, []);
+    const baseFare = useMemo(() => Math.round((Math.max(14, (pickup.length + destination.length) * 0.8) + (passengers > 3 ? (passengers - 3) * 6 : 0) + (airportTransfer ? 18 : 0) + (businessVip ? 24 : 0)) * vehicle.priceMultiplier), [pickup.length, destination.length, passengers, airportTransfer, businessVip, vehicle.priceMultiplier]);
+    const login = async () => {
+        const tokens = await webAuthService.signIn({ email, password });
+        const session = await webAuthProvider.getSession(tokens.accessToken);
+        const profile = await webAuthProvider.getUserProfile(tokens.accessToken);
+        setAuthState({ isAuthenticated: true, isLoading: false, tokens, session });
+        setUser(profile);
+    };
+    const logout = async () => { if (authState.session)
+        await webAuthService.signOut(authState.session.sessionId); setAuthState({ isAuthenticated: false, isLoading: false }); setUser(undefined); };
+    const canAccess = authState.isAuthenticated && user?.status === AccountStatus.ACTIVE && user.roles.includes(UserRole.CUSTOMER);
+    if (!authState.isAuthenticated)
+        return _jsxs("div", { className: "min-h-screen bg-lv-black text-white p-8", children: [_jsx("h1", { className: "text-2xl mb-4", children: "Customer Login" }), _jsx("input", { className: "text-black p-2 mr-2", value: email, onChange: (e) => setEmail(e.target.value) }), _jsx("input", { className: "text-black p-2 mr-2", type: "password", value: password, onChange: (e) => setPassword(e.target.value) }), _jsx(Button, { onClick: login, children: "Sign in" })] });
+    return _jsx(ProtectedRoute, { allowed: canAccess, fallback: _jsxs("div", { className: "min-h-screen bg-lv-black text-white p-8", children: ["Account not active for customer booking.", _jsx(Button, { onClick: logout, children: "Logout" })] }), children: _jsxs("div", { className: "min-h-screen bg-lv-black px-4 py-6 text-white sm:px-6 lg:px-8", children: [_jsx(Button, { variant: "secondary", onClick: logout, children: "Logout" }), _jsxs("p", { className: 'mt-2 text-sm', children: ["Onboarding: ", user?.onboardingStep] }), _jsxs("p", { children: [user?.profile.firstName, " ", user?.profile.lastName] }), _jsxs("div", { className: "mx-auto w-full max-w-6xl", children: [_jsxs("header", { className: "glass-panel mb-6 rounded-3xl p-5 sm:p-7", children: [_jsx("p", { className: "text-xs uppercase tracking-[0.24em] text-lv-champagne", children: "LV Transport Booking" }), _jsx("h1", { className: "mt-3 text-3xl font-semibold sm:text-5xl", children: "Premium ride booking, built for enterprise pace." })] }), _jsxs("section", { children: [_jsx("label", { children: _jsx("input", { value: pickup, onChange: (e) => setPickup(e.target.value) }) }), _jsx("label", { children: _jsx("input", { value: destination, onChange: (e) => setDestination(e.target.value) }) }), _jsx("label", { children: _jsx("input", { type: 'datetime-local', value: dateTime, onChange: (e) => setDateTime(e.target.value) }) }), _jsxs("p", { children: ["$", baseFare, " ", formatDateTime(dateTime)] })] })] })] }) });
 }
