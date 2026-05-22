@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { founderRoutes } from './founder.routes.js';
 import healthRoutes from './health.routes.js';
 import paymentRoutes from '../../modules/payments/payment.routes.js';
 import { realtimeOrchestratorService } from '../../services/realtime-orchestrator.service.js';
@@ -116,3 +117,6 @@ router.post('/drivers/:driverId/location', (req, res, next) => {
 });
 
 export default router;
+
+
+router.use(founderRoutes);
