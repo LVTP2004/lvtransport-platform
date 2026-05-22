@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "recovery:replay:event": "tsx src/scripts/recovery-replay-event.ts",
+    "notifications:retry": "tsx src/scripts/notifications-retry.ts",
+    "messages:replay": "tsx src/scripts/messages-replay.ts"
     "ops:transition:check": "tsx src/scripts/ops-transition-check.ts"
     "memory:index": "tsx src/operational-memory/cli.ts index",
     "memory:query": "tsx src/operational-memory/cli.ts query",
