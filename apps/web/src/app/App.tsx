@@ -18,7 +18,11 @@ import { getInstallPromptState } from '../pwa';
 import { Button } from '@lvtransport/ui';
 import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { CommandCenter } from '../pages/CommandCenter';
+import { AuditReplay } from '../pages/AuditReplay';
+import { WarRoom } from '../pages/WarRoom';
 
+type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'command-center' | 'audit-replay' | 'war-room';
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'replay-theater' | 'governance' | 'topology';
 type Step = 1 | 2 | 3;
 type Provider = 'stripe' | 'payconiq';
@@ -57,6 +61,7 @@ const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? '/driver';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? '/admin';
 
 const routeMap: Record<string, RouteKey> = {
+  '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/command-center': 'command-center', '/audit-replay': 'audit-replay', '/war-room': 'war-room'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/replay-theater': 'replay-theater', '/governance': 'governance', '/topology': 'topology'
 };
 
@@ -496,6 +501,10 @@ export function App() {
           {installReady && <button className='mobile-nav-btn mobile-nav-btn--utility' onClick={installEcosystemApp}>Install app</button>}
         </div>
       </header>
+
+      {route === 'command-center' && <CommandCenter />}
+      {route === 'audit-replay' && <AuditReplay />}
+      {route === 'war-room' && <WarRoom />}
       <section id='hero' className='glass-panel hero-panel rounded-3xl p-6 sm:p-10'><p className='text-xs uppercase tracking-[0.25em] text-lv-champagne'>LV Transport Platform</p><h1 className='mt-3 text-4xl font-semibold sm:text-6xl'>Calm Luxury Mobility, Realtime Intelligence</h1><p className='mt-4 max-w-3xl text-lv-mist'>Een emotioneel premium, realtime en verified ecosysteem voor executive mobiliteit met concierge-grade coordinatie en operationele rust.</p><div className='mt-6 flex flex-wrap gap-3'><button className='nav-btn nav-btn--primary' onClick={() => requireIdentity('booking', () => navigate('/booking', 'booking'))}>Reserveer nu</button><button className='nav-btn nav-btn--secondary' onClick={() => requireIdentity('tracking', () => navigate('/tracking', 'tracking'))}>Volg uw rit</button></div></section>
       <section className='glass-panel overflow-hidden rounded-3xl p-0'>
         <img src='/brand/lv-logo-presentation.svg' alt='Luxury mobility silhouette identity' className='h-auto w-full opacity-95' />
