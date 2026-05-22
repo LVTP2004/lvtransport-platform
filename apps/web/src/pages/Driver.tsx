@@ -21,6 +21,7 @@ type DriverPaymentRecord = {
   paidAt?: string
 }
 
+const statusLabel: Record<PaymentStatus, string> = {
 type DriverPaymentHistoryResponse = {
   payments?: DriverPaymentRecord[]
 }
@@ -32,6 +33,12 @@ const PAYMENT_STATUS_LABELS: Record<PaymentStatus, string> = {
   refunded: 'Terugbetaald',
   invoiced: 'Gefactureerd',
 }
+
+export default function Driver() {
+  const [payments, setPayments] = useState<DriverPaymentRecord[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
+  const [statusFilter, setStatusFilter] = useState<'all' | PaymentStatus>('all')
 
 export default function Driver() {
   const [payments, setPayments] = useState<DriverPaymentRecord[]>([])
@@ -60,6 +67,12 @@ export default function Driver() {
       setLoading(true)
       setError('')
       try {
+        const res = await fetch(`${API_V1_BASE}/driver/payments/history`)
+        const payload = await res.json()
+        if (!res.ok) throw new Error(payload?.message || 'Driver payment history ophalen mislukt.')
+        setPayments(Array.isArray(payload?.payments) ? payload.payments : [])
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'Driver payment history ophalen mislukt.')
         const response = await fetch(`${API_V1_BASE}/driver/payments/history`)
         const json = (await response.json()) as DriverPaymentHistoryResponse
 
@@ -129,8 +142,25 @@ export default function Driver() {
   const [message, setMessage] = useState('Esperando viaje')
   const [history, setHistory] = useState<DriverHistoryEntry[]>([])
 
-  const validCode = useMemo(() => /^\d{5}$/.test(tripCode), [tripCode])
+  const visiblePayments = useMemo(
+    () => payments.filter((payment) => statusFilter === 'all' || payment.paymentStatus === statusFilter),
+    [payments, statusFilter],
+  )
 
+  return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '24px 14px', fontFamily: 'Arial, sans-serif' }}>
+    <section style={{ maxWidth: 780, margin: '0 auto', display: 'grid', gap: 12 }}>
+      <article style={cardStyle}>
+        <h1 style={{ marginTop: 0, marginBottom: 8, color: GOLD }}>Driver · Betalingen</h1>
+        <p style={{ marginTop: 0 }}>Alleen rit-gerelateerde betalingen. Geen bedrijfsbrede omzet of admin-analytics.</p>
+        <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value as 'all' | PaymentStatus)} style={inputStyle}>
+          <option value='all'>Alle statussen</option>
+          <option value='pending'>In afwachting</option>
+          <option value='paid'>Betaald</option>
+          <option value='failed'>Mislukt</option>
+          <option value='refunded'>Terugbetaald</option>
+          <option value='invoiced'>Gefactureerd</option>
+        </select>
+      </article>
   useEffect(() => {
     void (async () => {
       try {
@@ -153,15 +183,27 @@ export default function Driver() {
     setMessage('Viaje aceptado. GPS automático activo.')
   }
 
-  const cancelRide = () => {
-    if (!validCode) {
-      setMessage('Ingresa código válido para anular.')
-      return
-    }
-    setStatus('cancelled')
-    setMessage('Viaje anulado por driver.')
-  }
+      <article style={cardStyle}>
+        <h2 style={{ marginTop: 0, color: GOLD, fontSize: 18 }}>Payment history</h2>
+        {loading && <p>Betalingen laden…</p>}
+        {error && <p style={{ color: '#fca5a5' }}>{error}</p>}
+        {!loading && !error && visiblePayments.length === 0 && (
+          <p style={{ marginBottom: 0 }}>Nog geen betalingsoverzicht beschikbaar. API-seam: <code>/api/v1/driver/payments/history</code>.</p>
+        )}
 
+        <div style={{ display: 'grid', gap: 10 }}>
+          {visiblePayments.map((payment) => (
+            <article key={payment.id} style={itemStyle}>
+              <p style={lineStyle}><strong>Rit:</strong> {payment.rideCode}</p>
+              <p style={lineStyle}><strong>Totaal:</strong> € {payment.total.toFixed(2)} {payment.currency}</p>
+              <p style={lineStyle}><strong>BTW:</strong> {payment.btwPercentage}% (€ {payment.btwAmount.toFixed(2)} inbegrepen)</p>
+              <p style={lineStyle}><strong>Methode:</strong> {payment.paymentMethod}</p>
+              <p style={lineStyle}><strong>Status:</strong> {statusLabel[payment.paymentStatus]}</p>
+              <p style={lineStyle}><strong>Aangemaakt:</strong> {payment.createdAt}</p>
+              <p style={lineStyle}><strong>Betaald op:</strong> {payment.paidAt ?? 'Nog niet betaald'}</p>
+            </article>
+          ))}
+        </div>
   return <main style={{ background: '#111214', color: 'white', minHeight: '100vh', padding: '28px 16px', fontFamily: 'Arial, sans-serif' }}>
     <section style={{ maxWidth: 720, margin: '0 auto', border: '1px solid rgba(212,175,55,.35)', borderRadius: 14, padding: 16, display: 'grid', gap: 14 }}>
       <h1 style={{ marginTop: 0, color: GOLD }}>Driver</h1>
@@ -185,6 +227,33 @@ export default function Driver() {
   </main>
 }
 
+const cardStyle: React.CSSProperties = {
+  border: '1px solid rgba(255,255,255,.15)',
+  borderRadius: 12,
+  padding: 14,
+  background: '#0f1011',
+}
+
+const inputStyle: React.CSSProperties = {
+  width: '100%',
+  boxSizing: 'border-box',
+  borderRadius: 10,
+  border: '1px solid rgba(255,255,255,.2)',
+  padding: '10px 12px',
+  background: '#0b0b0b',
+  color: 'white',
+}
+
+const itemStyle: React.CSSProperties = {
+  border: '1px solid rgba(212,175,55,.28)',
+  borderRadius: 10,
+  padding: 12,
+  background: '#101113',
+}
+
+const lineStyle: React.CSSProperties = {
+  margin: '4px 0',
+  fontSize: 14,
 function formatMoney(value: number, currency: 'EUR') {
   return new Intl.NumberFormat('nl-BE', { style: 'currency', currency }).format(value)
 }
