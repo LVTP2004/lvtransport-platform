@@ -11,6 +11,8 @@ CHECKSUM_FILE="$SNAPSHOT_DIR/checksums.sha256"
 mkdir -p "$SNAPSHOT_DIR"
 
 echo "[LVTP] Creating source snapshot in $SNAPSHOT_DIR"
+echo "LVTP backup snapshot: $STAMP" > "$MANIFEST_FILE"
+echo "repo_root=$ROOT_DIR" >> "$MANIFEST_FILE"
 
 INCLUDE_PATHS=(
   "apps"
@@ -51,52 +53,21 @@ if [[ -d "$ROOT_DIR/.git" ]]; then
   git -C "$ROOT_DIR" bundle create "$SNAPSHOT_DIR/lvtp-repo.bundle" --all
   git -C "$ROOT_DIR" rev-parse HEAD > "$SNAPSHOT_DIR/git-head.txt"
   echo "git-bundle" >> "$MANIFEST_FILE"
-STAMP="$(date -u +"%Y%m%dT%H%M%SZ")"
-BACKUP_ROOT="${1:-$ROOT_DIR/backups}"
-SNAPSHOT_DIR="$BACKUP_ROOT/$STAMP"
-MANIFEST="$SNAPSHOT_DIR/manifest.txt"
+fi
 
-mkdir -p "$SNAPSHOT_DIR"
-
-echo "LVTP backup snapshot: $STAMP" | tee "$MANIFEST"
-echo "repo_root=$ROOT_DIR" | tee -a "$MANIFEST"
-
-tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='build' \
+tar --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='build' --exclude='backups' \
   -czf "$SNAPSHOT_DIR/source-code.tar.gz" -C "$ROOT_DIR" .
 
-if [ -d "$ROOT_DIR/deploy" ]; then
-  tar -czf "$SNAPSHOT_DIR/deploy-config.tar.gz" -C "$ROOT_DIR" deploy scripts/deploy-production.sh deploy.sh
-fi
-
-if [ -f "$ROOT_DIR/.env.example" ]; then
-  cp "$ROOT_DIR/.env.example" "$SNAPSHOT_DIR/.env.example"
-fi
-
-# Branding and PWA assets.
-mkdir -p "$SNAPSHOT_DIR/branding"
-for path in apps/*/public/brand apps/*/public/icons apps/*/public/manifest.webmanifest; do
-  if compgen -G "$ROOT_DIR/$path" > /dev/null; then
-    tar -czf "$SNAPSHOT_DIR/branding/$(echo "$path" | tr '/*' '__').tar.gz" -C "$ROOT_DIR" $path
-  fi
-done
-
-# Documentation snapshot for operational continuity.
-if [ -d "$ROOT_DIR/docs" ]; then
+if [[ -d "$ROOT_DIR/docs" ]]; then
   tar -czf "$SNAPSHOT_DIR/docs.tar.gz" -C "$ROOT_DIR" docs
 fi
 
 (
   cd "$SNAPSHOT_DIR"
-  find . -type f ! -name "checksums.sha256" -print0 | sort -z | xargs -0 sha256sum > "$CHECKSUM_FILE"
+  find . -type f ! -name "checksums.sha256" -print0 | sort -z | xargs -0 sha256sum > checksums.sha256
 )
 
-tar -czf "$BACKUP_ROOT/lvtp-snapshot-$STAMP.tar.gz" -C "$BACKUP_ROOT" "snapshot-$STAMP"
-
-echo "[LVTP] Snapshot archive created: $BACKUP_ROOT/lvtp-snapshot-$STAMP.tar.gz"
+echo "snapshot_dir=$SNAPSHOT_DIR" >> "$MANIFEST_FILE"
 echo "[LVTP] Manifest: $MANIFEST_FILE"
 echo "[LVTP] Checksums: $CHECKSUM_FILE"
-  shasum -a 256 ./*.tar.gz .env.example 2>/dev/null | tee -a "$MANIFEST" || true
-)
-
-echo "snapshot_dir=$SNAPSHOT_DIR" | tee -a "$MANIFEST"
 echo "Backup complete."
