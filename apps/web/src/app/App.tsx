@@ -18,6 +18,9 @@ import { getInstallPromptState } from '../pwa';
 import { Button } from '@lvtransport/ui';
 import { BookingLifecycle, isImmutableLifecycleStatus } from '@lvtransport/realtime';
 import { MoniAssistant } from '../modules/moni/components/MoniAssistant';
+import { OperationsConsole } from '../pages/OperationsConsole';
+
+type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'operations';
 import { CommandCenter } from '../pages/CommandCenter';
 import { AuditReplay } from '../pages/AuditReplay';
 import { WarRoom } from '../pages/WarRoom';
@@ -107,6 +110,7 @@ const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? '/driver';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? '/admin';
 
 const routeMap: Record<string, RouteKey> = {
+  '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/operations': 'operations'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/investigation': 'investigation', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/command-center': 'command-center', '/audit-replay': 'audit-replay', '/war-room': 'war-room'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/replay-theater': 'replay-theater', '/governance': 'governance', '/topology': 'topology'
@@ -144,6 +148,7 @@ const utilityNavItems = [
   { label: 'Topology', path: '/topology' },
   { label: 'Driver', path: '/driver', intent: 'driver' as InteractionIntent },
   { label: 'Admin', path: '/admin', intent: 'admin' as InteractionIntent },
+  { label: 'Operations', path: '/operations' },
   { label: 'Maps', path: '/tracking-map', section: 'tracking-map' },
   { label: 'Moni Ride', path: '/vip', section: 'vip', intent: 'vip' as InteractionIntent }
 ];
@@ -611,6 +616,7 @@ export function App() {
       <section id='tracking' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Tracking Tower</h3><div className='mt-3 flex flex-col gap-3 sm:flex-row'><input className='estimate-input estimate-input--tracking' placeholder='LV12345' value={trackingInput} onChange={(event) => setTrackingInput(event.target.value)} /><Button className='tracking-cta' onClick={checkTracking} disabled={trackingLoading}>{trackingLoading ? 'Synchronisatie...' : 'Controleer status'}</Button></div><p className='mt-3 status-line'>{trackingResult}</p></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>Verified Ride Reviews</h3><p className='text-sm text-lv-mist'>Alle reviews zijn gekoppeld aan completed rides en verified identities.</p><ul className='mt-3 space-y-2'>{verifiedReviews.length ? verifiedReviews.map((review) => <li key={review} className='status-line status-line--active'>{review}</li>) : <li className='status-line'>Nog geen eligible verified reviews.</li>}</ul><Button variant='secondary' className='mt-3' onClick={() => requireIdentity('reviews', () => setTrackingResult('Verified review flow geactiveerd na completed ride lifecycle.'))}>Open review flow</Button></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>LV Business Expansion</h3><p className='text-lv-mist text-sm'>U brengt operationele capaciteit. LVTP levert verified dispatch, realtime lifecycle controle en premium klanttoegang.</p><Button className='mt-3' onClick={() => requireIdentity('expansion', () => setTrackingResult('Expansion onboarding geopend voor verified operator intake.'))}>Start Expansion Onboarding</Button></section>
+      {route === 'operations' && <OperationsConsole />}
 
       <section id='investigation' className='glass-panel rounded-3xl p-6'>
         <h3 className='text-2xl font-semibold'>Operational Investigation Workspace</h3>
