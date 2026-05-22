@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import healthRoutes from './health.routes.js';
+import mapsRoutes from '../../modules/maps/routes/maps.routes.js';
 import paymentRoutes from './payments.routes.js';
 
 const router = Router();
@@ -44,6 +45,7 @@ const normalizeOperationalError = (error: unknown): Error => {
 };
 
 router.use(healthRoutes);
+router.use('/maps', mapsRoutes);
 router.use('/payments', paymentRoutes);
 router.use(trackingRoutes);
 router.use(notificationRoutes);

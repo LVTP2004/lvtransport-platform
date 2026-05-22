@@ -4,6 +4,7 @@ import { corsMiddleware } from './config/cors.js';
 import { requestLogger } from './middleware/requestLogger.js';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
 import apiRoutes from './routes/index.js';
+import { authenticate } from './auth/middleware/authenticate.js';
 
 export function createApp() {
 import { randomUUID } from 'node:crypto';
@@ -36,6 +37,7 @@ export const createApp = () => {
   app.use(corsMiddleware);
   app.use(express.json());
   app.use(requestLogger);
+  app.use(authenticate);
   app.use(express.json({ limit: '1mb' }));
   app.use(requestValidationMiddleware);
   app.use(basicRateLimitMiddleware);
