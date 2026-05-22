@@ -1,3 +1,4 @@
+import { airportRuntimeScheduler } from './modules/airport-runtime/scheduler.js';
 import express from 'express';
 import { API_PREFIX } from './constants/app.constants.js';
 import { corsMiddleware } from './config/cors.js';
@@ -63,5 +64,8 @@ export const createApp = () => {
 
   app.use(API_PREFIX, apiRoutes);
   app.use(errorHandlerMiddleware);
-  return app;
+  
+airportRuntimeScheduler.start();
+return app;
+
 };
