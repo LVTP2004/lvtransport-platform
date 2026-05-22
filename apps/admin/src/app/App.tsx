@@ -211,7 +211,41 @@ export function App() {
             </section>
 type RuntimeState = 'Healthy' | 'Warning' | 'Degraded' | 'Critical';
 type SyncState = 'live' | 'recovering' | 'degraded';
-type Booking = { id: string; status: string; referenceCode?: string; pickup?: string; destination?: string; lifecycle?: { version?: number } };
+type Booking = {
+  id: string;
+  status: string;
+  referenceCode?: string;
+  pickup?: string;
+  destination?: string;
+  lifecycle?: { version?: number };
+  airportIntel?: {
+    flightNumber?: string;
+    airline?: string;
+    terminal?: string;
+    arrivalAirport?: string;
+  };
+  airportIntelligence?: {
+    enabled: boolean;
+    pickupBufferMin: number;
+    synchronizedAt: string;
+    monitoring: {
+      providerPriority: string[];
+      status: string;
+      delayMin: number;
+      terminal: string | null;
+      notes: string[];
+    };
+  };
+  lvMessenger?: {
+    messages?: Array<{
+      id: string;
+      messageType: string;
+      at: string;
+      channel: string;
+      content: string;
+    }>;
+  };
+};
 type Driver = { driverId: string; state: string };
 type Incident = { code: string; severity: string; message: string };
 
@@ -418,7 +452,14 @@ export function App() {
       <section className="grid gap-4 xl:grid-cols-3">
         <article className="lvtp-card xl:col-span-2 rounded-2xl p-4">
           <h2 className="text-sm font-semibold uppercase tracking-[0.16em] text-amber-300">Ride lifecycle visibility</h2>
-          <div className="mt-3 space-y-3">{bookings.map((ride) => <div key={ride.id} className="rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm text-zinc-100">{ride.referenceCode ?? ride.id}</p><span className="text-xs uppercase text-zinc-300">{ride.status.replaceAll('_', ' ')}</span></div><div className="mt-2 grid gap-2 text-xs text-zinc-300 sm:grid-cols-2 lg:grid-cols-4"><p>Status sync</p><p>Version {ride.lifecycle?.version ?? '-'}</p><p>Pickup {ride.pickup ?? '-'}</p><p>Destination {ride.destination ?? '-'}</p></div></div>)}</div>
+          <div className="mt-3 space-y-3">{bookings.map((ride) => {
+            const airportMessages = (ride.lvMessenger?.messages ?? []).filter((message) => (
+              message.messageType === 'flight_delay_detected'
+              || message.messageType === 'pickup_timing_adjusted'
+              || message.messageType === 'airport_instruction'
+            ));
+            return <div key={ride.id} className="rounded-xl border border-white/10 bg-black/20 p-3"><div className="flex items-center justify-between gap-2"><p className="text-sm text-zinc-100">{ride.referenceCode ?? ride.id}</p><span className="text-xs uppercase text-zinc-300">{ride.status.replaceAll('_', ' ')}</span></div><div className="mt-2 grid gap-2 text-xs text-zinc-300 sm:grid-cols-2 lg:grid-cols-4"><p>Status sync</p><p>Version {ride.lifecycle?.version ?? '-'}</p><p>Pickup {ride.pickup ?? '-'}</p><p>Destination {ride.destination ?? '-'}</p></div>{ride.airportIntelligence?.enabled ? <div className="mt-3 rounded-xl border border-amber-300/20 bg-black/30 p-3 text-xs text-zinc-200"><p className="text-[11px] uppercase tracking-[0.14em] text-amber-200">Airport Intelligence</p><div className="mt-2 grid gap-2 sm:grid-cols-2 lg:grid-cols-4"><p>providerPriority: {(ride.airportIntelligence.monitoring.providerPriority ?? []).join(', ') || '-'}</p><p>status: {ride.airportIntelligence.monitoring.status ?? '-'}</p><p>delayMin: {ride.airportIntelligence.monitoring.delayMin ?? 0}</p><p>terminal: {ride.airportIntelligence.monitoring.terminal ?? ride.airportIntel?.terminal ?? '-'}</p><p>pickupBufferMin: {ride.airportIntelligence.pickupBufferMin}</p><p>synchronizedAt: {ride.airportIntelligence.synchronizedAt ?? '-'}</p><p className="sm:col-span-2 lg:col-span-2">notes: {(ride.airportIntelligence.monitoring.notes ?? []).join(' | ') || '-'}</p></div><div className="mt-2 rounded-lg border border-white/10 bg-black/20 p-2"><p className="text-[11px] uppercase tracking-[0.14em] text-zinc-400">Generated LV messages</p><ul className="mt-1 space-y-1 text-zinc-300">{airportMessages.length ? airportMessages.map((message) => <li key={message.id}>{message.at} · {message.channel} · {message.content}</li>) : <li>No airport intelligence messages yet.</li>}</ul></div></div> : null}</div>;
+          })}</div>
         </article>
 
         <article className="lvtp-card rounded-2xl p-4">
