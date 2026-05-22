@@ -8,6 +8,9 @@
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
+    "memory:index": "tsx src/operational-memory/cli.ts index",
+    "memory:timeline": "tsx src/operational-memory/cli.ts timeline",
+    "memory:continuity": "tsx src/operational-memory/cli.ts continuity"
     "execution:validate": "tsx src/scripts/execution-validate.ts",
     "execution:history": "tsx src/scripts/execution-history.ts"
     "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
