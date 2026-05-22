@@ -22,6 +22,7 @@ import { CommandCenter } from '../pages/CommandCenter';
 import { AuditReplay } from '../pages/AuditReplay';
 import { WarRoom } from '../pages/WarRoom';
 
+type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'investigation' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'command-center' | 'audit-replay' | 'war-room';
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin' | 'replay-theater' | 'governance' | 'topology';
 type Step = 1 | 2 | 3;
@@ -29,7 +30,7 @@ type Provider = 'stripe' | 'payconiq';
 type RouteKey = 'home' | 'booking' | 'prijzen' | 'tracking' | 'diensten' | 'vip' | 'contact' | 'driver' | 'admin';
 type BookingStatus = 'draft' | 'submitted' | 'confirmed' | BookingLifecycle;
 type AuthMode = 'signin' | 'register';
-type InteractionIntent = 'booking' | 'tracking' | 'vip' | 'business' | 'driver' | 'admin' | 'reviews' | 'expansion';
+type InteractionIntent = 'booking' | 'tracking' | 'investigation' | 'vip' | 'business' | 'driver' | 'admin' | 'reviews' | 'expansion';
 
 type BookingRecord = {
   code: string;
@@ -56,11 +57,57 @@ type VerifiedIdentity = {
   verifiedAt: string;
 };
 
+
+
+type InvestigationArtifact = {
+  id: string;
+  entityType?: string;
+  entityId?: string;
+  correlationId?: string;
+  requestId?: string;
+  category?: string;
+  timestamp?: string;
+  sourceFile?: string;
+  sourceCategory?: string;
+  lineageReference?: string;
+  replayReference?: string;
+  transitionReference?: string;
+  runbookReference?: string;
+  incidentId?: string;
+  notificationFailureId?: string;
+};
+
+type InvestigationFilters = {
+  entityType: string; entityId: string; correlationId: string; requestId: string; category: string; sourceFile: string; from: string; to: string;
+};
+
+const readOperationalArtifacts = (): InvestigationArtifact[] => {
+  const fromWindow = (window as Window & { __LV_OPERATIONAL_MEMORY__?: unknown }).__LV_OPERATIONAL_MEMORY__;
+  const fromScript = document.getElementById('lv-operational-memory')?.textContent;
+  const fromStorage = localStorage.getItem('lv_operational_memory_artifacts');
+  const candidates: unknown[] = [fromWindow, fromScript, fromStorage];
+
+  for (const candidate of candidates) {
+    if (!candidate) continue;
+    try {
+      const parsed = typeof candidate === 'string' ? JSON.parse(candidate) : candidate;
+      const list = Array.isArray(parsed) ? parsed : Array.isArray((parsed as { artifacts?: unknown[] })?.artifacts) ? (parsed as { artifacts: unknown[] }).artifacts : null;
+      if (!list) continue;
+      return list
+        .map((item, index) => ({ ...(item as Record<string, unknown>), id: String((item as { id?: string }).id ?? `artifact-${index}`) }))
+        .filter((item) => typeof item.id === 'string') as InvestigationArtifact[];
+    } catch {
+      continue;
+    }
+  }
+  return [];
+};
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '').replace(/\/$/, '');
 const DRIVER_SURFACE_URL = import.meta.env.VITE_DRIVER_SURFACE_URL ?? '/driver';
 const ADMIN_SURFACE_URL = import.meta.env.VITE_ADMIN_SURFACE_URL ?? '/admin';
 
 const routeMap: Record<string, RouteKey> = {
+  '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/investigation': 'investigation', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/command-center': 'command-center', '/audit-replay': 'audit-replay', '/war-room': 'war-room'
   '/': 'home', '/booking': 'booking', '/prijzen': 'prijzen', '/tracking': 'tracking', '/diensten': 'diensten', '/vip': 'vip', '/contact': 'contact', '/driver': 'driver', '/admin': 'admin', '/replay-theater': 'replay-theater', '/governance': 'governance', '/topology': 'topology'
 };
@@ -85,6 +132,7 @@ const primaryNavItems = [
   { label: 'Home', path: '/', section: 'hero' },
   { label: 'Booking', path: '/booking', section: 'booking', intent: 'booking' as InteractionIntent },
   { label: 'Tracking', path: '/tracking', section: 'tracking', intent: 'tracking' as InteractionIntent },
+  { label: 'Investigation', path: '/investigation', section: 'investigation', intent: 'investigation' as InteractionIntent },
   { label: 'Diensten', path: '/diensten', section: 'diensten' },
   { label: 'Contact', path: '/contact', section: 'contact' }
 ];
@@ -105,6 +153,7 @@ const trustSignals = ['Verified Driver', 'Realtime Connected', 'Airport Synchron
 const interactionCopy: Record<InteractionIntent, string> = {
   booking: 'Reserveer premium ritten en operational lifecycle updates.',
   tracking: 'Bekijk realtime lifecycle, dispatch updates en ride intelligence.',
+  investigation: 'Inspecteer operationele continuiteit met read-only evidence en lineage.',
   vip: 'Activeer VIP/business privileges binnen het private LV-ecosysteem.',
   business: 'Open uw business dashboard en account governance.',
   driver: 'Toegang tot operator tools en driver lifecycle flows.',
@@ -268,7 +317,13 @@ export function App() {
 
   const [calc, setCalc] = useState({ km: 22, isNight: false, airport: true, business: false });
   const price = useMemo(() => Math.round(28 + calc.km * (calc.isNight ? 2.8 : 2.3) + (calc.airport ? 12 : 0) + (calc.business ? 8 : 0)), [calc]);
+  const [operationalArtifacts, setOperationalArtifacts] = useState<InvestigationArtifact[]>([]);
+  const [investigationFilters, setInvestigationFilters] = useState<InvestigationFilters>({ entityType: '', entityId: '', correlationId: '', requestId: '', category: '', sourceFile: '', from: '', to: '' });
 
+
+  useEffect(() => {
+    setOperationalArtifacts(readOperationalArtifacts());
+  }, []);
 
   useEffect(() => {
     const installState = getInstallPromptState();
@@ -451,6 +506,24 @@ export function App() {
     return () => clearTimeout(timer);
   }, []);
 
+  const filteredArtifacts = useMemo(() => operationalArtifacts.filter((item) => {
+    const timestamp = item.timestamp ? new Date(item.timestamp).getTime() : null;
+    const from = investigationFilters.from ? new Date(investigationFilters.from).getTime() : null;
+    const to = investigationFilters.to ? new Date(investigationFilters.to).getTime() : null;
+    return (!investigationFilters.entityType || item.entityType === investigationFilters.entityType)
+      && (!investigationFilters.entityId || item.entityId === investigationFilters.entityId)
+      && (!investigationFilters.correlationId || item.correlationId === investigationFilters.correlationId)
+      && (!investigationFilters.requestId || item.requestId === investigationFilters.requestId)
+      && (!investigationFilters.category || item.category === investigationFilters.category)
+      && (!investigationFilters.sourceFile || item.sourceFile === investigationFilters.sourceFile)
+      && (!from || (timestamp !== null && timestamp >= from))
+      && (!to || (timestamp !== null && timestamp <= to));
+  }), [operationalArtifacts, investigationFilters]);
+
+
+  const replayArtifacts = filteredArtifacts.filter((item) => item.replayReference);
+  const transitionArtifacts = filteredArtifacts.filter((item) => item.transitionReference);
+
   const mapPhase = customerMapStates.find((state) => state.key === customerMapPhase) ?? customerMapStates[0];
   const playUiSound = (tone: 'success' | 'click' = 'click') => {
     const AudioCtx = window.AudioContext || (window as typeof window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
@@ -539,6 +612,27 @@ export function App() {
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>Verified Ride Reviews</h3><p className='text-sm text-lv-mist'>Alle reviews zijn gekoppeld aan completed rides en verified identities.</p><ul className='mt-3 space-y-2'>{verifiedReviews.length ? verifiedReviews.map((review) => <li key={review} className='status-line status-line--active'>{review}</li>) : <li className='status-line'>Nog geen eligible verified reviews.</li>}</ul><Button variant='secondary' className='mt-3' onClick={() => requireIdentity('reviews', () => setTrackingResult('Verified review flow geactiveerd na completed ride lifecycle.'))}>Open review flow</Button></section>
       <section className='glass-panel rounded-3xl p-6'><h3 className='text-xl font-semibold'>LV Business Expansion</h3><p className='text-lv-mist text-sm'>U brengt operationele capaciteit. LVTP levert verified dispatch, realtime lifecycle controle en premium klanttoegang.</p><Button className='mt-3' onClick={() => requireIdentity('expansion', () => setTrackingResult('Expansion onboarding geopend voor verified operator intake.'))}>Start Expansion Onboarding</Button></section>
 
+      <section id='investigation' className='glass-panel rounded-3xl p-6'>
+        <h3 className='text-2xl font-semibold'>Operational Investigation Workspace</h3>
+        <p className='mt-2 text-sm text-lv-mist'>Read-only evidence workspace for entity, correlation, request, replay, incident, notification failure and source lineage inspection.</p>
+        <div className='mt-4 grid gap-3 sm:grid-cols-2 lg:grid-cols-4'>
+          {(['entityType','entityId','correlationId','requestId','category','sourceFile'] as const).map((key) => <label key={key} className='field-wrap'><span>{key}</span><input value={investigationFilters[key]} onChange={(event) => setInvestigationFilters({ ...investigationFilters, [key]: event.target.value })} /></label>)}
+          <label className='field-wrap'><span>timestamp from</span><input type='datetime-local' value={investigationFilters.from} onChange={(event) => setInvestigationFilters({ ...investigationFilters, from: event.target.value })} /></label>
+          <label className='field-wrap'><span>timestamp to</span><input type='datetime-local' value={investigationFilters.to} onChange={(event) => setInvestigationFilters({ ...investigationFilters, to: event.target.value })} /></label>
+        </div>
+        {!operationalArtifacts.length && <div className='mt-4 status-line'>Degraded state: no operational-memory artifacts detected. Timeline, lineage, replay and runbook references remain unavailable until evidence is provided.</div>}
+        {!!operationalArtifacts.length && <>
+          <p className='mt-4 text-xs uppercase tracking-[0.16em] text-lv-champagne'>Evidence panels</p>
+          <div className='mt-2 grid gap-3 lg:grid-cols-2'>
+            <article className='investigation-panel'><h4>Timeline ({filteredArtifacts.length})</h4>{filteredArtifacts.slice(0, 20).map((item) => <div key={item.id} className='status-line mt-2'><p>{item.timestamp ?? 'Unknown timestamp'} · {item.category ?? 'uncategorized'}</p><p className='text-xs text-lv-mist'>source: {item.sourceFile ?? 'n/a'} · lineage: {item.lineageReference ?? 'n/a'} · correlation/request: {item.correlationId ?? '-'} / {item.requestId ?? '-'}</p><p className='text-xs text-lv-mist'>runbook: {item.runbookReference ?? 'not matched'} · replay/transition: {item.replayReference ?? '-'} / {item.transitionReference ?? '-'}</p></div>)}</article>
+            <article className='investigation-panel'><h4>Source lineage</h4><ul>{filteredArtifacts.map((item) => <li key={`${item.id}-lineage`} className='status-line mt-2'>{item.sourceCategory ?? 'unknown'} · {item.sourceFile ?? 'n/a'} · {item.lineageReference ?? 'n/a'}</li>)}</ul></article>
+            <article className='investigation-panel'><h4>Replay history</h4><ul>{replayArtifacts.length ? replayArtifacts.map((item) => <li key={`${item.id}-replay`} className='status-line mt-2'>{item.entityType ?? 'entity'} {item.entityId ?? 'n/a'} · {item.replayReference}</li>) : <li className='status-line mt-2'>No replay references in filtered evidence.</li>}</ul></article>
+            <article className='investigation-panel'><h4>Transition history</h4><ul>{transitionArtifacts.length ? transitionArtifacts.map((item) => <li key={`${item.id}-transition`} className='status-line mt-2'>{item.transitionReference} · {item.correlationId ?? 'no correlation id'}</li>) : <li className='status-line mt-2'>No transition references in filtered evidence.</li>}</ul></article>
+            <article className='investigation-panel'><h4>Runbook references</h4><ul>{filteredArtifacts.map((item) => <li key={`${item.id}-runbook`} className='status-line mt-2'>{item.runbookReference ?? 'No deterministic runbook match'}</li>)}</ul></article>
+            <article className='investigation-panel'><h4>Missing data / degraded state</h4><ul className='space-y-2 text-sm text-lv-mist'><li>Incident records: {filteredArtifacts.some((item) => item.incidentId) ? 'available' : 'not present in current artifacts'}</li><li>Notification failures: {filteredArtifacts.some((item) => item.notificationFailureId) ? 'available' : 'not present in current artifacts'}</li><li>Correlation coverage: {filteredArtifacts.filter((item) => item.correlationId).length}/{filteredArtifacts.length}</li><li>Request coverage: {filteredArtifacts.filter((item) => item.requestId).length}/{filteredArtifacts.length}</li></ul></article>
+          </div>
+        </>}
+      </section>
       <section id='replay-theater' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Deterministic Replay Theater</h3><p className='text-sm text-lv-mist'>Immutable playback navigation, evidence snapshots, lineage overlays, governance markers.</p><ul className='mt-3 space-y-2 text-sm'><li>Sequence A-001 → A-002 → A-003</li><li>Execution chain is append-only and ordered by immutable event index.</li><li>Degraded mode: renders cached snapshot-only playback.</li></ul></section>
       <section id='governance' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Executive Governance Cockpit</h3><p className='text-sm text-lv-mist'>Read-only governance invariants, approval boundaries, runtime health, cognition limitations, replay governance.</p><ul className='mt-3 space-y-2 text-sm'><li>Integrity warnings are evidence-linked.</li><li>Immutable governance logs only.</li><li>No override controls or mutation authority.</li></ul></section>
       <section id='topology' className='glass-panel rounded-3xl p-6'><h3 className='text-2xl font-semibold'>Operational Topology Explorer</h3><p className='text-sm text-lv-mist'>Evidence-first relationship maps for entities, replay chains, synchronization paths, governance dependencies, and incident lineage.</p><p className='mt-2 text-sm'>No inferred edges. No speculative topology streams.</p></section>
