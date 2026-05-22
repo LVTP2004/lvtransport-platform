@@ -75,7 +75,12 @@ export const bookingMetricsController = async (_req: Request, res: Response) => 
 export const bookingAirportIntelligenceController = async (req: Request, res: Response) => {
   try {
     const snapshot = await bookingFlowService.getAirportIntelligence(req.params.bookingId);
-    return res.status(200).json({ success: true, snapshot });
+    return res.status(200).json({
+      bookingId: snapshot.bookingId,
+      airportIntel: snapshot.airportIntel,
+      airportIntelligence: snapshot.airportIntelligence,
+      lvMessages: snapshot.generatedLVMessages,
+    });
   } catch (error) {
     if (isDomainError(error)) {
       return res.status(error.statusCode).json({
