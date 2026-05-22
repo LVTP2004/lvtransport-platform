@@ -20,6 +20,8 @@
     "dev:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey dev",
     "build:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey build",
     "typecheck:web-grey": "pnpm --filter @lvtransport/web-consolidated-grey typecheck",
+    "memory:continuity": "node tools/memory-engine/continuity-index.mjs",
+    "memory:index": "node tools/memory-engine/continuity-index.mjs"
     "graph:build": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:build",
     "graph:verify": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:verify",
     "graph:query": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts graph:query",
