@@ -10,13 +10,15 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@lvtransport/auth": "workspace:*",
+    "@lvtransport/realtime": "workspace:*",
+    "@lvtransport/ui": "workspace:*",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "@lvtransport/ui": "workspace:*",
-    "@lvtransport/realtime": "workspace:*",
-    "@lvtransport/auth": "workspace:*"
+    "react-router-dom": "^7.15.1"
   },
   "devDependencies": {
+    "@lvtransport/config": "workspace:*",
     "@types/react": "^18.3.12",
     "@types/react-dom": "^18.3.1",
     "@vitejs/plugin-react": "^4.3.1",
@@ -24,7 +26,6 @@
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.16",
     "typescript": "^5.6.3",
-    "vite": "^5.4.10",
-    "@lvtransport/config": "workspace:*"
+    "vite": "^5.4.10"
   }
 }

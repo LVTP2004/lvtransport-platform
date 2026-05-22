@@ -1,5 +1,5 @@
-import { PricingEngineService } from './pricing-engine.service';
-import { BookingQuote, RouteEstimateInput } from '../models/pricing.types';
+import { PricingEngineService } from './pricing-engine.service.js';
+import { BookingQuote, RouteEstimateInput } from '../models/pricing.types.js';
 
 export class QuoteOrchestratorService {
   constructor(private readonly pricingEngine = new PricingEngineService()) {}

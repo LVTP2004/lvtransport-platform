@@ -1,0 +1,8 @@
+{
+  "startedAt": "2026-05-14T18:51:23.698Z",
+  "baseUrl": "http://127.0.0.1:4000/api/v1",
+  "preflight": "failed",
+  "reason": "API health endpoint is unavailable. Start apps/api before running endurance validation.",
+  "healthStatus": 0,
+  "healthError": "TypeError: fetch failed"
+}
