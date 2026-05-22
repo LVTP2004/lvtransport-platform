@@ -15,6 +15,14 @@ const fieldStyle = {
   boxSizing: 'border-box' as const,
 }
 
+const bookingLifecycle = [
+  { key: 'request_received', label: 'Aanvraag ontvangen', source: 'backend-contract' },
+  { key: 'assignment_pending', label: 'Toewijzing in wachtrij', source: 'deterministic-adapter' },
+  { key: 'driver_assigned', label: 'Chauffeur toegewezen', source: 'backend-contract' },
+  { key: 'in_progress', label: 'Rit onderweg', source: 'backend-contract' },
+  { key: 'completed', label: 'Rit voltooid', source: 'backend-contract' },
+] as const
+
 export default function Booking() {
   const [form, setForm] = useState({
     name: '',
@@ -33,6 +41,7 @@ export default function Booking() {
   const [trackingCode, setTrackingCode] = useState('')
   const [trackingResult, setTrackingResult] = useState('Voer uw ritcode in om uw taxi te volgen.')
   const [trackingLoading, setTrackingLoading] = useState(false)
+  const [lifecycleState, setLifecycleState] = useState<(typeof bookingLifecycle)[number]['key']>('request_received')
 
   async function submitBooking(event: FormEvent) {
     event.preventDefault()
@@ -60,6 +69,7 @@ export default function Booking() {
 
       const code = result.booking.referenceCode
       setTrackingCode(code)
+      setLifecycleState(result.booking.status === 'confirmed' ? 'assignment_pending' : 'request_received')
       setConfirmation(`Boeking bevestigd. Uw referentie: ${code}. Status: ${result.booking.status}.`)
     } catch (error) {
       setConfirmation(error instanceof Error ? error.message : 'Boeking mislukt.')
@@ -82,6 +92,10 @@ export default function Booking() {
       }
 
       const ride = result.booking
+      const normalized = String(ride.status ?? '').toLowerCase()
+      if (normalized.includes('assign')) setLifecycleState('driver_assigned')
+      else if (normalized.includes('progress') || normalized.includes('ongoing')) setLifecycleState('in_progress')
+      else if (normalized.includes('complete')) setLifecycleState('completed')
       const driver = ride.assignedDriverName ? ` • Chauffeur: ${ride.assignedDriverName}` : ''
       const when = ride.scheduleAt ? new Date(ride.scheduleAt).toLocaleString('nl-BE') : ''
       setTrackingResult(`Rit ${ride.code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}${driver}`)
@@ -140,6 +154,22 @@ export default function Booking() {
               {['Minimumrit Antwerpen: vanaf €15', 'Airport transfer: geschatte tarieven', 'Nachttoeslag: automatisch via tijdstip', 'Business/VIP: prioriteit en facturatie'].map((item) => (
                 <div key={item} style={{ padding: 14, borderRadius: 16, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.04)' }}>{item}</div>
               ))}
+            </div>
+
+            <div style={{ marginTop: 20 }}>
+              <p style={{ color: gold, letterSpacing: 2, fontWeight: 800 }}>BOOKING LIFECYCLE</p>
+              <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 8 }}>
+                {bookingLifecycle.map((step) => {
+                  const active = step.key === lifecycleState
+                  return (
+                    <li key={step.key} style={{ border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, padding: '10px 12px', background: active ? 'rgba(212,175,55,.14)' : 'rgba(255,255,255,.02)' }}>
+                      <strong style={{ fontSize: 13 }}>{step.label}</strong>
+                      <p style={{ margin: '4px 0 0', fontSize: 11, color: '#a1a1aa' }}>source: {step.source}</p>
+                    </li>
+                  )
+                })}
+              </ul>
+              <p style={{ color: '#a1a1aa', fontSize: 12, marginTop: 8 }}>Route estimation seam blijft gedeclareerd tot dispatch route engine contract actief is.</p>
             </div>
           </aside>
         </div>
