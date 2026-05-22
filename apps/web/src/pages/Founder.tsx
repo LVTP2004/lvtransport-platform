@@ -4,6 +4,7 @@ type GovernanceLane = {
   narrative: string
   checkpoint: string
   visibility: 'audit-safe' | 'contract-pending' | 'adapter-stable'
+  auditVisibility: string
 }
 
 const governanceLanes: GovernanceLane[] = [
@@ -13,6 +14,7 @@ const governanceLanes: GovernanceLane[] = [
     narrative: 'Summarizes verified operational indicators emitted by runtime services.',
     checkpoint: 'No synthetic KPI expansion permitted.',
     visibility: 'audit-safe',
+    auditVisibility: 'Contract metrics only; no inferred executive KPI overlays.',
   },
   {
     lane: 'Governance & Compliance',
@@ -20,6 +22,7 @@ const governanceLanes: GovernanceLane[] = [
     narrative: 'Reserved integration seam for policy and compliance event ingestion.',
     checkpoint: 'Waiting for policy service contract binding.',
     visibility: 'contract-pending',
+    auditVisibility: 'Lane visible as standby until policy event contract attaches.',
   },
   {
     lane: 'Replay Intelligence',
@@ -27,6 +30,7 @@ const governanceLanes: GovernanceLane[] = [
     narrative: 'Deterministic placeholder narrative for audit replay pipeline readiness.',
     checkpoint: 'Adapter stays static until replay service emits runtime events.',
     visibility: 'adapter-stable',
+    auditVisibility: 'Replay lineage shown as adapter-owned readiness state.',
   },
   {
     lane: 'System Health',
@@ -34,6 +38,7 @@ const governanceLanes: GovernanceLane[] = [
     narrative: 'Uses existing runtime health contract to keep founder visibility operational.',
     checkpoint: 'Contract-only health states shown.',
     visibility: 'audit-safe',
+    auditVisibility: 'Health evidence remains traceable to runtime health contract fields.',
   },
 ]
 
@@ -55,6 +60,7 @@ export default function Founder() {
               </div>
               <p className="mt-2 text-sm text-zinc-300">{item.narrative}</p>
               <p className="mt-2 text-sm text-zinc-400">{item.checkpoint}</p>
+              <p className="mt-2 text-xs text-zinc-500">Audit visibility: {item.auditVisibility}</p>
               <p className="mt-3 text-xs uppercase tracking-[0.12em] text-zinc-500">Source: {item.source}</p>
             </article>
           ))}

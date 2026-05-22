@@ -19,6 +19,12 @@ type DriverRuntimeState = {
     traffic: 'low' | 'moderate' | 'high' | 'unknown'
   }
   panels: RuntimePanel[]
+  source: 'backend-contract' | 'deterministic-adapter'
+  rideStateMachine: Array<{
+    state: 'queued' | 'accepted' | 'arrived_pickup' | 'in_transit' | 'completed'
+    visibility: 'visible' | 'awaiting-runtime-event'
+    source: 'backend-contract' | 'integration-seam'
+  }>
 }
 
 const driverState: DriverRuntimeState = {
@@ -53,6 +59,13 @@ const driverState: DriverRuntimeState = {
       state: 'standby',
       detail: 'Identity confirmation seam present without synthetic rider profile injection.',
     },
+  source: 'deterministic-adapter',
+  rideStateMachine: [
+    { state: 'queued', visibility: 'visible', source: 'backend-contract' },
+    { state: 'accepted', visibility: 'awaiting-runtime-event', source: 'backend-contract' },
+    { state: 'arrived_pickup', visibility: 'awaiting-runtime-event', source: 'backend-contract' },
+    { state: 'in_transit', visibility: 'awaiting-runtime-event', source: 'backend-contract' },
+    { state: 'completed', visibility: 'awaiting-runtime-event', source: 'integration-seam' },
   ],
 }
 
@@ -95,6 +108,20 @@ export default function Driver() {
               ))}
             </ul>
           </article>
+        </section>
+
+        <section className="rounded-2xl border border-amber-400/20 bg-[#111318]/85 p-4">
+          <h2 className="text-sm uppercase tracking-[0.16em] text-amber-200">Ride State Machine Visibility</h2>
+          <ul className="mt-3 grid gap-2 text-sm">
+            {driverState.rideStateMachine.map((node) => (
+              <li key={node.state} className="grid grid-cols-[1fr_auto_auto] items-center gap-2 rounded-xl border border-zinc-800 bg-black/35 px-3 py-2">
+                <span>{node.state}</span>
+                <span className="text-zinc-400">{node.visibility}</span>
+                <span className="text-xs uppercase tracking-[0.1em] text-amber-200">{node.source}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-xs text-zinc-500">Realtime contract binding seam: driver websocket transport/event contracts are declared but not simulated.</p>
         </section>
       </div>
     </main>
