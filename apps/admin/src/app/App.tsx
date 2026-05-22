@@ -51,6 +51,143 @@ export function App() {
     </main>
   );
 
+const navItems = [
+  { label: 'Dashboard', icon: '◫' },
+  { label: 'Bookings', icon: '◈' },
+  { label: 'Dispatch', icon: '⌖' },
+  { label: 'Fleet', icon: '▣' },
+  { label: 'Drivers', icon: '◍' },
+  { label: 'Incidents', icon: '⚠' },
+  { label: 'Settings', icon: '⚙' },
+];
+
+const bookings = [
+  ['BK-10924', 'Airport Transfer', 'Scheduled', 'Alicia D.', '10:40', 'paid'],
+  ['BK-10925', 'Corporate Shuttle', 'In Progress', 'Lars M.', '10:55', 'requires_action'],
+  ['BK-10926', 'VIP Point-to-Point', 'Delayed', 'Soren K.', '11:10', 'payment_failed_retrying'],
+  ['BK-10927', 'Hotel Pickup', 'Completed', 'Priya T.', '11:30', 'refunded_pending_approval'],
+];
+
+export function App() {
+  return (
+    <main className="min-h-screen bg-zinc-900 text-zinc-100">
+      <div className="grid min-h-screen grid-cols-1 lg:grid-cols-[260px_1fr]">
+        <aside className="border-r border-zinc-800 bg-black/90 p-6">
+          <div className="mb-8">
+            <p className="text-xs uppercase tracking-[0.28em] text-zinc-500">LV Transport</p>
+            <h1 className="mt-1 text-2xl font-bold text-amber-300">Control Tower</h1>
+          </div>
+          <nav className="space-y-2">
+            {navItems.map(({ label, icon }, index) => (
+              <button
+                key={label}
+                className={`flex w-full items-center gap-3 rounded-xl px-3 py-2 text-sm transition ${
+                  index === 0
+                    ? 'bg-amber-400/20 text-amber-200'
+                    : 'text-zinc-300 hover:bg-zinc-800/80 hover:text-white'
+                }`}
+              >
+                <span className="w-4 text-center">{icon}</span> {label}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <div className="flex flex-col">
+          <header className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-800 bg-zinc-950/80 px-5 py-4 backdrop-blur">
+            <div>
+              <p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Operations Center</p>
+              <p className="text-lg font-medium text-white">Regional Dispatch & Service Health</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <button className="rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2 text-sm transition hover:border-amber-300 hover:text-amber-200">Today</button>
+              <button className="rounded-xl border border-zinc-700 bg-zinc-900 p-2 transition hover:border-amber-300 hover:text-amber-200">
+                <span>🔔</span>
+              </button>
+            </div>
+          </header>
+
+          <div className="space-y-5 p-5">
+            <section className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+              <MetricCard title="Revenue Today" value="$84,290" trend="+6.4% vs yesterday" tone="gold" />
+              <MetricCard title="Active Rides" value="148" trend="12 nearing destination" tone="emerald" />
+              <MetricCard title="Driver Utilization" value="91%" trend="Across 3 operating zones" tone="blue" />
+              <MetricCard title="Critical Alerts" value="3" trend="2 requires dispatch intervention" tone="rose" />
+            </section>
+
+            <section className="grid gap-5 xl:grid-cols-3">
+              <div className="space-y-5 xl:col-span-2">
+                <Panel title="Booking Management" icon={<span>◈</span>}>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[620px] text-left text-sm">
+                      <thead className="text-xs uppercase tracking-[0.16em] text-zinc-400">
+                        <tr>
+                          {['ID', 'Service', 'Status', 'Driver', 'ETA', 'Payment'].map((h) => (
+                            <th key={h} className="px-2 py-2">{h}</th>
+                          ))}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {bookings.map((row) => (
+                          <tr key={row[0]} className="border-t border-zinc-800 text-zinc-200 transition hover:bg-zinc-900/70">
+                            {row.map((cell) => (
+                              <td key={cell} className="px-2 py-3">{cell}</td>
+                            ))}
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Panel>
+
+                <div className="grid gap-5 md:grid-cols-2">
+                  <Panel title="Active Rides" icon={<span>◉</span>}>
+                    <ul className="space-y-3 text-sm text-zinc-300">
+                      <li className="rounded-xl bg-zinc-900/80 p-3">Ride #R-8821 • Downtown to Terminal 1 • 14 min</li>
+                      <li className="rounded-xl bg-zinc-900/80 p-3">Ride #R-8830 • Convention to Bellagio • 9 min</li>
+                      <li className="rounded-xl bg-zinc-900/80 p-3">Ride #R-8833 • Wynn to Airport • 21 min</li>
+                    </ul>
+                  </Panel>
+
+                  <Panel title="Driver Monitoring" icon={<span>◍</span>}>
+                    <div className="grid gap-3 text-sm">
+                      {['On Duty 126', 'Break 14', 'Offline 8'].map((d) => (
+                        <div key={d} className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 transition hover:border-amber-300/40">{d}</div>
+                      ))}
+                    </div>
+                  </Panel>
+                </div>
+              </div>
+
+              <div className="space-y-5">
+                <Panel title="Live Status Widgets" icon={<span>◌</span>}>
+                  <div className="space-y-2 text-sm text-zinc-300">
+                    <p className="rounded-lg bg-zinc-900 p-2">System Health: <span className="text-emerald-300">Stable</span></p>
+                    <p className="rounded-lg bg-zinc-900 p-2">Avg Wait Time: <span className="text-amber-200">5m 42s</span></p>
+                    <p className="rounded-lg bg-zinc-900 p-2">Traffic Index: <span className="text-rose-300">High</span></p>
+                  </div>
+                </Panel>
+
+                <Panel title="Alerts & Incidents" icon={<span>⚠</span>}>
+                  <ul className="space-y-2 text-sm text-zinc-300">
+                    <li className="rounded-lg border border-rose-500/30 bg-rose-500/10 p-2">Engine anomaly • Unit DV-14</li>
+                    <li className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-2">Late pickup cluster • Sector West</li>
+                    <li className="rounded-lg border border-sky-500/30 bg-sky-500/10 p-2">Road closure • Strip Blvd</li>
+                  </ul>
+                </Panel>
+              </div>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-3">
+              <Panel title="Dispatch Overview" icon={<span>⌖</span>}><p className="text-sm text-zinc-300">56 open dispatch tasks, 18 pending route approvals.</p></Panel>
+              <Panel title="Fleet Overview" icon={<span>▣</span>}><p className="text-sm text-zinc-300">184 vehicles total • 169 available • 10 maintenance • 5 offline.</p></Panel>
+              <Panel title="Admin Settings" icon={<span>⚙</span>}><p className="text-sm text-zinc-300">Role profiles, escalation rules, and SLA thresholds configuration panel placeholder.</p></Panel>
+            </section>
+
+            <section className="grid gap-5 lg:grid-cols-2">
+              <Panel title="Customer Activity" icon={<span>◎</span>}><p className="text-sm text-zinc-300">Bookings/hour peak: 94 • Repeat customer ratio: 47% • App satisfaction: 4.8/5.</p></Panel>
+              <Panel title="Audit / Activity Log" icon={<span>◷</span>}><p className="text-sm text-zinc-300">10:32 Dispatch reassigned R-8821 • 10:29 Refund prepared (manual approval) • 10:25 Stripe test webhook accepted.</p></Panel>
+            </section>
 type RuntimeState = 'Healthy' | 'Warning' | 'Degraded' | 'Critical';
 type SyncState = 'live' | 'recovering' | 'degraded';
 type Booking = { id: string; status: string; referenceCode?: string; pickup?: string; destination?: string; lifecycle?: { version?: number } };
