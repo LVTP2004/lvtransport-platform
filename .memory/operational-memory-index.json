@@ -1,0 +1,4263 @@
+{
+  "generatedAt": "2026-05-21T19:01:09.726Z",
+  "sourceRoot": "docs/**/*.md",
+  "totalFiles": 109,
+  "records": [
+    {
+      "sourceFile": "docs/ARCHITECTURE.md",
+      "title": "ARCHITECTURE — LV Transport Platform (Premium Mobility SaaS Evolution)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident visibility",
+        "Incident and operational event logging foundation",
+        "incident alerts"
+      ],
+      "migrationReferences": [
+        "transition policy enforcement"
+      ],
+      "recoveryReferences": [
+        "backup routines"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "monitoring",
+        "audit",
+        "timeline",
+        "backup",
+        "readiness",
+        "production",
+        "operations"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/AUTH-USER-MANAGEMENT-ARCHITECTURE.md",
+      "title": "Auth & User Management Architecture",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "security",
+        "ai",
+        "audit"
+      ],
+      "categories": [
+        "security",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/BETA-OPERATIONAL-ROLLOUT-PLAN-2026-05-12.md",
+      "title": "LV Transport Platform — Limited Beta Operational Rollout Plan (2026-05-12)",
+      "phase": "PHASE-00",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "incident channels)",
+        "incident handoff)",
+        "incident and near-miss review",
+        "incident tagging (`beta_customer`) for tracking",
+        "Incident trend dashboard for beta-tagged rides",
+        "Incident Response Checklist",
+        "incident commander and communications owner",
+        "outage notices",
+        "incident close",
+        "Incident",
+        "postmortem within 48 hours",
+        "incident rate and mean time to recovery"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback options at all times",
+        "rollback steps and owners are documented and tested",
+        "rollback guardrails and halt criteria",
+        "Recovery",
+        "recovery (book → dispatch → track → pay → complete)",
+        "recovery",
+        "Rollback drill pass in the most recent cycle",
+        "rollback window"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "monitoring",
+        "rollback",
+        "readiness",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/CONSOLIDATED_ARCHITECTURE.md",
+      "title": "Consolidated Architecture (lvtransport.be)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Rollback strategy",
+        "backup before any switch",
+        "restore the last known good `dist` and reload Nginx",
+        "rollback by starting `vite preview`; rollback must remain static + Nginx"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "ai",
+        "rollback",
+        "backup",
+        "production"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/CONSOLIDATED_OPERATIONAL_ALIGNMENT_REPORT_2026-05-14.md",
+      "title": "Consolidated Operational Alignment Report — 2026-05-14",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "incident drill certification"
+      ],
+      "migrationReferences": [
+        "upgrade headers)",
+        "transition rejection continue to be enforced in service-level lifecycle logic"
+      ],
+      "recoveryReferences": [
+        "recovery"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "readiness",
+        "certification",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/CONTROLLED-FIRST-REAL-RIDE-TEST-PLAN-2026-05-12.md",
+      "title": "LV Transport Platform — Controlled First Real Ride Test Plan",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "failure) as generated by existing system behavior",
+        "Failure checklist (if any mismatch occurs)",
+        "incident as fail candidate if one or more occur:",
+        "failure capture:",
+        "incident record with booking ID, severity, and impacted module"
+      ],
+      "migrationReferences": [
+        "transition"
+      ],
+      "recoveryReferences": [
+        "Rollback / safety procedure",
+        "rollback procedure is invoked"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "deployment",
+        "product",
+        "ai",
+        "audit",
+        "timeline",
+        "rollback",
+        "compliance",
+        "production",
+        "operations",
+        "ops",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/CONTROLLED_AUTONOMOUS_FOUNDER_PILOT_SIMULATION_2026-05-13.md",
+      "title": "LVTP Controlled Autonomous Founder Pilot Operations Simulation",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "Incident traceability is possible from structured logs and request IDs"
+      ],
+      "migrationReferences": [
+        "transition attempt",
+        "transition enforcement logic are present in orchestration architecture",
+        "transition) degrade into opaque server faults",
+        "transition failures) to deterministic 4xx classes"
+      ],
+      "recoveryReferences": [
+        "recovery could not be certified end-to-end because canonical progression did not reach stable in-ride state",
+        "Recovery simplicity: moderate for observability, low for autonomous lifecycle continuity"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ai",
+        "observability",
+        "readiness",
+        "certification",
+        "hardening",
+        "operations",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/CONTROLLED_CHAOS_VALIDATION_CHECKLIST_2026-05-13.md",
+      "title": "LVTP Controlled Chaos Validation Checklist (Safe for dev/staging)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Chaos Validation Checklist (Safe for dev/staging)"
+      ],
+      "migrationReferences": [
+        "transition persisted",
+        "transition"
+      ],
+      "recoveryReferences": [
+        "recovery"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "product",
+        "ai",
+        "readiness",
+        "production",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/CURRENT-SITE-AUDIT.md",
+      "title": "Current Site Audit (`current-site/lvtransport-platform-current-site.zip`)",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-09"
+      ],
+      "incidentReferences": [
+        "outage or blocking can degrade mapping/tracking UX"
+      ],
+      "migrationReferences": [
+        "Migration plan (current static ZIP -> platform repository)",
+        "migration workspace (do not serve directly from ZIP)",
+        "cutover"
+      ],
+      "recoveryReferences": [
+        "backup artifact; not a deployable route by default, but present in the ZIP and should be excluded from production bundles)",
+        "backup artifact in deployable package",
+        "rollback-safe deploy process"
+      ],
+      "operationalKeywords": [
+        "migration",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "audit",
+        "rollback",
+        "backup",
+        "hardening",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/DEPLOY_DECISION_MATRIX.md",
+      "title": "DEPLOY DECISION MATRIX — lvtransport.be visual layer",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Rollback:"
+      ],
+      "operationalKeywords": [
+        "rollback"
+      ],
+      "categories": [
+        "incidents",
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_CONTROLLED_FOUNDER_LAUNCH_CERTIFICATION_2026-05-13.md",
+      "title": "LVTP Final Controlled Founder-Operated Launch Certification (Belgium)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "incident and stale-state KPIs",
+        "incident KPIs"
+      ],
+      "migrationReferences": [
+        "transition map; invalid transitions are blocked and duplicates are recorded as diagnostics rather than causing state mutation",
+        "transition validation (`allowedTransitions`)",
+        "transition traceability",
+        "transition map before writing state, relying on assignment preconditions",
+        "transition rejection: present",
+        "transition guards and anomaly logging"
+      ],
+      "recoveryReferences": [
+        "recovery evidence",
+        "Recovery hooks: present but constrained by memory-backed store",
+        "restore)",
+        "backup comms channel"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "monitoring",
+        "audit",
+        "timeline",
+        "backup",
+        "readiness",
+        "compliance",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_FOUNDER_OPERATED_PREMIUM_RIDE_SIMULATION_2026-05-13.md",
+      "title": "Final Founder-Operated Premium Ride Simulation & Operational Confidence Certification",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "incident response, override safety, and VIP ride handling"
+      ],
+      "migrationReferences": [
+        "transition guardrails and terminal-state immutability present",
+        "transition guardrails",
+        "transition semantics with explicit API integration tests"
+      ],
+      "recoveryReferences": [
+        "recovery, stale assignment handling, duplicate-event suppression, and lifecycle anomaly reporting are implemented"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "timeline",
+        "readiness",
+        "certification",
+        "production",
+        "operations",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_FOUNDER_VPS_PILOT_CERTIFICATION_2026-05-13.md",
+      "title": "LV Transport Platform — Final Controlled Founder-Operated VPS Pilot Readiness Certification (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "failure",
+        "incident: set Nginx maintenance route, stop new PM2 process, repoint to previous release, restart PM2"
+      ],
+      "migrationReferences": [
+        "transition enforcement, recovery hooks (`apps/api/src/services/realtime-orchestrator",
+        "transition validation (`apps/api/src/bookings/bookings",
+        "transition matrix are explicitly encoded and deterministic",
+        "transition matrix constraints",
+        "transition rejection is implemented in both bookings service and realtime orchestrator",
+        "transition anomaly visibility exists through invalid transition handling + lifecycle anomaly reporting",
+        "upgrade headers",
+        "upgrade misconfiguration would break realtime lifecycle synchronization",
+        "upgrade proxy headers",
+        "transition",
+        "transition and verify rejection",
+        "upgrade forwarding proof"
+      ],
+      "recoveryReferences": [
+        "recovery hooks (`apps/api/src/services/realtime-orchestrator",
+        "Rollback process is procedural/documented but must be operationally rehearsed on VPS once before first real ride",
+        "recovery exists through orchestrator recovery pathways and realtime state publication",
+        "recovery proven on target VPS",
+        "recovery",
+        "recovery/snapshot alignment",
+        "Rollback procedure readiness**",
+        "Rollback Plan",
+        "backup",
+        "Restore prior `"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "backup",
+        "readiness",
+        "compliance",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_OPERATIONAL_ALIGNMENT_REPORT_2026-05-14.md",
+      "title": "LV Transport Platform — Final Operational Alignment Report (2026-05-14)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "Transition anomalies are recorded and prevented from mutating canonical state",
+        "transition validation layer** (`lifecycle-validation",
+        "transition whitelist"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_OPERATIONAL_CONVERGENCE_AUDIT_2026-05-13.md",
+      "title": "FINAL OPERATIONAL CONVERGENCE AUDIT — 2026-05-13",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "chaos-oriented service tests ✅",
+        "chaos maturity signals"
+      ],
+      "migrationReferences": [
+        "transition"
+      ],
+      "recoveryReferences": [
+        "recovery determinism, and evidence quality without feature expansion",
+        "recovery behavior after completion returns to stable `available` state with no active-booking residue"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ux",
+        "ai",
+        "audit",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_PREMIUM_OPERATIONAL_HARDENING_AND_LUXURY_EXPERIENCE_GAP_ANALYSIS_2026-05-13.md",
+      "title": "LV Transport Platform — Final Premium Operational Hardening & Luxury Experience Gap Analysis",
+      "phase": "PHASE-00",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "failure handling and personalization to beat mass-market apps on trust + polish**",
+        "incident; dashboards and pager signals become noisy",
+        "incident class playbooks: delayed assignment, lost realtime sync, failed payment capture, chauffeur no-show",
+        "failure UX",
+        "failure state must provide next-best action",
+        "chaos tests",
+        "incident drills"
+      ],
+      "migrationReferences": [
+        "transition guardrail engine** (allowed transition matrix + invariant checks + compensation actions) is evident in the active path",
+        "transition enforcement is not centralized (e",
+        "transition service** with:",
+        "transition matrix",
+        "transition command IDs",
+        "transition journal (event log) alongside current snapshot",
+        "transition events with monotonic sequence IDs",
+        "Migrate booking + lifecycle store to transactional DB (Postgres recommended)",
+        "transition engine + transition matrix",
+        "Transition journal + version checks",
+        "migration plan to transactional DB"
+      ],
+      "recoveryReferences": [
+        "recovery",
+        "Recovery drills and operator runbooks",
+        "recovery choreography” checklist is linked to lifecycle incidents",
+        "recovery SLA: proactive outreach <= 2 min for VIP bookings",
+        "recovery response design is visible",
+        "recovery messaging states + operator escalation hooks",
+        "recovery KPIs",
+        "recovery playbooks executed in at least 3 simulated incident drills"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "migration",
+        "recovery",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_PRODUCTION_ALIGNMENT_CONSOLIDATION_REPORT_2026-05-14.md",
+      "title": "FINAL PRODUCTION ALIGNMENT CONSOLIDATION REPORT — 2026-05-14",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "chaos scenarios require additional repeated production telemetry validation"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "backup remnants that degrade trust,",
+        "failover checks should be scheduled after next live rehearsal"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "ai",
+        "audit",
+        "backup",
+        "failover",
+        "readiness",
+        "production",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_TRANSFORMATION_PROTOCOL_EXECUTION.md",
+      "title": "LV Transport Platform — Final Transformation Protocol Execution",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident handling"
+      ],
+      "migrationReferences": [
+        "transition"
+      ],
+      "recoveryReferences": [
+        "recovery scenarios pass",
+        "recovery, invoice/receipt continuity and payout state observability pass",
+        "rollback, audit logs, and monitoring coverage validated",
+        "recovery and emotional trust suites all pass",
+        "recovery 92 --backup-rollback-readiness 90 --mobile-experience 91 \\",
+        "recovery pathway must preserve customer-visible continuity"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FINAL_WEAKNESS_OPTIMIZATION_RUNTIME_CONSOLIDATION_REPORT_2026-05-15.md",
+      "title": "LV Transport Platform Final Weakness Optimization + Runtime Consolidation Report",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "incident recovery | Weekly restore drill with signed evidence artifacts |"
+      ],
+      "migrationReferences": [
+        "transition guards at booking lifecycle manager |"
+      ],
+      "recoveryReferences": [
+        "restore |",
+        "Backup/rollback | Recovery docs not fully drill-verified weekly | **MEDIUM** | Slower incident recovery | Weekly restore drill with signed evidence artifacts |",
+        "restore first, always",
+        "recovery hardening",
+        "Backup + rollback protection",
+        "restore drills with timed RTO/RPO evidence",
+        "recovery time",
+        "recovery, reconnect, and Moni observation as one integrated validation suite",
+        "recovery: **79**",
+        "Backup/rollback readiness: **87**"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FOUNDER_AUDIT_REPORT.md",
+      "title": "FOUNDER AUDIT REPORT — LVTP2004/lvtransport-platform",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Rollback:",
+        "rollback inmediato definido"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "audit",
+        "rollback",
+        "hardening",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/FOUNDER_BETA_STRESS_RUNBOOKS_2026-05-13.md",
+      "title": "LVTP Founder Beta Stress Runbooks (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "Incident threshold:** repeated conflicts for same booking after reconnect"
+      ],
+      "migrationReferences": [
+        "transition"
+      ],
+      "recoveryReferences": [
+        "recovery expected:** backend lifecycle remains canonical; reconnect triggers latest snapshot pull",
+        "Recovery:** force driver panel refresh; validate booking lifecycle version monotonicity",
+        "recovery fails across >=2 surfaces"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ai",
+        "timeline",
+        "readiness",
+        "operations",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FOUNDER_OPERATED_PREMIUM_LAUNCH_HARDENING_CERTIFICATION_2026-05-13.md",
+      "title": "LV Transport Platform — Controlled Founder-Operated Premium Launch Hardening Certification",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "incident response ergonomics under live interruption pressure**",
+        "chaos/interruption regression matrix for websocket flap + PM2 restart + replay ordering under load",
+        "Incident runbook depth for websocket partition + stale tracking escalation"
+      ],
+      "migrationReferences": [
+        "transition endpoints (`completed`, `cancelled`, `failed` disallow forward transitions)",
+        "transition validation paths are enforced in realtime lifecycle services"
+      ],
+      "recoveryReferences": [
+        "recovery",
+        "recovery requests",
+        "recovery endpoint/event pattern supports reconnect hydration",
+        "recovery behavior for assignment restoration has test coverage",
+        "recovery) is not committed in audit artifacts",
+        "rollback protocol for realtime degradation"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "rollback",
+        "readiness",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FOUNDER_VISION_STATEMENT.md",
+      "title": "Founder Vision Statement — Leonardo Vargas",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ai",
+        "readiness"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/FRONTEND_GREY_VALIDATION.md",
+      "title": "FRONTEND GREY VALIDATION — checklist conservador",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Rollback:",
+        "Rollback plan"
+      ],
+      "operationalKeywords": [
+        "ux",
+        "product",
+        "ai",
+        "rollback",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/FULL_RIDE_ECOSYSTEM_OPERATIONAL_EMULATION_2026-05-14.md",
+      "title": "LV Transport Platform — Full Ride Ecosystem Operational Emulation",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "failure-surface visibility, but cannot validate live lifecycle synchronization correctness",
+        "failure at test time"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery failures: 2,060",
+        "recovery under active sessions"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ux",
+        "ai",
+        "observability",
+        "readiness",
+        "ops",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-DIAGRAMS.md",
+      "title": "FUTURE CONCEPT — LVTP Ecosystem Diagrams",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ai",
+        "governance",
+        "audit",
+        "operations",
+        "ops",
+        "validation"
+      ],
+      "categories": [
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/FUTURE-CONCEPT-LVTP-ECOSYSTEM-ROADMAP.md",
+      "title": "FUTURE CONCEPT — LVTP Ecosystem Expansion Roadmap",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "audit",
+        "readiness",
+        "compliance",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/INTERNAL_FUNCTIONAL_TECHNICAL_AUDIT_2026-05-18.md",
+      "title": "LVTRANSPORT — Internal Functional & Technical Audit (2026-05-18)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "backup/restore policy, consistency checks, structured observability pipelines, SLO alarms)"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "migration",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "audit",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/INTERNAL_SOFTWARE_AUDIT_2026-05-16.md",
+      "title": "LV Transport Platform — Internal Software Audit (2026-05-16)",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-16"
+      ],
+      "incidentReferences": [
+        "failure handling in UI** (many fetch flows degrade silently into local behavior)",
+        "Incident/audit trail persistence and replay",
+        "chaos drills, security review, deployment rollback playbooks, and KPI baselines"
+      ],
+      "migrationReferences": [
+        "transition UI triggers real API calls** for status updates and GPS posts"
+      ],
+      "recoveryReferences": [
+        "rollback automation",
+        "rollback playbooks, and KPI baselines"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "audit",
+        "rollback",
+        "readiness",
+        "compliance",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/INVESTOR-DEMO-READINESS-2026-05-12.md",
+      "title": "LV Transport Platform — Investor & Business Demo Readiness",
+      "phase": "unknown",
+      "dates": [
+        "May 12, 2026"
+      ],
+      "incidentReferences": [
+        "incident/cancellation handling narrative with one controlled example",
+        "incident response communication playbooks"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "failover if live creation fails",
+        "backup pre-seeded run"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "timeline",
+        "backup",
+        "failover",
+        "readiness",
+        "compliance",
+        "hardening",
+        "production",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/INVESTOR_GRADE_OPERATIONAL_EVIDENCE_CERTIFICATION_2026-05-13.md",
+      "title": "LV Transport Platform — Investor-Grade Operational Evidence Certification (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "upgrade path validation in deployment checklists"
+      ],
+      "recoveryReferences": [
+        "recovery behavior are recognized in prior VPS certification and hardening reports",
+        "recovery drill records as auditable operational artifacts"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "readiness",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LEO-IA-FUTURE-CONCEPT-ARCHITECTURE.md",
+      "title": "Leo IA — Future Concept Architecture (Roadmap Only)",
+      "phase": "PHASE-00",
+      "dates": [
+        "May 12, 2026"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback/mitigation notes"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "compliance",
+        "production",
+        "operations",
+        "ops",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LEO_IA_AUDITORIA_PROTOCOL.md",
+      "title": "LV Transport Platform — LEO IA AUDITORÍA Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "timeline",
+        "production",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "security",
+        "deployment",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LONG_DURATION_FLOW_COHERENCE_HARDENING_2026-05-14.md",
+      "title": "LVTP Long-Duration Flow Coherence Hardening — 2026-05-14",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "Failure analysis checklist",
+        "failure signals"
+      ],
+      "migrationReferences": [
+        "transition bypass causing illegal state mutation"
+      ],
+      "recoveryReferences": [
+        "recovery, and runtime stability",
+        "Recovery: 3 → 2 → 1 customers",
+        "recovery outcomes"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ai",
+        "readiness",
+        "hardening",
+        "ops",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LV-BUSINESS-LOGISTICS-SUPPORT-CONCEPTUAL-ARCHITECTURE.md",
+      "title": "LV Business Logistics Support (BLS) — Conceptual Architecture",
+      "phase": "PHASE-00",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident response lifecycle",
+        "failure replacement",
+        "Incident Intake & Triage Module**",
+        "Incident registration (overflow, vehicle failure, staffing gap, route gap)",
+        "failure scenarios",
+        "incident operational dashboards",
+        "Incident Response Lifecycle Module**",
+        "incident state model",
+        "incident review payloads",
+        "Incident lifecycle",
+        "incident validated for support activation",
+        "incident operational assessment created",
+        "Incident Intake creates incident record and triage payload",
+        "incident review",
+        "failure replacement workflow",
+        "Failure incident classified as `VEHICLE_FAILURE`",
+        "incident with load estimate",
+        "incident",
+        "incident-response`",
+        "incident intake + dispatch + monitoring"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "backup logistics support for businesses in Belgium",
+        "Backup driver assignment",
+        "backup drivers/operators",
+        "Backup Operator Management Module**",
+        "Backup driver/operator pool registry",
+        "recovery checkpoints",
+        "Backup driver assignment workflow",
+        "recovery time, and overflow containment"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "monitoring",
+        "backup",
+        "readiness",
+        "certification",
+        "production",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LV-TECH-OPERATIONS-CONCEPTUAL-BRANCH.md",
+      "title": "LV Tech Operations (Conceptual Branch)",
+      "phase": "PHASE-00",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback templates only (no live deployment)"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "monitoring",
+        "audit",
+        "rollback",
+        "readiness",
+        "compliance",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LVTP_CONTROLLED_PILOT_DEPLOYMENT_PLAN.md",
+      "title": "LV Transport Platform (LVTP) Controlled Pilot Deployment Plan",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident response contacts and escalation tree published",
+        "failure triggers monitoring alert within SLA",
+        "incident customer callback + compensation policy (if applicable)",
+        "Incident Recovery, and Manual Override",
+        "incident via alert or operator report",
+        "incident severity (P1/P2/P3)",
+        "Incident count by severity",
+        "incident bursts",
+        "incident playbooks and communication templates",
+        "incident dashboard (P1/P2 queue + stalled rides + dispatch failures)",
+        "incident response, and proven lifecycle synchronization in production-like conditions",
+        "incident simulation"
+      ],
+      "migrationReferences": [
+        "transition",
+        "migration plan"
+      ],
+      "recoveryReferences": [
+        "backup baseline",
+        "backup retention: 14 days minimum for pilot",
+        "restore drill in staging",
+        "Backup job executed successfully at least once",
+        "Rollback package artifact prepared and stored",
+        "Rollback, Incident Recovery, and Manual Override",
+        "Rollback procedures",
+        "rollback when:",
+        "Rollback steps:",
+        "recovery flow",
+        "rollback path to previous stable build",
+        "restore valid client state",
+        "Backup restore process untested",
+        "rollback, validated alerts, rehearsed incident response, and proven lifecycle synchronization in production-like conditions",
+        "backup restore and rollback within target time"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "migration",
+        "recovery",
+        "security",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LVTP_FINAL_RUNTIME_REALITY_OPERATIONAL_PRODUCTIZATION_PROTOCOL.md",
+      "title": "LVTP Final Runtime Reality + Operational Productization Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "failure",
+        "failure)"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery",
+        "Backup + Rollback Validation",
+        "backup",
+        "Recovery checks:",
+        "restore path documented and executable",
+        "rollback command verified",
+        "recovery verified",
+        "Backup/rollback readiness"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LVTP_PHASES_11_20_AUTOMATION_ROADMAP.md",
+      "title": "LV Transport Platform — Phases 11–20 Automation Roadmap",
+      "phase": "PHASE-11",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback strategy",
+        "rollback safety",
+        "recovery only"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "monitoring",
+        "rollback",
+        "readiness",
+        "certification",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/LVTP_PHASES_21_30_FRONTEND_OPERATIONAL_ROADMAP.md",
+      "title": "LV Transport Platform — Phases 21–30 Frontend & Operational Consolidation Roadmap",
+      "phase": "PHASE-21",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "backup",
+        "backup-first execution rules",
+        "recovery to controlled real-world operation"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "ux",
+        "product",
+        "audit",
+        "backup",
+        "readiness",
+        "certification",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/LVTP_PHASES_31_40_PRODUCTION_PERSISTENCE_ROADMAP.md",
+      "title": "LVTP Phases 31–40 — Production Persistence Roadmap",
+      "phase": "PHASE-31",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "migration-safe boundaries",
+        "migration from standalone production API to monorepo API",
+        "migration safety is proven"
+      ],
+      "recoveryReferences": [
+        "recovery and founder pilot readiness without breaking the current working system",
+        "Recovery",
+        "Restore lifecycle snapshots, dashboard state and websocket sync after restart"
+      ],
+      "operationalKeywords": [
+        "migration",
+        "recovery",
+        "product",
+        "ai",
+        "monitoring",
+        "readiness",
+        "certification",
+        "hardening",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/MAPS-TRACKING-ARCHITECTURE.md",
+      "title": "Maps & Live Tracking Architecture Preparation",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "production"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/MATRIX_CONSOLIDATION_ASCENSION_EXECUTION_2026-05-15.md",
+      "title": "LV Transport Platform — Matrix Consolidation Ascension Execution",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "transition recovery"
+      ],
+      "recoveryReferences": [
+        "recovery required",
+        "recovery"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/MATRIX_EQUILIBRATION_PROTOCOL_EXECUTION_2026-05-15.md",
+      "title": "LVTP MATRIX EQUILIBRATION PROTOCOL — EXECUTION REPORT",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "incident narratives |",
+        "Chaos injection in lab | Maps, ETA, scorecards | Medium | High | Low | High | Low | Keep + reconnect hardening |",
+        "incident expression",
+        "failure and no synthetic success states",
+        "failure cascade, not disconnected bug fragments"
+      ],
+      "migrationReferences": [
+        "transition constraints)",
+        "transition is attempted"
+      ],
+      "recoveryReferences": [
+        "recovery behavior"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/MATRIX_EVOLUTION_EXTENDED_PROTOCOL_IMPLEMENTATION.md",
+      "title": "LVTP Matrix Evolution Extended — Implementation Guide",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "product",
+        "ai",
+        "hardening",
+        "production",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/MIGRATION-PLAN-FROM-CURRENT-SITE.md",
+      "title": "Migration Plan from Current Site to LV Transport Platform",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-09"
+      ],
+      "incidentReferences": [
+        "incident thresholds"
+      ],
+      "migrationReferences": [
+        "Migration Plan from Current Site to LV Transport Platform",
+        "migration plan from the audited static current site package (`current-site/lvtransport-platform-current-site",
+        "migration planning only",
+        "migration decisions reinforce security-by-default and reliability principles",
+        "migration",
+        "Migration Strategy (Masterplan-Aligned)",
+        "migration is sequenced to match official development priority and platform principles",
+        "migration boundaries before implementation",
+        "Cutover (LV Ride, LV Admin, LV Driver, LV API)",
+        "migrate operational core to platform architecture",
+        "migration away from localStorage tokens toward secure server-managed session patterns (httpOnly cookie model where applicable)",
+        "cutover plan with monitoring and incident thresholds",
+        "migration backlog approved",
+        "Cutover**",
+        "migration complete with monitoring",
+        "migration introduces regressions",
+        "cutover",
+        "Migration",
+        "Migration is complete when all conditions are met:"
+      ],
+      "recoveryReferences": [
+        "backup artifacts from packaging and release gates",
+        "rollback safety",
+        "rollback runbook validated in staging-like conditions",
+        "rollback rehearsals"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "migration",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "backup",
+        "readiness",
+        "compliance",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/MODULES.md",
+      "title": "MODULES — LV Transport Platform (Operational Ecosystem)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident/risk/fraud monitoring foundation"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "ai",
+        "governance",
+        "monitoring",
+        "audit",
+        "timeline",
+        "readiness",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/MONI-AI-OPERATIONS-MANAGER-ARCHITECTURE.md",
+      "title": "Moni AI Operations Manager Architecture (MVP Preparation)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident"
+      ],
+      "migrationReferences": [
+        "transition logs for all AI recommendations/actions"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "readiness",
+        "production",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/MONI_RIDE_ECOSYSTEM_REPORT_2026-05-14.md",
+      "title": "MONI RIDE Ecosystem Report — 2026-05-14",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "governance",
+        "hardening",
+        "production",
+        "operations",
+        "validation"
+      ],
+      "categories": [
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL-QA-PASS-2026-05-11.md",
+      "title": "LV Transport Platform — Operational QA Pass",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-11"
+      ],
+      "incidentReferences": [
+        "failure",
+        "failure (driver + shared packages)",
+        "failure injection"
+      ],
+      "migrationReferences": [
+        "transition call exists, but build is broken and optimistic mutations can drift before server confirmation",
+        "migrate booking core path off in-memory store"
+      ],
+      "recoveryReferences": [
+        "rollback exists on non-OK response, transient divergence is still possible under latency or dropped responses"
+      ],
+      "operationalKeywords": [
+        "ux",
+        "product",
+        "ai",
+        "rollback",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL-VALIDATION-2026-05-12.md",
+      "title": "LV Transport Platform Operational Lifecycle Validation",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "transition history"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "security",
+        "product",
+        "ai",
+        "audit",
+        "readiness",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "migrations",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL-VALIDATION-2026-05-13.md",
+      "title": "Production Operational Validation Report (Post-Observability Merge)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "failure surfaced as 500 instead of controlled domain rejection (4xx)"
+      ],
+      "migrationReferences": [
+        "transition",
+        "transition path",
+        "Transition failure surfaced as 500 instead of controlled domain rejection (4xx)",
+        "transition and duplicate-completed semantics were not auditable in completed-state context due lifecycle truncation",
+        "transition errors with deterministic 4xx + machine-readable reason codes",
+        "transition rejection with explicit audited invalid_transition event and non-500 response",
+        "transition, verify:",
+        "transition probes only after first successful completion"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "timeline",
+        "readiness",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL_ALIGNMENT_PROTOCOL_EXECUTION_2026-05-14.md",
+      "title": "LV Transport Platform — 85% Operational Alignment Protocol Execution",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "failure previously blocking reliable release | `apps/web/src/app/App"
+      ],
+      "migrationReferences": [
+        "transition logic validated in audit; integration tests still missing",
+        "transition validation"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "audit",
+        "readiness",
+        "production",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL_MATURITY_MAP_2026-05-14.md",
+      "title": "LVTP Operational Maturity Map — 2026-05-14 14:37 UTC",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "readiness",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/OPERATIONAL_SYSTEM_AUDIT_2026-05-14.md",
+      "title": "LV Transport Platform — Operational System Audit (2026-05-14)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "failure",
+        "failure handling, and persistence confirmation in the shown implementation",
+        "chaos/reconnect tests are executed against running services",
+        "failure + incomplete E2E operational proof"
+      ],
+      "migrationReferences": [
+        "transition rejection is present and coherent",
+        "cutover debt",
+        "transition controls and terminal-state immutability checks are implemented API-side"
+      ],
+      "recoveryReferences": [
+        "Restore a single canonical `App` implementation for web"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/PHASE1_STRESS_HARDENING_REPORT_2026-05-14.md",
+      "title": "LVTP Operational Error Hardening + Stability Elevation (Phase Execution)",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Failure Analysis",
+        "failure injection"
+      ],
+      "migrationReferences": [
+        "transition instead of explicit immutable-state rejection, making recovery logic noisy and operational handling inconsistent",
+        "transition mutations with dedicated `TERMINAL_STATE_IMMUTABLE` path and observability reason `terminal_state_immutable`"
+      ],
+      "recoveryReferences": [
+        "recovery logic noisy and operational handling inconsistent",
+        "recovery confidence**: needed stronger controlled proof that driver reconnect snapshots settle into latest valid state after ride completion"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "ai",
+        "observability",
+        "readiness",
+        "hardening",
+        "operations",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PHASE_06_DEEP_VALIDATION_LVTRANSPORT_BE_2026-05-18.md",
+      "title": "LVTRANSPORT.BE — Deep Validation Before Consolidation (Phase 06)",
+      "phase": "PHASE-06",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "incident-derived runtime state are computed from fetched bookings/drivers/incidents"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "ai",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PHASE_06_OPERATIONAL_BOOKING_LIFECYCLE_AUDIT.md",
+      "title": "Phase 06 — Operational Booking Lifecycle Audit (lvtransport.be)",
+      "phase": "PHASE-06",
+      "dates": [
+        "2026-05-18"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "ai",
+        "audit",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "deployment",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PREMIUM-VERTICAL-SLICE-AUDIT-2026-05-10.md",
+      "title": "LV Transport Platform Premium Audit (10 May 2026)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident risk (for example admin auth/pricing modules and API pricing files)",
+        "incident timeline",
+        "incident summaries, reassignment recommendations)",
+        "incident center, manual override controls",
+        "incident",
+        "chaos tests on realtime and lifecycle transitions",
+        "incident workflows and operational runbooks",
+        "incident tooling and replayable audits",
+        "incident summary helper",
+        "incident/reassignment"
+      ],
+      "migrationReferences": [
+        "transition graph: `pending -> validated -> priced -> assigned -> accepted -> on_route -> arrived -> in_progress -> completed` (+ cancel/issue paths)",
+        "transition tests"
+      ],
+      "recoveryReferences": [
+        "Backup/recovery drills and deployment rollback discipline"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "backup",
+        "hardening",
+        "production",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PREMIUM_CUSTOMER_TRUST_AND_CONCIERGE_CERTIFICATION_2026-05-13.md",
+      "title": "LVTP Premium Customer-Trust & Concierge-Experience Certification",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "failure risk"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "restore, session recovery eventing, idempotency key for duplicate-submit protection, and online/offline visibility banners",
+        "recovery burden (stale/disconnect/duplicate anomalies) can erode premium calm if volume grows too fast"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "governance",
+        "monitoring",
+        "audit",
+        "readiness",
+        "certification",
+        "operations",
+        "ops",
+        "risk",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PREMIUM_OPERATIONAL_VISUAL_TRANSFORMATION_REPORT_2026-05-14.md",
+      "title": "Premium Operational Visual Transformation Report — 2026-05-14",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "incident drill-down modal"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "ux",
+        "product",
+        "ai",
+        "monitoring",
+        "readiness",
+        "production",
+        "operations"
+      ],
+      "categories": [
+        "incidents",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PREMIUM_PRODUCT_READINESS_EVIDENCE_PACK_2026-05-13.md",
+      "title": "LV Transport Platform — Premium Product Readiness Evidence Pack (May 13, 2026)",
+      "phase": "unknown",
+      "dates": [
+        "May 13, 2026"
+      ],
+      "incidentReferences": [
+        "Incident/recovery notitie (indien relevant)"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery notitie (indien relevant)"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "product",
+        "readiness"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/PREMIUM_PROFESSIONALIZATION_PHASE_REPORT_2026-05-13.md",
+      "title": "LV Transport Platform — Premium Professionalization Phase Report (2026-05-13)",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "Incident log updated (if applicable)"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery banner"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "monitoring",
+        "readiness",
+        "production",
+        "operations",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRICING-ARCHITECTURE.md",
+      "title": "Smart Pricing Engine Architecture (Preparation)",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "production"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRODUCTION_DEPLOYMENT_READINESS_AUDIT_2026-05-13.md",
+      "title": "LV Transport Platform — Production Deployment Readiness Audit (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "failure for assign-driver test lowers CI confidence unless test runner strategy is standardized",
+        "incident review",
+        "incident: disable ingress at Nginx route level (maintenance page), `pm2 stop` new process, switch symlink to previous release, `pm2 restart` previous",
+        "incident in operations log before reopening pilot"
+      ],
+      "migrationReferences": [
+        "transition matrix",
+        "upgrade headers for `/ws` route",
+        "Upgrade`/`Connection` headers) and reconnect snapshot behavior from real browser clients",
+        "upgrade forwarding"
+      ],
+      "recoveryReferences": [
+        "recovery path exists via websocket `booking",
+        "rollback trigger",
+        "Rollback Strategy",
+        "Restore previous `",
+        "backup"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRODUCTION_DEPLOYMENT_SOURCE_OF_TRUTH.md",
+      "title": "LVTP Production Deployment Source of Truth (2026-05-14)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "production"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRODUCTION_OPERATIONS_READINESS.md",
+      "title": "LVTP Production Operations Readiness",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident Recovery Checklist",
+        "incident summary",
+        "incident codes only (never secrets)"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Backup Readiness (Non-destructive)",
+        "restore weekly in staging by replacing local `",
+        "Recovery Checklist",
+        "Restore driver assignment state via `/drivers/:driverId/restore-assignments`"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "product",
+        "ai",
+        "observability",
+        "backup",
+        "readiness",
+        "production",
+        "operations"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRODUCTION_ROUTE_AND_DEPLOYMENT_VISIBILITY_2026-05-13.md",
+      "title": "Production route and deployment visibility (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "ai",
+        "production"
+      ],
+      "categories": [
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/PRODUCTION_ROUTE_DEPLOYMENT.md",
+      "title": "LV Transport Production Route Deployment (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "product",
+        "production",
+        "validation"
+      ],
+      "categories": [
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/PROJECT-MASTERPLAN.md",
+      "title": "PROJECT MASTERPLAN — LV Transport Platform",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident handling and support workflows"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback strategy"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "audit",
+        "timeline",
+        "rollback",
+        "readiness",
+        "operations",
+        "risk"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/ROADMAP.md",
+      "title": "ROADMAP — LV Transport Platform",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "security",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "observability",
+        "timeline",
+        "readiness",
+        "production",
+        "operations"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/SECURITY.md",
+      "title": "SECURITY BASELINE — LV Transport Platform",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident analysis",
+        "Incident response playbook maintained with clear ownership"
+      ],
+      "migrationReferences": [
+        "transition endpoints"
+      ],
+      "recoveryReferences": [
+        "backup strategy with access controls and restore tests"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "deployment",
+        "product",
+        "ai",
+        "audit",
+        "backup",
+        "readiness",
+        "compliance",
+        "hardening",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/SIMULATION_1_CUSTOMER_ACCIDENTALLY_CANCELLED_RIDE_2026-05-14.md",
+      "title": "SIMULATION 1 — CUSTOMER ACCIDENTALLY CANCELLED RIDE",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "restore it?",
+        "recovery"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ai",
+        "stress"
+      ],
+      "categories": [
+        "recovery",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/SOFT-LAUNCH-READINESS-2026-05-12.md",
+      "title": "LV Transport Platform — Controlled Soft Launch Preparation (2026-05-12)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-12"
+      ],
+      "incidentReferences": [
+        "incident severity matrix with escalation contacts",
+        "failure (stuck state or irreversible mismatch)",
+        "failure causing loss of operational awareness",
+        "incident review** with root-cause actions before next launch attempt"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback target exists (last known good deployment)",
+        "backup)",
+        "rollback trigger thresholds documented",
+        "Rollback plan",
+        "recovery**:",
+        "rollback decision + deployment switch"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "rollback",
+        "backup",
+        "readiness",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/STABLE_SAAS_CORE_CONSOLIDATION.md",
+      "title": "LV Transport Platform — Stable SaaS Core Consolidation",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "chaos and transform LVTP into a stable, coherent, maintainable operational SaaS core"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "production",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/TECHNICAL-STATUS-AUDIT.md",
+      "title": "LV Transport Platform — Auditoría técnica del estado actual",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-10"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback + smoke tests post-deploy",
+        "rollback probado)"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "product",
+        "ai",
+        "audit",
+        "rollback",
+        "hardening"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/UBER-FUNCTIONAL-REFERENCE.md",
+      "title": "UBER FUNCTIONAL REFERENCE (NON-BRANDED) — LV Transport Platform",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ux",
+        "product",
+        "ai",
+        "monitoring",
+        "compliance",
+        "operations"
+      ],
+      "categories": [
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/VALIDATION-REPORT-2026-05-11.md",
+      "title": "LV Transport Platform Validation Report",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-11"
+      ],
+      "incidentReferences": [
+        "failure and API base mismatch"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "rollback only happens after explicit error handling"
+      ],
+      "operationalKeywords": [
+        "security",
+        "ux",
+        "ai",
+        "rollback",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/VPS_CONTROLLED_PILOT_HARDENING_PLAN_2026-05-13.md",
+      "title": "LV Transport Platform — VPS Controlled Pilot Hardening Plan (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "incident tracing"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "backup plan",
+        "backup (managed DB snapshot or `pg_dump` equivalent)",
+        "backup of:",
+        "Rollback plan",
+        "rollback rehearsal on VPS",
+        "backup restore drill evidence",
+        "Rollback execution drill not yet evidenced"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "timeline",
+        "rollback",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/VPS_PRODUCTION_PILOT_PREPARATION_AUDIT_2026-05-13.md",
+      "title": "LV Transport Platform — Controlled VPS Production Pilot Preparation Audit (2026-05-13)",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-13"
+      ],
+      "incidentReferences": [
+        "incident timeline, root cause, and corrective action before next live attempt"
+      ],
+      "migrationReferences": [
+        "Upgrade` / `Connection` forwarding for `/ws`",
+        "transition matrix is explicitly encoded",
+        "transition map",
+        "upgrade headers enabled",
+        "transition integrity and errors"
+      ],
+      "recoveryReferences": [
+        "recovery",
+        "rollback rehearsal has been performed successfully once",
+        "Rollback drill not yet marked as executed evidence for current deployment artifact",
+        "recovery from browser clients across app/admin/driver",
+        "rollback trigger owner assigned",
+        "rollback plan",
+        "rollback if lifecycle determinism breaks, realtime desync persists, or API availability drops below pilot threshold",
+        "Restore previous `",
+        "backup",
+        "rollback rehearsal is confirmed"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "observability",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/lvtp-night-tram-inspection-concept.md",
+      "title": "LVTP Night Tram Inspection Vehicle (NTIV)",
+      "phase": "PHASE-00",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "Incident Panel]",
+        "incident",
+        "incident-workflow",
+        "Incident Management",
+        "Incident classes:",
+        "incident (obstacle requiring urgent intervention)",
+        "incident (sensor or anchor failure)",
+        "incident (extended telemetry outage)",
+        "incident -> assign owner -> mitigate -> close with postmortem note",
+        "Incident timeline synchronized with telemetry and media artifacts",
+        "Incident panel with escalation status"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "security",
+        "deployment",
+        "product",
+        "ai",
+        "monitoring",
+        "audit",
+        "timeline",
+        "readiness",
+        "hardening",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/LVTP_BACKUP_AND_DISASTER_RECOVERY_PROTOCOL.md",
+      "title": "LV Transport Platform — Full Ecosystem Backup + Recovery Protection Protocol",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "incident investigation",
+        "incident triage"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Backup + Recovery Protection Protocol",
+        "Backup Status",
+        "backup/lvtp-backup",
+        "rollback snapshots",
+        "Backup integrity fingerprints are appended to `manifest",
+        "backup (to run on VPS host):",
+        "backup coverage:",
+        "backup script:",
+        "Recovery procedures and deployment references",
+        "Backup Strategy",
+        "Disaster Recovery Plan",
+        "Recovery order:",
+        "restore and connectivity checks",
+        "recovery mode:",
+        "Backup Validation Status",
+        "restore check:",
+        "backup/lvtp-restore-check",
+        "backup artifacts exist",
+        "backup status: **Implemented (scripted + checksums)**",
+        "backup status: **Documented runbook; requires host execution**"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "rollback",
+        "backup",
+        "readiness",
+        "production",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/LVTP_CONTROLLED_REALITY_PILOT_PROTOCOL_2026-05-15.md",
+      "title": "LV Transport Platform — Controlled Reality Pilot Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "chaos"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery",
+        "recovery effectiveness",
+        "Recovery Discipline",
+        "recovery under:",
+        "recovery attempts",
+        "recovery quality",
+        "Recovery before spectacle"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "product",
+        "ai",
+        "governance",
+        "hardening",
+        "production",
+        "ops",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/LVTP_OPERATIONAL_PILOT_PREPARATION_PROTOCOL_2026-05-15.md",
+      "title": "LV Transport Platform — OPERATIONAL PILOT PREPARATION Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "Failure recovery validation",
+        "Failure Recovery Validation",
+        "failure without chaos"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery validation",
+        "recovery",
+        "recovery speed",
+        "Recovery Validation",
+        "recovery discipline",
+        "recovery stabilizes"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ux",
+        "ai",
+        "readiness",
+        "operations",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/LVTP_REALITY_SHAPING_RUNTIME_HARDENING_PROTOCOL_2026-05-15.md",
+      "title": "LVTP Reality Shaping & Runtime Hardening Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-15"
+      ],
+      "incidentReferences": [
+        "incident path:",
+        "Failure Modes",
+        "Chaos Constraints"
+      ],
+      "migrationReferences": [
+        "transition guard enforces canonical state machine",
+        "Transition rejection logs with causal context"
+      ],
+      "recoveryReferences": [
+        "recovery discipline, realtime consistency, degraded-condition stability, Moni calmness under stress",
+        "Recovery before innovation",
+        "recovery",
+        "recovery-timing telemetry",
+        "recovery result`",
+        "Recovery effectiveness score",
+        "recovery playbook",
+        "recovery quality",
+        "recovery evidence"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "product",
+        "ai",
+        "governance",
+        "audit",
+        "readiness",
+        "hardening",
+        "production",
+        "ops",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/backups/LVTP_BACKUP_EXECUTION_REPORT_2026-05-14.md",
+      "title": "LVTP Backup Execution Report — 2026-05-14",
+      "phase": "unknown",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "incident operations"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Backup Execution Report — 2026-05-14",
+        "backup and recovery scaffolding executed in the current environment",
+        "backup script: `scripts/backup/lvtp-backup",
+        "Restore preview script: `scripts/backup/lvtp-restore-preview",
+        "backup/lvtp-verify-backup",
+        "disaster recovery protocol: `docs/operations/backups/LVTP_BACKUP_RECOVERY_PROTOCOL",
+        "backup status:** **Implemented (Repository scope)",
+        "backup status:** **Defined, not executed here",
+        "backup status:** **Covered in source snapshot when asset directories exist",
+        "backup status:** **Covered",
+        "Recovery readiness %:** **78%** (repo backup automation complete; infra/db live drills pending)",
+        "Restore validation %:** **65%** (checksum/restore preview validated locally; full staging restore pending)",
+        "failover untested in this environment)",
+        "backup risks:**",
+        "restore in this run",
+        "backup frequency:**"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "governance",
+        "backup",
+        "failover",
+        "readiness",
+        "production",
+        "operations",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/operations/backups/LVTP_BACKUP_RECOVERY_PROTOCOL.md",
+      "title": "LV Transport Platform Backup + Recovery Protection Protocol",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident recovery or suspicious access",
+        "Incident broadcast to operator channels"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Backup + Recovery Protection Protocol",
+        "backup baseline before any additional expansion, runtime testing, merge, or production deployment",
+        "Backup",
+        "backup/lvtp-backup",
+        "rollback bundle (`lvtp-repo",
+        "recovery or suspicious access",
+        "Backup Strategy",
+        "Disaster Recovery Plan",
+        "Recovery sequence priority:",
+        "Restore source snapshot and deployment scripts",
+        "Restore infra layer (Nginx, PM2, SSL, cron)",
+        "Restore runtime environment templates and vault-managed secrets",
+        "Restore databases/realtime exports",
+        "Backup Validation",
+        "backup as valid until successful test restore:",
+        "backup/lvtp-restore-preview",
+        "backup/lvtp-verify-backup",
+        "restore drills in staging",
+        "backup timestamp in the same operating window"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "rollback",
+        "backup",
+        "production",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-01-STABLE-CORE-AUDIT.md",
+      "title": "Phase 01 — Stable Core Audit",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "audit"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-02-VPS-CLEAN-RECOVERY.md",
+      "title": "Phase 02 — VPS Clean Recovery",
+      "phase": "PHASE-02",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Recovery",
+        "Backup, clean, and stabilize VPS infrastructure before operational deployment"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment",
+        "backup"
+      ],
+      "categories": [
+        "recovery",
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-03-DEPLOYMENT-CONSOLIDATION.md",
+      "title": "Phase 03 — Deployment Consolidation",
+      "phase": "PHASE-03",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "deployment"
+      ],
+      "categories": [
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-04-BOOKING-LIFECYCLE-VALIDATION.md",
+      "title": "Phase 04 — Booking Lifecycle Validation",
+      "phase": "PHASE-04",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "validation"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-05-FRONTEND-STABILIZATION.md",
+      "title": "Phase 05 — Frontend Stabilization",
+      "phase": "PHASE-05",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ux"
+      ],
+      "categories": [
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-06-ADMIN-DRIVER-HARDENING.md",
+      "title": "Phase 06 — Admin & Driver Hardening",
+      "phase": "PHASE-06",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "hardening"
+      ],
+      "categories": [
+        "security"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-07-REALTIME-PERSISTENCE.md",
+      "title": "Phase 07 — Realtime & Persistence Stabilization",
+      "phase": "PHASE-07",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "unknown"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-08-SECURITY-PRODUCTION-HARDENING.md",
+      "title": "Phase 08 — Security & Production Hardening",
+      "phase": "PHASE-08",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "security",
+        "deployment",
+        "product",
+        "hardening",
+        "production"
+      ],
+      "categories": [
+        "security",
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-09-OPERATIONAL-DOCUMENTATION.md",
+      "title": "Phase 09 — Operational Documentation",
+      "phase": "PHASE-09",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery procedures and operational infrastructure"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "deployment"
+      ],
+      "categories": [
+        "recovery",
+        "deployment"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-10-PREMIUM-UX-POLISH.md",
+      "title": "Phase 10 — Premium UX Polish",
+      "phase": "PHASE-10",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ux"
+      ],
+      "categories": [
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-11-AUTOMATION-PHASE.md",
+      "title": "Phase 11 — Automation Phase",
+      "phase": "PHASE-11",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ai"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-12-MONI-AI-INTEGRATION.md",
+      "title": "Phase 12 — Moni AI Integration",
+      "phase": "PHASE-12",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "ai"
+      ],
+      "categories": [
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-13-BUSINESS-VIP-MODULES.md",
+      "title": "Phase 13 — Business & VIP Modules",
+      "phase": "PHASE-13",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "unknown"
+      ],
+      "categories": [
+        "ux/product"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-14-SCALING-SAAS-PREPARATION.md",
+      "title": "Phase 14 — Scaling & SaaS Preparation",
+      "phase": "PHASE-14",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "operations"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/phases/PHASE-15-KBC-STARTUP-PRESENTATION.md",
+      "title": "Phase 15 — KBC / Startup Presentation Phase",
+      "phase": "PHASE-15",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "validation"
+      ],
+      "categories": [
+        "unknown"
+      ]
+    },
+    {
+      "sourceFile": "docs/pilot-operations-readiness.md",
+      "title": "LV Transport Platform Pilot Operations Readiness Runbook",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "incident channel, paging thresholds)",
+        "incident response + rollback commands",
+        "Incident Commander (IC), Dispatch Lead, Driver Lead, Customer Ops, Scribe",
+        "incident summaries and unresolved action items",
+        "incident notes",
+        "incident rate",
+        "Incident response checklist",
+        "outage, severe payment impact",
+        "failure",
+        "incident with severity and timestamp",
+        "incident channel/timeline",
+        "incident with root-cause hypothesis + follow-up actions",
+        "failure > 2% over 15 min",
+        "incident/game-day rehearsal during pilot week",
+        "incident thresholds",
+        "incident rate and rollback drills are consistently green"
+      ],
+      "migrationReferences": [
+        "transition and final distance/time values",
+        "transition latency per stage"
+      ],
+      "recoveryReferences": [
+        "rollback points for `web`, `admin`, `driver`",
+        "rollback commands",
+        "rollback",
+        "Rollback and recovery procedure",
+        "Rollback execution**",
+        "Recovery validation**",
+        "recovery reliability | Induced network interruption drills | >= 90% reconnect within SLA window |",
+        "rollback drills are consistently green"
+      ],
+      "operationalKeywords": [
+        "incident",
+        "recovery",
+        "deployment",
+        "product",
+        "ai",
+        "monitoring",
+        "audit",
+        "timeline",
+        "rollback",
+        "readiness",
+        "production",
+        "operations",
+        "ops",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "migrations",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/reports/LVTP_FINAL_RUNTIME_SCORECARD.md",
+      "title": "LVTP Final Runtime Scorecard",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Recovery | 92",
+        "Backup Rollback Readiness | 90"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ux",
+        "product",
+        "ai",
+        "audit",
+        "rollback",
+        "backup",
+        "readiness",
+        "hardening",
+        "production",
+        "risk",
+        "validation"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/reports/LVTP_MATRIX_EVOLUTION_EXTENDED_REPORT.md",
+      "title": "LVTP MATRIX EVOLUTION EXTENDED Report",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ai",
+        "risk"
+      ],
+      "categories": [
+        "ux/product",
+        "ai/governance"
+      ]
+    },
+    {
+      "sourceFile": "docs/reports/LVTP_MATRIX_RELOADED_REPORT.md",
+      "title": "LVTP MATRIX RELOADED Runtime Report",
+      "phase": "unknown",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "ai"
+      ],
+      "categories": [
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/reports/LVTP_OPERATIONAL_MATURITY_SIMPLIFICATION_SCORECARD.md",
+      "title": "LVTP Operational Maturity & Simplification Scorecard",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "unknown"
+      ],
+      "operationalKeywords": [
+        "product",
+        "ai",
+        "readiness",
+        "hardening",
+        "production"
+      ],
+      "categories": [
+        "security",
+        "deployment",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/runtime-validation/FINAL_OPERATIONAL_CONSOLIDATION_REPORT_2026-05-14.md",
+      "title": "LV Transport Platform — Final Operational Consolidation Report",
+      "phase": "PHASE-01",
+      "dates": [
+        "2026-05-14"
+      ],
+      "incidentReferences": [
+        "Failure recovery maturity | 69% | Endurance harness + lifecycle services present | Need successful runtime chaos/reconnect run with backend live |"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "recovery maturity | 69% | Endurance harness + lifecycle services present | Need successful runtime chaos/reconnect run with backend live |"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "security",
+        "deployment",
+        "ux",
+        "product",
+        "ai",
+        "readiness",
+        "hardening",
+        "production",
+        "ops",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "incidents",
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance",
+        "observability"
+      ]
+    },
+    {
+      "sourceFile": "docs/runtime-validation/LVTP_REALITY_SHAPING_RUNTIME_HARDENING_REPORT.md",
+      "title": "LVTP Reality Shaping & Runtime Hardening Report",
+      "phase": "PHASE-01",
+      "dates": [
+        "unknown"
+      ],
+      "incidentReferences": [
+        "unknown"
+      ],
+      "migrationReferences": [
+        "unknown"
+      ],
+      "recoveryReferences": [
+        "Recovery Quality | 86",
+        "Recovery Validations",
+        "Recovery before innovation"
+      ],
+      "operationalKeywords": [
+        "recovery",
+        "product",
+        "ai",
+        "readiness",
+        "hardening",
+        "production",
+        "risk",
+        "validation",
+        "stress"
+      ],
+      "categories": [
+        "recovery",
+        "security",
+        "deployment",
+        "ux/product",
+        "ai/governance"
+      ]
+    }
+  ]
+}
