@@ -1,0 +1,1 @@
+export function AuditReplay() { return <section className='glass-panel rounded-3xl p-6'><h2 className='text-2xl font-semibold'>Audit Replay Workspace</h2><p>Immutable replay chain visualization only.</p></section>; }
