@@ -1,0 +1,122 @@
+{
+  "ok": true,
+  "type": "RUNTIME_MEMORY_SNAPSHOT",
+  "stamp": "20260523T130057Z",
+  "capturedAt": "2026-05-23T13:00:57.865629+00:00",
+  "health": {
+    "ok": true,
+    "mode": "api-runtime",
+    "service": "lvtransport-api",
+    "startedAt": "2026-05-23T13:00:02.739Z",
+    "uptime": 55.086538272,
+    "timestamp": "2026-05-23T13:00:57.600Z"
+  },
+  "telemetry": {
+    "ok": true,
+    "timestamp": "2026-05-23T13:00:57.802Z",
+    "system": {
+      "hostname": "vps-96d17c46",
+      "platform": "linux",
+      "arch": "x64",
+      "uptimeSeconds": 149767.36,
+      "loadAverage": [
+        0.15,
+        0.1,
+        0.03
+      ],
+      "totalMemory": 8127066112,
+      "freeMemory": 6971039744,
+      "cpuCount": 4
+    },
+    "process": {
+      "pid": 1437407,
+      "nodeVersion": "v22.22.2",
+      "uptimeSeconds": 55.288932716,
+      "memory": {
+        "rss": 70811648,
+        "heapTotal": 12685312,
+        "heapUsed": 10030448,
+        "external": 2586690,
+        "arrayBuffers": 35964
+      }
+    },
+    "runtime": {
+      "name": "lvtransport-api",
+      "pid": 1437407,
+      "restarts": 8,
+      "status": "online",
+      "unstableRestarts": 0,
+      "createdAt": 1779541202396,
+      "monit": {
+        "memory": 70811648,
+        "cpu": 4.3
+      }
+    }
+  },
+  "replay": {
+    "ok": true,
+    "replayedAt": "2026-05-23T13:00:57.814Z",
+    "state": {
+      "ok": true,
+      "eventCount": 0,
+      "lastEventAt": null,
+      "counters": {},
+      "incidents": [],
+      "runtime": {
+        "healthConfirmed": false,
+        "lastHealth": null
+      }
+    }
+  },
+  "timeline": {
+    "ok": true,
+    "count": 0,
+    "timeline": []
+  },
+  "recoveryMode": {
+    "mode": "normal",
+    "reason": "runtime_stable",
+    "metrics": {
+      "pm2Status": "online",
+      "restarts": 6,
+      "incidentCount": 0,
+      "quarantined": false
+    },
+    "updatedAt": "2026-05-23T12:50:45.345363+00:00"
+  },
+  "quarantine": {
+    "quarantined": false,
+    "reason": null,
+    "metrics": {
+      "restarts": 6,
+      "incidentCount": 0,
+      "criticalIncidentCount": 0
+    },
+    "updatedAt": "2026-05-23T12:46:04.751020+00:00"
+  },
+  "agentRegistry": {
+    "agents": [
+      {
+        "name": "auto-runtime-cycle",
+        "script": "scripts/agents/lv-auto-runtime-cycle.sh",
+        "stage": "runtime",
+        "enabled": true,
+        "critical": true
+      },
+      {
+        "name": "governance",
+        "script": "scripts/agents/lv-governance-agent.sh",
+        "stage": "governance",
+        "enabled": true,
+        "critical": true
+      },
+      {
+        "name": "integrity-audit",
+        "script": "scripts/agents/lv-integrity-audit-agent.sh",
+        "stage": "audit",
+        "enabled": true,
+        "critical": true
+      }
+    ]
+  }
+}
