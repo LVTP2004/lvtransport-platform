@@ -1,0 +1,25 @@
+{
+  "agents": [
+    {
+      "name": "auto-runtime-cycle",
+      "script": "scripts/agents/lv-auto-runtime-cycle.sh",
+      "stage": "runtime",
+      "enabled": true,
+      "critical": true
+    },
+    {
+      "name": "governance",
+      "script": "scripts/agents/lv-governance-agent.sh",
+      "stage": "governance",
+      "enabled": true,
+      "critical": true
+    },
+    {
+      "name": "integrity-audit",
+      "script": "scripts/agents/lv-integrity-audit-agent.sh",
+      "stage": "audit",
+      "enabled": true,
+      "critical": true
+    }
+  ]
+}
