@@ -1,17 +1,20 @@
-node_modules/
-.pnpm-store/
-dist/
-build/
-.vite/
-.turbo/
+node_modules
+dist
+coverage
+.next
+.cache
+
 .env
 .env.*
-!.env.example
-.DS_Store
-Thumbs.db
-*.log
-coverage/
 
-# Backup artifacts
-backups/snapshot-*
-backups/*.tar.gz
+ops/backups
+ops/reports
+
+*.bak
+*.log
+
+.pm2
+tmp
+.temp
+
+.DS_Store

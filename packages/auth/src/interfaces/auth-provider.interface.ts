@@ -1,14 +1,26 @@
-import type { AuthState, AuthTokens, SessionContext } from '../models/session.models';
-import type { UserAccount } from '../models/user.models';
 import type { AuthState, AuthTokens, SessionContext } from '../models/session.models.js';
-export interface LoginInput { email?: string; password?: string; oauthToken?: string; }
+
+export interface LoginInput {
+  email: string;
+  password: string;
+}
+
+export type Permission = string;
+
+export interface UserAccount {
+  id: string;
+  email: string;
+  role?: string;
+  permissions?: Permission[];
+}
+
 export interface AuthProviderAdapter {
-  signIn(input: LoginInput): Promise<AuthTokens>;
-  signOut(sessionId: string): Promise<void>;
-  refresh(refreshToken: string): Promise<AuthTokens>;
+  signIn(email: string, password: string): Promise<AuthState>;
+  signOut(sessionId?: string): Promise<void>;
+  refresh(token?: string): Promise<AuthTokens | undefined>;
+  getUserProfile(): Promise<unknown>;
   sendPasswordReset(email: string): Promise<void>;
   sendVerification(email: string): Promise<void>;
-  getSession(accessToken: string): Promise<SessionContext>;
-  getUserProfile(accessToken: string): Promise<UserAccount | undefined>;
+  getSession(token?: string): Promise<SessionContext>;
   getInitialState(): Promise<AuthState>;
 }
