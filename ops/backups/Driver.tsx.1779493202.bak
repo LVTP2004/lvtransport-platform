@@ -1,0 +1,29 @@
+import React from 'react';
+
+export default function Driver() {
+  return (
+    <main style={{
+      minHeight: '100vh',
+      background: '#050807',
+      color: '#f5ead8',
+      padding: 32,
+      fontFamily: 'Inter, Arial, sans-serif'
+    }}>
+      <header style={{display:'flex',justifyContent:'space-between',marginBottom:32}}>
+        <strong>LV TRANSPORT</strong>
+        <strong style={{color:'#4ade80'}}>● Driver Online</strong>
+      </header>
+
+      <section style={{
+        background:'#101817',
+        border:'1px solid rgba(216,169,79,.35)',
+        borderRadius:20,
+        padding:24
+      }}>
+        <div style={{color:'#d8a94f',fontWeight:800}}>DRIVER — OPERATIONAL COCKPIT</div>
+        <h1 style={{fontSize:36}}>Realtime Dispatch</h1>
+        <p>Trips, ETA, airport intelligence and navigation runtime.</p>
+      </section>
+    </main>
+  );
+}

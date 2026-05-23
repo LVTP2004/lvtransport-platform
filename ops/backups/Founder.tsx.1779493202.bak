@@ -1,0 +1,85 @@
+import React from 'react';
+
+export default function Founder() {
+
+  const shell: React.CSSProperties = {
+    minHeight: '100vh',
+    background: '#050807',
+    color: '#f5ead8',
+    padding: 32,
+    fontFamily: 'Inter, Arial, sans-serif'
+  };
+
+  const card: React.CSSProperties = {
+    background: '#101817',
+    border: '1px solid rgba(216,169,79,.25)',
+    borderRadius: 20,
+    padding: 24,
+    marginBottom: 24
+  };
+
+  const metric: React.CSSProperties = {
+    fontSize: 42,
+    fontWeight: 900,
+    color: '#d8a94f'
+  };
+
+  return (
+    <main style={shell}>
+
+      <header style={{
+        display:'flex',
+        justifyContent:'space-between',
+        marginBottom:32
+      }}>
+        <div>
+          <div style={{fontWeight:900}}>
+            LV TRANSPORT
+          </div>
+
+          <div style={{color:'#4ade80'}}>
+            ● Governance OS
+          </div>
+        </div>
+      </header>
+
+      <section style={card}>
+        <h1 style={{
+          fontSize:36,
+          marginBottom:12
+        }}>
+          Runtime Intelligence
+        </h1>
+
+        <p>
+          Redis, WebSocket, replay engine,
+          operational continuity and governance.
+        </p>
+      </section>
+
+      <section style={{
+        display:'grid',
+        gridTemplateColumns:'repeat(auto-fit,minmax(240px,1fr))',
+        gap:20
+      }}>
+
+        <div style={card}>
+          <div style={metric}>100%</div>
+          <div>Continuity</div>
+        </div>
+
+        <div style={card}>
+          <div style={metric}>LIVE</div>
+          <div>Runtime</div>
+        </div>
+
+        <div style={card}>
+          <div style={metric}>24/7</div>
+          <div>Operations</div>
+        </div>
+
+      </section>
+
+    </main>
+  );
+}
