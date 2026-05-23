@@ -1,0 +1,36 @@
+{
+  "policies": [
+    {
+      "name": "restart-warning",
+      "metric": "runtime.restarts",
+      "operator": ">=",
+      "value": 10,
+      "severity": "warning",
+      "event": "POLICY_RESTART_WARNING"
+    },
+    {
+      "name": "restart-critical",
+      "metric": "runtime.restarts",
+      "operator": ">=",
+      "value": 20,
+      "severity": "critical",
+      "event": "POLICY_RESTART_CRITICAL"
+    },
+    {
+      "name": "incident-warning",
+      "metric": "replay.incidentCount",
+      "operator": ">=",
+      "value": 1,
+      "severity": "warning",
+      "event": "POLICY_INCIDENTS_PRESENT"
+    },
+    {
+      "name": "memory-pressure",
+      "metric": "process.rss",
+      "operator": ">=",
+      "value": 250000000,
+      "severity": "warning",
+      "event": "POLICY_MEMORY_PRESSURE"
+    }
+  ]
+}
