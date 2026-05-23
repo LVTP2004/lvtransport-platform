@@ -5,6 +5,7 @@ import paymentsRoutes from "./modules/payments/payments.routes.js";
 import eventStoreRoutes from "./modules/events/event-store.routes.js";
 import timelineRoutes from "./modules/timeline/timeline.routes.js";
 import replayRoutes from "./modules/replay/replay.routes.js";
+import telemetryRoutes from "./modules/telemetry/telemetry.routes.js";
 
 const app = express();
 const port = Number(process.env.PORT || 3000);
@@ -23,6 +24,7 @@ app.use("/api/v1/payments", paymentsRoutes);
 app.use("/api/v1/events", eventStoreRoutes);
 app.use("/api/v1/timeline", timelineRoutes);
 app.use("/api/v1/replay", replayRoutes);
+app.use("/api/v1/telemetry", telemetryRoutes);
 
 app.use((req, res) => res.status(404).json({ ok: false, error: "not_found", path: req.path }));
 
