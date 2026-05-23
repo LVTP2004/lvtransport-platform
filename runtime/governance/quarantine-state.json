@@ -1,0 +1,10 @@
+{
+  "quarantined": false,
+  "reason": null,
+  "metrics": {
+    "restarts": 6,
+    "incidentCount": 0,
+    "criticalIncidentCount": 0
+  },
+  "updatedAt": "2026-05-23T12:46:04.751020+00:00"
+}
