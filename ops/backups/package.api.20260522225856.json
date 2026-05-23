@@ -9,27 +9,27 @@
     "start": "node dist/server.js",
     "typecheck": "tsc --noEmit",
     "db:integrity": "tsx scripts/db-integrity.ts",
-    "db:backup": "tsx scripts/db-backup.ts",
+    "db:backup": "tsx scripts/db-backup.ts"
     "db:inspect:audit": "node scripts/db-ops.mjs inspect-audit",
     "db:inspect:recovery": "node scripts/db-ops.mjs inspect-recovery",
     "db:inspect:messages": "node scripts/db-ops.mjs inspect-messages",
     "db:health": "node scripts/db-ops.mjs health",
     "db:export:audit": "node scripts/db-ops.mjs export-audit",
-    "db:export:recovery": "node scripts/db-ops.mjs export-recovery",
+    "db:export:recovery": "node scripts/db-ops.mjs export-recovery"
     "recovery:replay:event": "tsx src/scripts/recovery-replay-event.ts",
     "notifications:retry": "tsx src/scripts/notifications-retry.ts",
-    "messages:replay": "tsx src/scripts/messages-replay.ts",
-    "ops:transition:check": "tsx src/scripts/ops-transition-check.ts",
+    "messages:replay": "tsx src/scripts/messages-replay.ts"
+    "ops:transition:check": "tsx src/scripts/ops-transition-check.ts"
     "memory:index": "tsx src/operational-memory/cli.ts index",
     "memory:query": "tsx src/operational-memory/cli.ts query",
-    "memory:summary": "tsx src/operational-memory/cli.ts summary",
+    "memory:summary": "tsx src/operational-memory/cli.ts summary"
     "memory:timeline": "tsx src/operational-memory/cli.ts timeline",
-    "memory:continuity": "tsx src/operational-memory/cli.ts continuity",
+    "memory:continuity": "tsx src/operational-memory/cli.ts continuity"
     "execution:validate": "tsx src/scripts/execution-validate.ts",
-    "execution:history": "tsx src/scripts/execution-history.ts",
+    "execution:history": "tsx src/scripts/execution-history.ts"
     "runtime:verify": "tsx src/runtime/cli.ts runtime:verify",
     "backup:verify": "bash ../../scripts/backup/lvtp-verify-backup.sh \"$LVTP_BACKUP_SNAPSHOT\"",
-    "restore:validate": "tsx src/runtime/cli.ts restore:validate",
+    "restore:validate": "tsx src/runtime/cli.ts restore:validate"
     "incident:cognition": "tsx src/cli/ops-cli.ts incident:cognition",
     "incident:explain": "tsx src/cli/ops-cli.ts incident:explain",
     "snapshot:create": "tsx src/cli/ops-cli.ts snapshot:create",
