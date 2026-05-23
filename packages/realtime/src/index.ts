@@ -40,3 +40,12 @@ export * from "./transport/event-bus.js";
 export * from "./transport/firebase-websocket-bridge.js";
 
 export * from './bookings/lifecycle-manager.js';
+
+export {
+  BookingLifecycle,
+  CanonicalBookingLifecycle,
+  BookingLifecycleManager,
+  isImmutableLifecycleStatus,
+  toCanonicalLifecycle,
+  canTransitionCanonicalLifecycle
+} from './bookings/lifecycle-manager.js';

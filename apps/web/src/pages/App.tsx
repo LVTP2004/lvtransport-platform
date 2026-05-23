@@ -7,14 +7,13 @@ export default function App() {
         <strong>LV TRANSPORT OS</strong>
         <strong style={{color:'#4ade80'}}>● LIVE</strong>
       </header>
-
       <section style={{display:'grid',gridTemplateColumns:'repeat(auto-fit,minmax(280px,1fr))',gap:18}}>
         {[
           ['1. CLIENT — PREMIUM EXPERIENCE','Betrouwbaar. Comfortabel. Altijd op tijd.'],
           ['2. DRIVER — OPERATIONAL COCKPIT','Realtime dispatch, ETA, airport intelligence.'],
           ['3. ADMIN — CONTROL TOWER','Bookings, fleet status, operations, continuity.'],
           ['4. FOUNDER — GOVERNANCE OS','Runtime intelligence, replay, audit, system health.']
-        ].map(([k,t]) => (
+        ].map(([k,t])=>(
           <div key={k} style={{background:'#101817',border:'1px solid rgba(216,169,79,.35)',borderRadius:20,padding:24,minHeight:220}}>
             <div style={{color:'#d8a94f',fontWeight:800,fontSize:13}}>{k}</div>
             <h1 style={{fontSize:30,lineHeight:1.05,marginTop:16}}>{t}</h1>

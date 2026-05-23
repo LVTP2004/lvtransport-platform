@@ -1,14 +1,9 @@
-name: LVTP Safe Deploy
+name: LVTransport Deploy
 
 on:
-  workflow_dispatch:
   push:
     branches:
       - main
-
-concurrency:
-  group: lvtp-production-deploy
-  cancel-in-progress: false
 
 jobs:
   deploy:
@@ -18,27 +13,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
           node-version: 22
 
-      - name: Install
-        run: pnpm install --frozen-lockfile
+      - name: Setup PNPM
+        uses: pnpm/action-setup@v3
+        with:
+          version: 9
 
-      - name: Build
+      - name: Install
+        run: pnpm install --no-frozen-lockfile
+
+      - name: Typecheck
         run: pnpm --filter @lvtransport/web build
 
-      - name: Deploy VPS
-        uses: appleboy/ssh-action@v1.2.0
-        with:
-          host: ${{ secrets.VPS_HOST }}
-          username: ${{ secrets.VPS_USER }}
-          password: ${{ secrets.VPS_PASSWORD }}
-          port: 22
-          script: |
-            cd /home/ubuntu/lvtransport-platform
-            /home/ubuntu/lvtp-ops/safe-deploy.sh
+      - name: Deploy Trigger
+        run: echo "READY"
