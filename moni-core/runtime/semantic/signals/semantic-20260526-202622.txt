@@ -1,0 +1,21 @@
+LVTP SEMANTIC RUNTIME STATE
+Date: di 26 mei 2026 20:26:23 CEST
+Node: acer-linux
+
+Raw Signals:
+- service=active
+- web=online
+- docker=online
+- memory_free_mb=307
+- disk_used_percent=82
+
+Semantic Classification:
+- status=stable
+
+Meaning:
+- The Acer Linux node is operationally stable.
+- Runtime, web, and container layers are available.
+
+Governance:
+- Semantic layer performs interpretation only.
+- No mutation performed.

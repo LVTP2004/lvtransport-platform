@@ -1,0 +1,8 @@
+node_modules
+.git
+.lvtp
+dist
+build
+.cache
+*.log
+.DS_Store

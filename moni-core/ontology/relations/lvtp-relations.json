@@ -1,0 +1,14 @@
+{
+  "relations": [
+    { "subject": "agent", "relation": "must_obey", "object": "law" },
+    { "subject": "runtime", "relation": "runs_on", "object": "node" },
+    { "subject": "node", "relation": "has_role", "object": "topology" },
+    { "subject": "memory", "relation": "records", "object": "event" },
+    { "subject": "snapshot", "relation": "captures", "object": "state" },
+    { "subject": "governance", "relation": "constrains", "object": "agent" },
+    { "subject": "cognition", "relation": "interprets", "object": "memory" },
+    { "subject": "bootstrap", "relation": "initializes", "object": "infrastructure" },
+    { "subject": "failover", "relation": "protects", "object": "continuity" },
+    { "subject": "lvtransport.be", "relation": "has_priority_over", "object": "experimentation" }
+  ]
+}

@@ -1,0 +1,20 @@
+{
+  "system": "LVTP CORE",
+  "law": "LVTP AGENT LAW ACTIVE",
+  "bootstraps": [
+    "v1-foundation",
+    "v2-container-runtime",
+    "v3-topology-agent-foundation",
+    "v4-operational-memory-lineage",
+    "v5-distributed-cognition",
+    "super-bootstrap-platform-foundation",
+    "meta-bootstrap-governance-layer"
+  ],
+  "policy": {
+    "safe": true,
+    "reversible": true,
+    "no_architecture_drift": true,
+    "backup_before_change": true,
+    "audit_required": true
+  }
+}

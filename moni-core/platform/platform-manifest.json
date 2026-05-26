@@ -1,0 +1,21 @@
+{
+  "system": "LVTP CORE",
+  "mode": "multi-device-ai-native-operational-ecosystem",
+  "primary_goal": "lvtransport.be must work first",
+  "law": "LVTP AGENT LAW ACTIVE",
+  "node": "acer-linux",
+  "runtime": {
+    "node": "22.22.2",
+    "docker": "enabled",
+    "systemd": "enabled",
+    "web": "http://192.168.241.149:5173"
+  },
+  "next_layers": [
+    "containerized-services",
+    "moni-core-runtime",
+    "agent-runtime",
+    "observability-dashboard",
+    "failover-readiness",
+    "distributed-node-coordination"
+  ]
+}

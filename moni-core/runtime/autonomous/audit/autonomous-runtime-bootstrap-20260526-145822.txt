@@ -1,0 +1,7 @@
+LVTP AUTONOMOUS RUNTIME BOOTSTRAP AUDIT
+Date: di 26 mei 2026 14:59:22 CEST
+Node: acer-linux
+Mode: bounded autonomous runtime
+Allowed: observe, heartbeat, report, snapshot, restart runtime
+Blocked: delete, redesign, governance mutation, DNS mutation, secrets exposure
+Log: /home/leonardo-vargas/.lvtp/logs/autonomous-runtime-bootstrap-20260526-145822.log

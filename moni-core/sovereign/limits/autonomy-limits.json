@@ -1,0 +1,22 @@
+{
+  "autonomy_mode": "bounded",
+  "human_approval_required": true,
+  "allowed_actions": [
+    "inspect",
+    "report",
+    "snapshot",
+    "backup",
+    "health_check",
+    "index",
+    "log_review"
+  ],
+  "blocked_actions": [
+    "delete",
+    "redesign",
+    "modify_governance",
+    "change_dns",
+    "expose_secrets",
+    "production_mutation_without_approval"
+  ],
+  "law": "LVTP AGENT LAW ACTIVE"
+}

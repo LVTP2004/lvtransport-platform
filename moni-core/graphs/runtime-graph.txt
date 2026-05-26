@@ -1,0 +1,23 @@
+[Fossibot]
+  -> internet backbone
+
+[Beam Pro]
+  -> SSH control plane
+
+[Galaxy Tablet]
+  -> cognitive command center
+
+[Acer Linux]
+  -> execution node
+  -> docker runtime
+  -> lvtp runtime
+  -> code-server
+
+[VPS]
+  -> persistent cloud runtime
+
+[ChatGPT]
+  -> orchestration cognition
+
+[Telegram]
+  -> backup sync layer

@@ -1,0 +1,17 @@
+{
+  "system": "LVTP CORE",
+  "concepts": {
+    "node": "A physical or virtual operational unit capable of hosting, controlling, observing, or supporting LVTP operations.",
+    "runtime": "An active execution environment where LVTP services, agents, or interfaces run.",
+    "agent": "A bounded AI or automation entity operating under LVTP Agent Law.",
+    "governance": "The rule layer that prevents drift, unsafe mutation, and unauthorized redesign.",
+    "memory": "Persistent operational records used for continuity, reconstruction, and reasoning.",
+    "event": "A timestamped operational occurrence inside LVTP infrastructure.",
+    "snapshot": "A captured state of a node, runtime, topology, or cognition layer.",
+    "topology": "The map of nodes, roles, services, and dependencies.",
+    "cognition": "The operational reasoning layer that interprets context, continuity, and system state.",
+    "bootstrap": "A controlled initialization layer that creates or reinforces LVTP infrastructure.",
+    "failover": "A continuity mechanism where another node takes over when the primary node fails.",
+    "law": "A non-negotiable operational invariant."
+  }
+}

@@ -1,0 +1,56 @@
+{
+  "system": "LVTP CORE",
+  "designation": "Multi-Device AI-Native Operational Ecosystem",
+  "nodes": [
+    {
+      "id": "vps-primary",
+      "name": "LV Transport VPS",
+      "role": "Persistent Runtime Cloud Node",
+      "storage": "72GB",
+      "status": "active",
+      "priority": "primary-cloud"
+    },
+    {
+      "id": "acer-linux",
+      "name": "Acer Linux Mint",
+      "role": "Execution + Storage + Runtime Node",
+      "storage": "1000GB",
+      "ip": "192.168.241.149",
+      "services": ["ssh", "code-server", "docker", "lvtp-web", "systemd-runtime"],
+      "status": "active",
+      "priority": "local-execution"
+    },
+    {
+      "id": "fossibot",
+      "name": "Fossibot",
+      "role": "Network Backbone Node",
+      "services": ["internet-uplink", "hotspot"],
+      "status": "critical",
+      "priority": "network-lifeline"
+    },
+    {
+      "id": "beam-pro",
+      "name": "Beam Pro",
+      "role": "Mobile Control Plane",
+      "services": ["termius", "ssh-control"],
+      "status": "active",
+      "priority": "operations"
+    },
+    {
+      "id": "galaxy-tablet",
+      "name": "Galaxy Tablet",
+      "role": "Cognitive Command Center",
+      "services": ["browser", "code-server", "chatgpt", "lvtp-web"],
+      "status": "active",
+      "priority": "interface"
+    },
+    {
+      "id": "telegram",
+      "name": "Telegram Saved Messages",
+      "role": "Backup Sync Layer",
+      "services": ["manual-sync", "fallback-clipboard"],
+      "status": "standby",
+      "priority": "continuity"
+    }
+  ]
+}
