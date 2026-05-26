@@ -1,0 +1,24 @@
+{
+  "symbols": [
+    {
+      "symbol": "runtime_stable",
+      "meaning": "Operational continuity preserved"
+    },
+    {
+      "symbol": "web_online",
+      "meaning": "Client interface reachable"
+    },
+    {
+      "symbol": "docker_online",
+      "meaning": "Container orchestration available"
+    },
+    {
+      "symbol": "memory_pressure",
+      "meaning": "Potential runtime degradation risk"
+    },
+    {
+      "symbol": "failover_candidate",
+      "meaning": "Node capable of continuity takeover"
+    }
+  ]
+}

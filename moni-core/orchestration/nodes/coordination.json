@@ -1,0 +1,24 @@
+{
+  "coordination": {
+    "vps-primary": {
+      "role": "persistent-cloud-runtime",
+      "priority": 1
+    },
+    "acer-linux": {
+      "role": "execution-runtime-node",
+      "priority": 2
+    },
+    "beam-pro": {
+      "role": "mobile-control-plane",
+      "priority": 3
+    },
+    "galaxy-tablet": {
+      "role": "cognitive-command-center",
+      "priority": 4
+    },
+    "fossibot": {
+      "role": "network-backbone",
+      "priority": 0
+    }
+  }
+}

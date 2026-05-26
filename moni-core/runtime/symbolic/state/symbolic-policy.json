@@ -1,0 +1,17 @@
+{
+  "system": "LVTP CORE",
+  "layer": "symbolic-runtime",
+  "mode": "symbolic-reasoning",
+  "allowed": [
+    "classify",
+    "interpret",
+    "infer",
+    "reason"
+  ],
+  "blocked": [
+    "mutation",
+    "redesign",
+    "governance_override"
+  ],
+  "law": "LVTP AGENT LAW ACTIVE"
+}

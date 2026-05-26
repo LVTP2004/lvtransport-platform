@@ -1,0 +1,26 @@
+{
+  "system": "LVTP CORE",
+  "node": "acer-linux",
+  "runtime_layer": "active",
+  "services": {
+    "lvtp-web": {
+      "type": "web-runtime",
+      "port": 5173,
+      "manager": "systemd-user",
+      "status_command": "lvtp-service status",
+      "logs_command": "lvtp-service logs"
+    },
+    "docker": {
+      "type": "container-runtime",
+      "status_command": "docker --version"
+    },
+    "code-server": {
+      "type": "remote-ide",
+      "port": 8080
+    },
+    "ssh": {
+      "type": "remote-control",
+      "port": 22
+    }
+  }
+}

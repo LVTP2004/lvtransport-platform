@@ -1,0 +1,43 @@
+LVTP PLATFORM CONSOLIDATION
+Date: di 26 mei 2026 23:22:35 CEST
+
+Data Lake:
+/mnt/lvtp-data/LVTP-DATA-LAKE
+
+Storage:
+/dev/sda4          855G      80G  776G  10% /mnt/lvtp-data
+
+Runtime:
+active
+
+Web:
+HTTP/1.1 200 OK
+
+Git:
+?? .dockerignore
+?? Dockerfile
+?? docker-compose.lvtp.yml
+?? lvtp-observer.sh
+?? moni-core/agents/
+?? moni-core/bootstrap/
+?? moni-core/cognition/
+?? moni-core/failover/
+?? moni-core/graphs/
+?? moni-core/memory/events/
+?? moni-core/observability/
+?? moni-core/observer/
+?? moni-core/ontology/
+?? moni-core/orchestration/
+?? moni-core/platform/
+?? moni-core/recursive/
+?? moni-core/runtime/audit/
+?? moni-core/runtime/autonomous/
+?? moni-core/runtime/cognitive/
+?? moni-core/runtime/heartbeat/
+?? moni-core/runtime/registry/
+?? moni-core/runtime/semantic/
+?? moni-core/runtime/supervision/
+?? moni-core/runtime/symbolic/
+?? moni-core/sovereign/
+?? moni-core/tasks/
+?? moni-core/topology/

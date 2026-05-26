@@ -1,0 +1,8 @@
+{
+  "system": "LVTP CORE",
+  "layer": "semantic-runtime",
+  "mode": "meaning-index",
+  "allowed": ["read", "index", "classify", "interpret", "summarize"],
+  "blocked": ["delete", "redesign", "governance_mutation", "secret_exposure", "runtime_mutation_without_approval"],
+  "law": "LVTP AGENT LAW ACTIVE"
+}

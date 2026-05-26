@@ -1,0 +1,9 @@
+services:
+  lvtp-web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lvtp-web-local
+    ports:
+      - "5174:5173"
+    restart: unless-stopped

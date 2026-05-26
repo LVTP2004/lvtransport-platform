@@ -1,0 +1,8 @@
+{
+  "system": "LVTP CORE",
+  "layer": "cognitive-runtime",
+  "mode": "diagnostic-only",
+  "allowed": ["inspect", "interpret", "diagnose", "recommend"],
+  "blocked": ["delete", "redesign", "governance_mutation", "secret_exposure", "unapproved_runtime_mutation"],
+  "law": "LVTP AGENT LAW ACTIVE"
+}

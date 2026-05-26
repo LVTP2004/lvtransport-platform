@@ -1,0 +1,41 @@
+{
+  "system": "LVTP CORE",
+  "agent_law": "LVTP AGENT LAW ACTIVE",
+  "agents": [
+    {
+      "id": "moni-core",
+      "name": "Moni Core",
+      "role": "Operational Cognitive Orchestrator",
+      "permissions": ["governance-read", "memory-governance", "runtime-supervision"],
+      "mutation_policy": "no-live-governance-mutation"
+    },
+    {
+      "id": "moni-assistant",
+      "name": "Moni Assistant Core",
+      "role": "Internal Assistance and Operational Support",
+      "permissions": ["support", "contextual-guidance", "workflow-assistance"],
+      "mutation_policy": "proposal-first"
+    },
+    {
+      "id": "moni-driver",
+      "name": "Moni Driver",
+      "role": "Restricted Driver Operational Context",
+      "permissions": ["driver-context", "trip-support"],
+      "mutation_policy": "restricted"
+    },
+    {
+      "id": "moni-ride",
+      "name": "Moni Ride",
+      "role": "Passenger and Trip Operational Context",
+      "permissions": ["ride-context", "passenger-support"],
+      "mutation_policy": "restricted"
+    },
+    {
+      "id": "moni-admin",
+      "name": "Moni Admin",
+      "role": "Administrative Governance and Supervision",
+      "permissions": ["admin-review", "audit", "governance-supervision"],
+      "mutation_policy": "approval-required"
+    }
+  ]
+}

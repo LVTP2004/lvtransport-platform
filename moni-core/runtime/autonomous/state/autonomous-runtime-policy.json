@@ -1,0 +1,21 @@
+{
+  "system": "LVTP CORE",
+  "mode": "bounded-autonomous-runtime",
+  "allowed_actions": [
+    "health_check",
+    "heartbeat",
+    "snapshot",
+    "report",
+    "restart_lvtp_runtime"
+  ],
+  "blocked_actions": [
+    "delete_files",
+    "modify_governance",
+    "redesign_architecture",
+    "change_dns",
+    "expose_secrets",
+    "install_unapproved_agents"
+  ],
+  "human_approval_required_for_mutation": true,
+  "law": "LVTP AGENT LAW ACTIVE"
+}

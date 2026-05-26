@@ -1,0 +1,16 @@
+{
+  "timestamp": "di 26 mei 2026 14:21:40 CEST",
+  "event": "bootstrap-v4",
+  "node": "acer-linux",
+  "services": [
+    "ssh",
+    "docker",
+    "code-server",
+    "lvtp-runtime",
+    "health-checks",
+    "snapshots"
+  ],
+  "status": "operational",
+  "topology": "distributed",
+  "governance": "LVTP AGENT LAW ACTIVE"
+}

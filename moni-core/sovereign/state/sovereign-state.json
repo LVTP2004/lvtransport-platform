@@ -1,0 +1,9 @@
+{
+  "system": "LVTP CORE",
+  "layer": "sovereign-autonomous-bootstrap",
+  "status": "active",
+  "autonomy": "bounded",
+  "approval": "human-required-for-mutation",
+  "timestamp": "di 26 mei 2026 14:35:04 CEST",
+  "node": "acer-linux"
+}
