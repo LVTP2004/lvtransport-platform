@@ -1,0 +1,64 @@
+#!/usr/bin/env bash
+
+echo "================================================"
+echo "LVTP OPERATIONAL STATUS"
+echo "================================================"
+
+echo ""
+echo "[GIT]"
+cd ~/lvtransport-platform || exit 1
+git branch --show-current
+git log --oneline -5
+
+echo ""
+echo "[DOCKER]"
+docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}"
+
+echo ""
+echo "[SERVICES]"
+systemctl --user --type=service --state=running | grep lvtp || true
+
+echo ""
+echo "[EVENTS]"
+docker exec -i lvtp-postgres psql -U lvtp -d lvtp -c "
+SELECT id,event_type,created_at
+FROM runtime_events
+ORDER BY id DESC
+LIMIT 5;
+"
+
+echo ""
+echo "[RISKS]"
+docker exec -i lvtp-postgres psql -U lvtp -d lvtp -c "
+SELECT id,event_type,risk_level,risk_score
+FROM risk_assessments
+ORDER BY id DESC
+LIMIT 5;
+"
+
+echo ""
+echo "[INCIDENTS]"
+docker exec -i lvtp-postgres psql -U lvtp -d lvtp -c "
+SELECT id,event_type,severity,status
+FROM incidents
+ORDER BY id DESC
+LIMIT 5;
+"
+
+echo ""
+echo "[RECOVERY]"
+docker exec -i lvtp-postgres psql -U lvtp -d lvtp -c "
+SELECT id,event_type,status,result
+FROM recovery_runs
+ORDER BY id DESC
+LIMIT 5;
+"
+
+echo ""
+echo "[DASHBOARD]"
+echo "http://192.168.241.149:4010"
+
+echo ""
+echo "================================================"
+echo "LVTP STATUS COMPLETE"
+echo "================================================"
