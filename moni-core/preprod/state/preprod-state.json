@@ -1,0 +1,14 @@
+{
+  "system": "LVTP CORE",
+  "layer": "pre-production-stack",
+  "status": "initialized",
+  "node": "acer-linux",
+  "timestamp": "wo 27 mei 2026 10:31:23 CEST",
+  "services": {
+    "nats": "planned",
+    "postgres": "planned",
+    "redis": "planned",
+    "moni-core-service": "foundation"
+  },
+  "law": "LVTP AGENT LAW ACTIVE"
+}

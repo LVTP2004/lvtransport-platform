@@ -1,0 +1,31 @@
+services:
+  nats:
+    image: nats:2.10
+    container_name: lvtp-nats
+    ports:
+      - "4222:4222"
+      - "8222:8222"
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16
+    container_name: lvtp-postgres
+    environment:
+      POSTGRES_USER: lvtp
+      POSTGRES_PASSWORD: lvtp_dev_password
+      POSTGRES_DB: lvtp
+    ports:
+      - "5432:5432"
+    volumes:
+      - lvtp-postgres-data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  redis:
+    image: redis:7
+    container_name: lvtp-redis
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+volumes:
+  lvtp-postgres-data:
