@@ -1,54 +1,29 @@
-import { BOOKING_EVENTS } from '../constants/index.js';
-import type { BookingLifecycleStatus, BookingTimelineEntry } from '@lvtransport/realtime';
+import { WS_EVENTS } from '../constants/app.constants.js';
 import { eventBus } from '../events/event-bus.js';
+import type { BookingLifecycleStatus, BookingTimelineEntry } from '@lvtransport/realtime';
 
-export type DispatchBookingStatus =
-  | 'pending'
-  | 'assigned'
-  | 'driver_accepted'
-  | 'driver_rejected'
-  | 'driver_arriving'
-  | 'passenger_onboard'
-  | 'completed'
-  | 'cancelled';
+export type BookingEventName =
+  | 'booking.created'
+  | 'booking.updated'
+  | 'booking.status.updated'
+  | 'booking.driver.assigned';
 
 export interface BookingEventPayload {
   bookingId: string;
+  bookingCode?: string;
   customerId: string;
   driverId?: string;
-  status: DispatchBookingStatus;
-  occurredAt: string;
+  status: BookingLifecycleStatus;
+  timelineEntry?: BookingTimelineEntry;
+  trackingCode?: string;
+  occurredAt?: string;
+  eventId?: string;
   metadata?: Record<string, unknown>;
 }
 
 export const BOOKING_UPDATED_EVENT = 'booking.updated' as const;
 
 export const emitBookingEvent = (payload: BookingEventPayload): void => {
-  eventBus.emit(BOOKING_UPDATED_EVENT, payload);
-import { BOOKING_EVENTS } from '../constants/index.js';
-import { WS_EVENTS } from '../constants/app.constants.js';
-import { eventBus } from '../events/event-bus.js';
-
-export type BookingEventName = (typeof BOOKING_EVENTS)[keyof typeof BOOKING_EVENTS] | 'booking.status.updated';
-
-export interface BookingEventPayload {
-  bookingId: string;
-  bookingCode: string;
-  customerId: string;
-  driverId?: string;
-  status: BookingLifecycleStatus;
-  timelineEntry: BookingTimelineEntry;
-  customerId: string;
-  driverId?: string;
-  status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
-  trackingCode?: string;
-  status?: 'pending' | 'accepted' | 'assigned' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
-  occurredAt?: string;
-  eventId?: string;
-  metadata?: Record<string, unknown>;
-  occurredAt: string;
-}
-
-export const emitBookingEvent = (payload: BookingEventPayload): void => {
   eventBus.emit(WS_EVENTS.BOOKING_UPDATED, payload);
+  eventBus.emit(BOOKING_UPDATED_EVENT, payload);
 };

@@ -1,17 +1,4 @@
 import express from 'express';
-import { API_PREFIX } from './constants/app.constants.js';
-import { corsMiddleware } from './config/cors.js';
-import { requestLoggerMiddleware } from './middleware/request-logger.middleware.js';
-import { errorHandlerMiddleware } from './middleware/error-handler.middleware.js';
-import apiRoutes from './routes/index.js';
-import { API_PREFIX } from './constants/index.js';
-import { corsMiddleware } from './config/cors.js';
-import { requestLogger } from './middleware/requestLogger.js';
-import { errorHandler, notFoundHandler } from './middleware/errorHandler.js';
-import apiRoutes from './routes/index.js';
-import { authenticate } from './auth/middleware/authenticate.js';
-
-export function createApp() {
 import { randomUUID } from 'node:crypto';
 import { API_PREFIX } from './constants/app.constants.js';
 import { corsMiddleware } from './config/cors.js';
@@ -23,13 +10,14 @@ import { apiSecurityMiddleware, requestValidationMiddleware } from './modules/se
 import apiRoutes from './routes/index.js';
 import { authenticate } from './auth/middleware/authenticate.js';
 
-export function createApp() {
-  const app = express();
-
 export const createApp = () => {
   const app = express();
+
   app.disable('x-powered-by');
-  if (env.trustProxy) app.set('trust proxy', 1);
+
+  if (env.trustProxy) {
+    app.set('trust proxy', 1);
+  }
 
   app.use((req, res, next) => {
     const requestId = req.header('x-request-id') ?? randomUUID();
@@ -40,9 +28,6 @@ export const createApp = () => {
 
   app.use(apiSecurityMiddleware);
   app.use(corsMiddleware);
-  app.use(express.json());
-  app.use(requestLogger);
-  app.use(authenticate);
   app.use(express.json({ limit: '1mb' }));
   app.use(requestValidationMiddleware);
   app.use(basicRateLimitMiddleware);
@@ -63,5 +48,10 @@ export const createApp = () => {
 
   app.use(API_PREFIX, apiRoutes);
   app.use(errorHandlerMiddleware);
+
   return app;
 };
+
+export function createExpressApp() {
+  return createApp();
+}

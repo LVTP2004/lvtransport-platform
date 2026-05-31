@@ -1,18 +1,27 @@
-import { createTrackingCode, normalizeTrackingCode } from '@lvtransport/shared';
 import { randomUUID } from 'node:crypto';
+import { createTrackingCode } from '@lvtransport/shared';
 import type { BookingLifecycleStatus, BookingRecord } from '@lvtransport/realtime';
 import { BOOKING_STATUS_TRANSITIONS, canTransitionBookingStatus, makeTimelineEntry } from '@lvtransport/realtime';
 import { emitBookingEvent } from './bookings.service.js';
+import { NotificationService } from '../notifications/notification.service.js';
+import { TrackingService } from '../tracking/tracking.service.js';
 
 const bookingStore = new Map<string, BookingRecord>();
+const TRACKING_BASE_PATH = '/track';
 
 const makeBookingCode = () => `LV-${Math.floor(100000 + Math.random() * 900000)}`;
 
+const notificationService = new NotificationService();
+const trackingService = new TrackingService();
+
 export class BookingService {
+  constructor(private readonly notifications: NotificationService = notificationService) {}
+
   createBooking(input: { customerId: string; pickup: string; destination: string }) {
     const id = randomUUID();
     const now = new Date().toISOString();
     const timeline = [makeTimelineEntry('pending', 'customer', now)];
+
     const booking: BookingRecord = {
       id,
       bookingCode: makeBookingCode(),
@@ -24,28 +33,50 @@ export class BookingService {
       timeline,
       version: 1,
       createdAt: now,
-      updatedAt: now,
+      updatedAt: now
     };
+
     bookingStore.set(id, booking);
     emitBookingEvent(booking, timeline[0]);
+
     return booking;
   }
 
-  listBookings() { return [...bookingStore.values()]; }
+  listBookings() {
+    return [...bookingStore.values()];
+  }
 
-  updateStatus(bookingId: string, nextStatus: BookingLifecycleStatus, actor: 'admin' | 'driver' | 'system', expectedVersion?: number) {
+  updateStatus(
+    bookingId: string,
+    nextStatus: BookingLifecycleStatus,
+    actor: 'admin' | 'driver' | 'system',
+    expectedVersion?: number
+  ) {
     const booking = bookingStore.get(bookingId);
-    if (!booking) throw new Error('Booking not found');
-    if (expectedVersion && expectedVersion !== booking.version) throw new Error('Version conflict');
-    if (!canTransitionBookingStatus(booking.status, nextStatus)) throw new Error(`Invalid transition ${booking.status} -> ${nextStatus}`);
+
+    if (!booking) {
+      throw new Error('Booking not found');
+    }
+
+    if (expectedVersion && expectedVersion !== booking.version) {
+      throw new Error('Version conflict');
+    }
+
+    if (!canTransitionBookingStatus(booking.status, nextStatus)) {
+      throw new Error(`Invalid transition ${booking.status} -> ${nextStatus}`);
+    }
+
     const now = new Date().toISOString();
     const entry = makeTimelineEntry(nextStatus, actor, now);
+
     booking.status = nextStatus;
     booking.updatedAt = now;
     booking.version += 1;
     booking.timeline.push(entry);
+
     bookingStore.set(bookingId, booking);
     emitBookingEvent(booking, entry);
+
     return booking;
   }
 
@@ -58,45 +89,25 @@ export class BookingService {
 
   allowedTransitions(status: BookingLifecycleStatus) {
     return BOOKING_STATUS_TRANSITIONS[status];
-import { randomBytes } from 'node:crypto';
-import type { BookingEventName, BookingEventPayload } from './booking.events.js';
-import { NotificationService } from '../notifications/notification.service.js';
+  }
 
-const TRACKING_BASE_PATH = '/track';
-import { TrackingService } from '../tracking/tracking.service.js';
-
-const notificationService = new NotificationService();
-const trackingService = new TrackingService();
-
-const emailTemplates = {
-  booking_confirmation: 'Booking {{bookingId}} confirmed. Track: {{trackingUrl}}',
-  booking_status_update: 'Booking {{bookingId}} is now {{status}}.',
-  driver_assigned: 'Driver {{driverId}} assigned to booking {{bookingId}}.',
-  admin_new_booking_alert: 'New booking {{bookingId}} created by customer {{customerId}}.'
-} as const;
-
-const whatsappTemplates = {
-  booking_confirmation: 'Your LV Transport booking {{bookingId}} is confirmed. Track: {{trackingUrl}}',
-  booking_status_update: 'Booking {{bookingId}} updated to {{status}}',
-  driver_assigned: 'Driver assigned for booking {{bookingId}}: {{driverId}}',
-  admin_new_booking_alert: 'New booking created: {{bookingId}}'
-} as const;
-
-export class BookingService {
-  constructor(private readonly notificationService: NotificationService = new NotificationService()) {}
-
-  publishEvent(event: BookingEventName, payload: BookingEventPayload) {
+  publishEvent(event: string, payload: Record<string, unknown>) {
     const enrichedPayload = {
       ...payload,
       occurredAt: new Date().toISOString()
     };
 
-    return { event, payload: enrichedPayload, publishedAt: enrichedPayload.occurredAt };
+    return {
+      event,
+      payload: enrichedPayload,
+      publishedAt: enrichedPayload.occurredAt
+    };
   }
 
   generateCustomerTrackingLink(bookingId: string, customerId: string, baseUrl: string) {
     const trackingCode = this.generateTrackingCode();
     const path = `${TRACKING_BASE_PATH}/${trackingCode}`;
+
     return {
       bookingId,
       customerId,
@@ -110,12 +121,12 @@ export class BookingService {
     bookingId: string;
     customerId: string;
     adminId: string;
-    status: 'pending' | 'accepted' | 'in_progress' | 'completed' | 'cancelled';
+    status: 'pending' | 'accepted' | 'assigned' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'cancelled';
     driverId?: string;
     trackingLink?: string;
   }) {
     const messages = [
-      this.notificationService.queue({
+      this.notifications.queue({
         bookingId: input.bookingId,
         recipientId: input.customerId,
         audience: 'customer',
@@ -125,17 +136,17 @@ export class BookingService {
         body: `Your booking ${input.bookingId} is confirmed.${input.trackingLink ? ` Track: ${input.trackingLink}` : ''}`,
         data: { status: input.status }
       }),
-      this.notificationService.queue({
+      this.notifications.queue({
         bookingId: input.bookingId,
         recipientId: input.adminId,
         audience: 'admin',
-        channel: 'in_app',
+        channel: 'push',
         eventType: 'admin.booking.created',
         title: 'New booking request',
         body: `Booking ${input.bookingId} requires dispatch visibility.`,
         data: { status: input.status }
       }),
-      this.notificationService.queue({
+      this.notifications.queue({
         bookingId: input.bookingId,
         recipientId: input.customerId,
         audience: 'customer',
@@ -149,7 +160,7 @@ export class BookingService {
 
     if (input.driverId) {
       messages.push(
-        this.notificationService.queue({
+        this.notifications.queue({
           bookingId: input.bookingId,
           recipientId: input.driverId,
           audience: 'driver',
@@ -164,15 +175,17 @@ export class BookingService {
 
     return {
       notifications: messages,
-      deliveryLog: this.notificationService.getDeliveryLog()
+      deliveryLog: this.notifications.getDeliveryLog()
     };
   }
 
   preparePublicTrackingLookup(code: string, known: Array<{ bookingId: string; code: string; status: string }>) {
     const match = known.find((item) => item.code === code);
+
     if (!match) {
       return { found: false, code, error: 'Tracking code not found.' };
     }
+
     return {
       found: true,
       code,
@@ -182,15 +195,11 @@ export class BookingService {
     };
   }
 
-  private generateTrackingCode() {
-    return createTrackingCode();
-  }
-
   getTrackingByCode(code: string) {
     return trackingService.findByTrackingCode(code);
   }
 
-  private renderTemplate(template: string, values: Record<string, unknown>) {
-    return template.replace(/{{(.*?)}}/g, (_, key) => String(values[key.trim()] ?? ''));
+  private generateTrackingCode() {
+    return createTrackingCode();
   }
 }
