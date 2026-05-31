@@ -51,7 +51,7 @@ export class NotificationService {
       ...message,
       notificationId,
       id: message.id ?? notificationId,
-      channels: message.channels ?? [message.channel],
+      channels: message.channels ?? (message.channel ? [message.channel] : ['push']),
       retryCount: message.retryCount ?? 0,
       status: message.status ?? 'queued',
       occurredAt: message.occurredAt ?? now,
@@ -110,6 +110,93 @@ export class NotificationService {
     return [...this.legacyDeliveryLog];
   }
 
+
+  getDeliveryLogs(): DeliveryLogEntry[] {
+    return this.getDeliveryLog();
+  }
+
+  createDriverAssignmentDispatchNotification(input: {
+    bookingId: string;
+    driverId: string;
+    customerId?: string;
+    adminId?: string;
+    recipientId?: string;
+    title?: string;
+    body?: string;
+    data?: Record<string, unknown>;
+  }): { customer: NotificationMessage; driver: NotificationMessage; admin: NotificationMessage } {
+    const driver = this.queue({
+      bookingId: input.bookingId,
+      recipientId: input.recipientId ?? input.driverId,
+      audience: 'driver',
+      type: 'driver_assignment',
+      channel: 'push',
+      channels: ['push'],
+      title: input.title ?? 'Driver assignment',
+      body: input.body ?? `Driver ${input.driverId} assigned to booking ${input.bookingId}.`,
+      data: input.data ?? {}
+    });
+
+    const customer = this.queue({
+      bookingId: input.bookingId,
+      recipientId: input.customerId ?? 'customer',
+      audience: 'customer',
+      type: 'driver_assignment',
+      channel: 'push',
+      channels: ['push'],
+      title: 'Driver assigned',
+      body: `A driver has been assigned to booking ${input.bookingId}.`,
+      data: input.data ?? {}
+    });
+
+    const admin = this.queue({
+      bookingId: input.bookingId,
+      recipientId: input.adminId ?? 'admin',
+      audience: 'admin',
+      type: 'admin_alert',
+      channel: 'push',
+      channels: ['push'],
+      title: 'Driver assignment published',
+      body: `Driver ${input.driverId} assigned to booking ${input.bookingId}.`,
+      data: input.data ?? {}
+    });
+
+    return { customer, driver, admin };
+  }
+
+  restoreActiveNotifications(bookingId?: string, _checkpoint?: string): NotificationMessage[] {
+    return this.messages.filter((message) => {
+      const status = message.lifecycle?.status ?? message.status;
+      const active = status !== 'delivered' && status !== 'sent' && status !== 'failed' && status !== 'archived';
+      return active && (!bookingId || message.bookingId === bookingId);
+    });
+  }
+
+  archiveOperationalAlertsForBooking(bookingId: string, _reason?: string): number {
+    let archived = 0;
+    const now = new Date().toISOString();
+
+    for (const message of this.messages) {
+      if (message.bookingId === bookingId && message.audience === 'admin') {
+        message.status = 'archived';
+        message.lifecycle = {
+          ...(message.lifecycle ?? {
+            status: 'archived',
+            attempts: message.retryCount ?? 0,
+            maxAttempts: 4,
+            updatedAt: now
+          }),
+          status: 'archived',
+          updatedAt: now,
+          archivedAt: now
+        };
+        archived += 1;
+      }
+    }
+
+    return archived;
+  }
+
   getQueue(): NotificationQueueEntry[] {
     return [...this.operationalQueue];
   }
@@ -137,7 +224,7 @@ export class NotificationService {
       bookingId: message.bookingId,
       audience: message.audience,
       type: toNotificationType(message),
-      channels: message.channels ?? [message.channel],
+      channels: message.channels ?? (message.channel ? [message.channel] : ['push']),
       state,
       message: message.body,
       occurredAt: message.occurredAt ?? message.createdAt ?? new Date().toISOString(),
@@ -191,7 +278,7 @@ export class NotificationService {
       id: randomUUID(),
       notificationId,
       bookingId: message.bookingId,
-      channel: message.channel,
+      channel: message.channel ?? message.channels?.[0] ?? 'push',
       provider: this.provider.name,
       status,
       attempt,
@@ -220,6 +307,9 @@ export class NotificationService {
     });
 
     return entry;
+  }
+  getOperationalQueue(): NotificationQueueEntry[] {
+    return this.getQueue();
   }
 }
 
