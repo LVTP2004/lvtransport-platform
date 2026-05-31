@@ -1,3 +1,4 @@
+import { createTrackingCode, normalizeTrackingCode } from '@lvtransport/shared';
 import crypto from 'node:crypto';
 export type BookingStatus = 'pending' | 'accepted' | 'rejected';
 
@@ -23,7 +24,7 @@ class BookingEngineService {
 
   createBooking(input: Omit<Booking, 'id' | 'status' | 'trackingCode' | 'createdAt' | 'updatedAt' | 'fare'> & { distanceKm: number }) {
     const id = crypto.randomUUID();
-    const trackingCode = `LV-${id.slice(0, 8).toUpperCase()}`;
+    const trackingCode = createTrackingCode();
     const now = new Date().toISOString();
     const fare = Number((BASE_FARE + input.distanceKm * PER_KM).toFixed(2));
 
@@ -46,7 +47,7 @@ class BookingEngineService {
   }
 
   findByTrackingCode(code: string) {
-    return this.listBookings().find((booking) => booking.trackingCode === code);
+    return this.listBookings().find((booking) => normalizeTrackingCode(booking.trackingCode) === normalizeTrackingCode(code));
   }
 
   respondToRide(bookingId: string, driverId: string, action: 'accept' | 'reject') {

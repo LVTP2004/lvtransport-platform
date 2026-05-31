@@ -1,3 +1,4 @@
+import { createTrackingCode, normalizeTrackingCode } from '@lvtransport/shared';
 import { randomUUID } from 'node:crypto';
 import type { BookingLifecycleStatus, BookingRecord } from '@lvtransport/realtime';
 import { BOOKING_STATUS_TRANSITIONS, canTransitionBookingStatus, makeTimelineEntry } from '@lvtransport/realtime';
@@ -182,60 +183,7 @@ export class BookingService {
   }
 
   private generateTrackingCode() {
-    return randomBytes(5).toString('hex').toUpperCase();
-    const tracking = trackingService.createTrackingLink(payload.bookingId, payload.customerId, payload.driverId);
-
-    const customerConfirmation = notificationService.queue({
-      notificationId: `${payload.bookingId}-customer-confirmation`,
-      recipientId: payload.customerId,
-      audience: 'customer',
-      channel: 'email',
-      template: 'booking_confirmation',
-      title: 'Booking confirmed',
-      body: this.renderTemplate(emailTemplates.booking_confirmation, { ...payload, ...tracking }),
-      data: { trackingCode: tracking.trackingCode, trackingUrl: tracking.trackingUrl },
-      occurredAt: payload.occurredAt
-    });
-
-    const statusUpdate = notificationService.queue({
-      notificationId: `${payload.bookingId}-customer-status`,
-      recipientId: payload.customerId,
-      audience: 'customer',
-      channel: 'whatsapp',
-      template: 'booking_status_update',
-      title: 'Booking status update',
-      body: this.renderTemplate(whatsappTemplates.booking_status_update, payload),
-      data: { status: payload.status },
-      occurredAt: payload.occurredAt
-    });
-
-    const assignment = payload.driverId
-      ? notificationService.queue({
-          notificationId: `${payload.bookingId}-driver-assigned`,
-          recipientId: payload.driverId,
-          audience: 'driver',
-          channel: 'in_app',
-          template: 'driver_assigned',
-          title: 'New ride assigned',
-          body: this.renderTemplate(emailTemplates.driver_assigned, payload),
-          data: { bookingId: payload.bookingId },
-          occurredAt: payload.occurredAt
-        })
-      : null;
-
-    const adminAlert = notificationService.queue({
-      notificationId: `${payload.bookingId}-admin-alert`,
-      recipientId: 'admin-dispatch',
-      audience: 'admin',
-      channel: 'in_app',
-      template: 'admin_new_booking_alert',
-      title: 'New booking alert',
-      body: this.renderTemplate(emailTemplates.admin_new_booking_alert, payload),
-      data: { bookingId: payload.bookingId, status: payload.status },
-      occurredAt: payload.occurredAt
-    });
-
-    return { event, payload, tracking, notifications: { customerConfirmation, statusUpdate, assignment, adminAlert }, deliveryLog: notificationService.getDeliveryLog(), publishedAt: new Date().toISOString() };
+    return createTrackingCode();
   }
 
   getTrackingByCode(code: string) {

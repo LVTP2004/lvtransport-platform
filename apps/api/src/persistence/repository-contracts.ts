@@ -1,4 +1,4 @@
-export type RideStatus = 'pending' | 'assigned' | 'accepted' | 'en_route' | 'arrived' | 'in_progress' | 'completed' | 'cancelled' | 'failed';
+export type { RideStatus } from '@lvtransport/shared';
 export type PaymentStatus = 'pending' | 'authorized' | 'paid' | 'failed' | 'cancelled' | 'refunded';
 export type NotificationStatus = 'pending' | 'sent' | 'failed' | 'retrying' | 'abandoned';
 export type RecoveryStatus = 'pending' | 'in_progress' | 'resolved' | 'failed';

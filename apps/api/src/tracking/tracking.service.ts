@@ -1,9 +1,10 @@
+import { createTrackingCode, normalizeTrackingCode } from '@lvtransport/shared';
 import crypto from 'node:crypto';
 import type { TrackingEventName, TrackingEventPayload } from './tracking.events.js';
 
 const trackingStore = new Map<string, TrackingEventPayload>();
 
-const generateTrackingCode = (bookingId: string) => `trk_${bookingId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random().toString(36).slice(2, 8)}`;
+const generateTrackingCode = (_bookingId: string) => createTrackingCode();
 export interface TrackingLink {
   bookingId: string;
   trackingCode: string;
@@ -28,12 +29,12 @@ export class TrackingService {
       timestamp: new Date().toISOString()
     };
 
-    trackingStore.set(trackingCode, payload);
+    trackingStore.set(normalizeTrackingCode(trackingCode), payload);
     return payload;
   }
 
   findByTrackingCode(trackingCode: string) {
-    return trackingStore.get(trackingCode) ?? null;
+    return trackingStore.get(normalizeTrackingCode(trackingCode)) ?? null;
   }
 
   publishEvent(event: TrackingEventName, payload: TrackingEventPayload) {
@@ -53,12 +54,12 @@ export class TrackingService {
       createdAt: createdAt.toISOString(),
       expiresAt: expiresAt.toISOString(),
     };
-    trackingLinks.set(trackingCode, link);
+    trackingLinks.set(normalizeTrackingCode(trackingCode), link);
     return link;
   }
 
   lookupByCode(trackingCode: string) {
-    const link = trackingLinks.get(trackingCode.toUpperCase());
+    const link = trackingLinks.get(normalizeTrackingCode(trackingCode));
     if (!link) return null;
     if (new Date(link.expiresAt).getTime() < Date.now()) return null;
     return link;

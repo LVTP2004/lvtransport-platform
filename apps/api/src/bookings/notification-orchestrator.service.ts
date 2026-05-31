@@ -1,3 +1,4 @@
+import { createTrackingCode } from '@lvtransport/shared';
 import { NotificationService } from '../notifications/notification.service.js';
 
 const notificationService = new NotificationService();
@@ -13,7 +14,7 @@ type OrchestratorContext = {
 
 export const notificationOrchestrator = {
   createBookingConfirmation(input: OrchestratorContext) {
-    const trackingCode = input.bookingId.slice(0, 8).toUpperCase();
+    const trackingCode = createTrackingCode();
     const trackingUrl = `https://track.lvtransport.local/${trackingCode}`;
 
     const customerNotification = notificationService.queue({
