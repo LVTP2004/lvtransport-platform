@@ -1,0 +1,80 @@
+[
+  {
+    "file": "src/bookings/booking.service.ts",
+    "errorCount": 8,
+    "primaryPattern": "type_mismatch",
+    "strategy": "adapt object shape to declared type"
+  },
+  {
+    "file": "src/modules/payments/services/payment-architecture.service.ts",
+    "errorCount": 5,
+    "primaryPattern": "type_mismatch",
+    "strategy": "adapt object shape to declared type"
+  },
+  {
+    "file": "src/operational-memory/cli.ts",
+    "errorCount": 5,
+    "primaryPattern": "duplicate_declaration",
+    "strategy": "remove duplicated blocks or choose one canonical implementation"
+  },
+  {
+    "file": "src/modules/persistence/sqlite.repositories.ts",
+    "errorCount": 3,
+    "primaryPattern": "type_mismatch",
+    "strategy": "adapt object shape to declared type"
+  },
+  {
+    "file": "src/websocket/socket.server.ts",
+    "errorCount": 3,
+    "primaryPattern": "duplicate_declaration",
+    "strategy": "remove duplicated blocks or choose one canonical implementation"
+  },
+  {
+    "file": "src/modules/bookings/service.ts",
+    "errorCount": 2,
+    "primaryPattern": "wrong_method_contract",
+    "strategy": "align caller with repository/service interface"
+  },
+  {
+    "file": "src/modules/persistence/in-memory-empty.repository.ts",
+    "errorCount": 2,
+    "primaryPattern": "missing_import_or_contract",
+    "strategy": "import canonical type from packages/shared or local contract"
+  },
+  {
+    "file": "src/persistence/repository-contracts.ts",
+    "errorCount": 2,
+    "primaryPattern": "missing_import_or_contract",
+    "strategy": "import canonical type from packages/shared or local contract"
+  },
+  {
+    "file": "src/server.ts",
+    "errorCount": 2,
+    "primaryPattern": "duplicate_declaration",
+    "strategy": "remove duplicated blocks or choose one canonical implementation"
+  },
+  {
+    "file": "src/tracking/tracking.service.ts",
+    "errorCount": 2,
+    "primaryPattern": "duplicate_declaration",
+    "strategy": "remove duplicated blocks or choose one canonical implementation"
+  },
+  {
+    "file": "src/dispatch/dispatch.service.ts",
+    "errorCount": 1,
+    "primaryPattern": "unknown",
+    "strategy": "manual inspection required"
+  },
+  {
+    "file": "src/modules/payments/payment.routes.ts",
+    "errorCount": 1,
+    "primaryPattern": "type_mismatch",
+    "strategy": "adapt object shape to declared type"
+  },
+  {
+    "file": "src/routes/v1/persistence.routes.ts",
+    "errorCount": 1,
+    "primaryPattern": "wrong_method_contract",
+    "strategy": "align caller with repository/service interface"
+  }
+]
