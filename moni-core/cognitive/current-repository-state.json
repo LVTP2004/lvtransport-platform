@@ -1,0 +1,37 @@
+{
+  "generatedAt": "2026-06-01T09:27:00.494004Z",
+  "totalTypeScriptErrors": 37,
+  "errorsByModule": {
+    "bookings": 10,
+    "persistence": 9,
+    "payments": 6,
+    "operational_memory": 5,
+    "websocket": 3,
+    "server": 2,
+    "tracking": 2
+  },
+  "errorsByPattern": {
+    "contract_shape_mismatch": 14,
+    "wrong_method_contract": 4,
+    "unknown": 4,
+    "implicit_any": 1,
+    "missing_contract": 3,
+    "duplicate_implementation": 10,
+    "wrong_argument_count": 1
+  },
+  "topFiles": {
+    "src/bookings/booking.service.ts": 8,
+    "src/modules/payments/services/payment-architecture.service.ts": 5,
+    "src/operational-memory/cli.ts": 5,
+    "src/modules/persistence/sqlite.repositories.ts": 3,
+    "src/websocket/socket.server.ts": 3,
+    "src/modules/bookings/service.ts": 2,
+    "src/modules/persistence/in-memory-empty.repository.ts": 2,
+    "src/persistence/repository-contracts.ts": 2,
+    "src/server.ts": 2,
+    "src/tracking/tracking.service.ts": 2,
+    "src/dispatch/dispatch.service.ts": 1,
+    "src/modules/payments/payment.routes.ts": 1,
+    "src/routes/v1/persistence.routes.ts": 1
+  }
+}

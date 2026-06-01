@@ -1,0 +1,65 @@
+{
+  "name": "LVTP Repository Knowledge Graph",
+  "generatedAt": "2026-06-01T09:27:00.493916Z",
+  "principle": "Moni reasons from subsystem ownership, not isolated TypeScript lines.",
+  "canonicalContracts": {
+    "shared": [
+      "packages/shared/src/ride-lifecycle.ts",
+      "packages/shared/src/tracking.ts",
+      "packages/shared/src/booking.types.ts",
+      "packages/shared/src/dispatch.types.ts",
+      "packages/shared/src/pricing.types.ts",
+      "packages/shared/src/moni.types.ts"
+    ],
+    "apiPersistence": [
+      "apps/api/src/persistence/repository-contracts.ts",
+      "apps/api/src/modules/persistence/contracts.ts"
+    ]
+  },
+  "subsystems": {
+    "persistence": {
+      "owns": [
+        "repository contracts",
+        "sqlite repositories",
+        "in-memory repositories"
+      ],
+      "risk": "high",
+      "rule": "Patch by interface alignment, not by individual TS errors."
+    },
+    "payments": {
+      "owns": [
+        "payment session lifecycle",
+        "refund state",
+        "transaction history"
+      ],
+      "risk": "high",
+      "rule": "Reconcile payment types before route/service method fixes."
+    },
+    "notifications": {
+      "owns": [
+        "queue",
+        "delivery lifecycle",
+        "operational alerts"
+      ],
+      "risk": "medium",
+      "rule": "Service contract must match route and booking notification flow."
+    },
+    "auth": {
+      "owns": [
+        "middleware",
+        "role authorization",
+        "access control"
+      ],
+      "risk": "medium",
+      "rule": "Do not change runtime auth semantics while stabilizing build."
+    },
+    "tracking": {
+      "owns": [
+        "tracking code generation",
+        "tracking lookup"
+      ],
+      "risk": "medium",
+      "rule": "Use packages/shared tracking contract."
+    }
+  }
+}
