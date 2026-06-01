@@ -1,225 +1,382 @@
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
-import { logger } from '../../utils/logger.js';
-import type {
-  AuditEventRecord,
-  AuditRepository,
-  MessageEventRecord,
-  MessageRepository,
-  NotificationAttemptRecord,
-  NotificationRepository,
-  NotificationStatus,
-  PaymentRecord,
-  PaymentRepository,
-  PaymentStatus,
-  RecoveryEventRecord,
-  RecoveryRepository,
-  RecoveryStatus,
-  RideRecord,
-  RideRepository,
-  RideStatus,
-} from './contracts.js';
+import { randomUUID } from 'node:crypto';
 
 const dbPath = resolve(process.cwd(), process.env.LVTRANSPORT_DB_PATH ?? '.data/lvtransport.sqlite');
+
 mkdirSync(dirname(dbPath), { recursive: true });
 
 const db = new DatabaseSync(dbPath);
+
 db.exec(`
 CREATE TABLE IF NOT EXISTS rides (
   id TEXT PRIMARY KEY,
-  code TEXT UNIQUE NOT NULL,
-  customer_id TEXT NOT NULL,
-  status TEXT NOT NULL,
+  code TEXT UNIQUE,
+  customer_id TEXT,
+  customer_name TEXT,
+  pickup TEXT,
+  destination TEXT,
+  status TEXT,
   assigned_driver_id TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  assigned_driver_name TEXT,
+  created_at TEXT,
+  updated_at TEXT
 );
+
 CREATE TABLE IF NOT EXISTS payments (
   id TEXT PRIMARY KEY,
-  ride_id TEXT NOT NULL,
-  amount_minor INTEGER NOT NULL,
-  currency TEXT NOT NULL,
-  status TEXT NOT NULL,
+  ride_id TEXT,
+  amount_minor INTEGER,
+  amount INTEGER,
+  currency TEXT,
+  status TEXT,
   invoice_reference TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  created_at TEXT,
+  updated_at TEXT
 );
+
 CREATE TABLE IF NOT EXISTS audit_events (
   id TEXT PRIMARY KEY,
-  entity_type TEXT NOT NULL,
-  entity_id TEXT NOT NULL,
-  action TEXT NOT NULL,
+  entity_type TEXT,
+  entity_id TEXT,
+  action TEXT,
   actor_id TEXT,
   payload TEXT,
-  created_at TEXT NOT NULL
+  created_at TEXT
 );
+
 CREATE TABLE IF NOT EXISTS message_events (
   id TEXT PRIMARY KEY,
-  ride_id TEXT NOT NULL,
-  channel TEXT NOT NULL,
-  direction TEXT NOT NULL,
-  content TEXT NOT NULL,
-  created_at TEXT NOT NULL
+  ride_id TEXT,
+  channel TEXT,
+  direction TEXT,
+  content TEXT,
+  status TEXT,
+  created_at TEXT
 );
+
 CREATE TABLE IF NOT EXISTS notification_attempts (
   id TEXT PRIMARY KEY,
-  notification_type TEXT NOT NULL,
-  recipient TEXT NOT NULL,
-  status TEXT NOT NULL,
+  notification_type TEXT,
+  recipient TEXT,
+  channel TEXT,
+  status TEXT,
   error_message TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
+  created_at TEXT,
+  updated_at TEXT
 );
+
 CREATE TABLE IF NOT EXISTS recovery_events (
   id TEXT PRIMARY KEY,
-  incident_code TEXT NOT NULL,
-  status TEXT NOT NULL,
+  incident_code TEXT,
+  status TEXT,
   notes TEXT,
-  created_at TEXT NOT NULL,
-  updated_at TEXT NOT NULL
-);`);
+  created_at TEXT,
+  updated_at TEXT
+);
+`);
 
-const safe = <T>(operation: () => T, message: string): T => {
-  try { return operation(); } catch (error) { logger.error(message, error); throw new Error('Persistence operation failed'); }
-};
+const now = () => new Date().toISOString();
 
-const mapRide = (row: any): RideRecord => ({ id: row.id, code: row.code, customerId: row.customer_id, status: row.status as RideStatus, assignedDriverId: row.assigned_driver_id, createdAt: row.created_at, updatedAt: row.updated_at });
-const mapPayment = (row: any): PaymentRecord => ({ id: row.id, rideId: row.ride_id, amountMinor: row.amount_minor, currency: row.currency, status: row.status as PaymentStatus, invoiceReference: row.invoice_reference, createdAt: row.created_at, updatedAt: row.updated_at });
-const mapAudit = (row: any): AuditEventRecord => ({ id: row.id, entityType: row.entity_type, entityId: row.entity_id, action: row.action, actorId: row.actor_id, payload: row.payload, createdAt: row.created_at });
-const mapMessage = (row: any): MessageEventRecord => ({ id: row.id, rideId: row.ride_id, channel: row.channel, direction: row.direction, content: row.content, createdAt: row.created_at });
-const mapNotification = (row: any): NotificationAttemptRecord => ({ id: row.id, notificationType: row.notification_type, recipient: row.recipient, status: row.status as NotificationStatus, errorMessage: row.error_message, createdAt: row.created_at, updatedAt: row.updated_at });
-const mapRecovery = (row: any): RecoveryEventRecord => ({ id: row.id, incidentCode: row.incident_code, status: row.status as RecoveryStatus, notes: row.notes, createdAt: row.created_at, updatedAt: row.updated_at });
+const row = (statement: string, ...params: unknown[]): any | null =>
+  db.prepare(statement).get(...params) as any | null;
 
-export const rideRepository: RideRepository = {
-  async createRide(record) { return safe(() => { db.prepare('INSERT INTO rides (id, code, customer_id, status, assigned_driver_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(record.id, record.code, record.customerId, record.status, record.assignedDriverId, record.createdAt, record.updatedAt); return record; }, 'Failed to create ride'); },
-  async getRideById(id) { return safe(() => { const row = db.prepare('SELECT * FROM rides WHERE id = ?').get(id); return row ? mapRide(row) : null; }, 'Failed to get ride by id'); },
-  async getRideByCode(code) { return safe(() => { const row = db.prepare('SELECT * FROM rides WHERE code = ?').get(code); return row ? mapRide(row) : null; }, 'Failed to get ride by code'); },
-  async updateRideStatus(id, status, updatedAt) { return safe(() => { db.prepare('UPDATE rides SET status = ?, updated_at = ? WHERE id = ?').run(status, updatedAt, id); const row = db.prepare('SELECT * FROM rides WHERE id = ?').get(id); return row ? mapRide(row) : null; }, 'Failed to update ride status'); },
-  async assignDriver(id, driverId, updatedAt) { return safe(() => { db.prepare('UPDATE rides SET assigned_driver_id = ?, updated_at = ? WHERE id = ?').run(driverId, updatedAt, id); const row = db.prepare('SELECT * FROM rides WHERE id = ?').get(id); return row ? mapRide(row) : null; }, 'Failed to assign driver'); },
-};
+const rows = (statement: string, ...params: unknown[]): any[] =>
+  db.prepare(statement).all(...params) as any[];
 
-export const paymentRepository: PaymentRepository = {
-  async listPayments(rideId) { return safe(() => { const rows = rideId ? db.prepare('SELECT * FROM payments WHERE ride_id = ? ORDER BY created_at DESC').all(rideId) : db.prepare('SELECT * FROM payments ORDER BY created_at DESC').all(); return rows.map(mapPayment); }, 'Failed to list payments'); },
-  async getPaymentById(id) { return safe(() => { const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id); return row ? mapPayment(row) : null; }, 'Failed to get payment by id'); },
-  async updatePaymentStatus(id, status, updatedAt) { return safe(() => { db.prepare('UPDATE payments SET status = ?, updated_at = ? WHERE id = ?').run(status, updatedAt, id); const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id); return row ? mapPayment(row) : null; }, 'Failed to update payment status'); },
-  async attachInvoiceReference(id, invoiceReference, updatedAt) { return safe(() => { db.prepare('UPDATE payments SET invoice_reference = ?, updated_at = ? WHERE id = ?').run(invoiceReference, updatedAt, id); const row = db.prepare('SELECT * FROM payments WHERE id = ?').get(id); return row ? mapPayment(row) : null; }, 'Failed to attach invoice reference'); },
-};
+const run = (statement: string, ...params: unknown[]) =>
+  db.prepare(statement).run(...params);
 
-export const auditRepository: AuditRepository = {
-  async recordAuditEvent(event) { return safe(() => { db.prepare('INSERT INTO audit_events (id, entity_type, entity_id, action, actor_id, payload, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(event.id, event.entityType, event.entityId, event.action, event.actorId, event.payload, event.createdAt); return event; }, 'Failed to record audit event'); },
-  async listAuditEvents(entityType, entityId) { return safe(() => { if (entityType && entityId) return db.prepare('SELECT * FROM audit_events WHERE entity_type = ? AND entity_id = ? ORDER BY created_at DESC').all(entityType, entityId).map(mapAudit); if (entityType) return db.prepare('SELECT * FROM audit_events WHERE entity_type = ? ORDER BY created_at DESC').all(entityType).map(mapAudit); return db.prepare('SELECT * FROM audit_events ORDER BY created_at DESC').all().map(mapAudit); }, 'Failed to list audit events'); },
-};
+const json = (value: unknown): string =>
+  typeof value === 'string' ? value : JSON.stringify(value ?? {});
 
-export const messageRepository: MessageRepository = {
-  async createMessageEvent(event) { return safe(() => { db.prepare('INSERT INTO message_events (id, ride_id, channel, direction, content, created_at) VALUES (?, ?, ?, ?, ?, ?)').run(event.id, event.rideId, event.channel, event.direction, event.content, event.createdAt); return event; }, 'Failed to create message event'); },
-  async listMessageEvents(rideId) { return safe(() => { const rows = rideId ? db.prepare('SELECT * FROM message_events WHERE ride_id = ? ORDER BY created_at DESC').all(rideId) : db.prepare('SELECT * FROM message_events ORDER BY created_at DESC').all(); return rows.map(mapMessage); }, 'Failed to list message events'); },
-};
+const mapRide = (r: any) => ({
+  id: r.id,
+  code: r.code,
+  customerId: r.customer_id,
+  customerName: r.customer_name,
+  pickup: r.pickup,
+  destination: r.destination,
+  status: r.status,
+  assignedDriverId: r.assigned_driver_id ?? undefined,
+  assignedDriverName: r.assigned_driver_name ?? undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at
+});
 
-export const notificationRepository: NotificationRepository = {
-  async createNotificationAttempt(event) { return safe(() => { db.prepare('INSERT INTO notification_attempts (id, notification_type, recipient, status, error_message, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)').run(event.id, event.notificationType, event.recipient, event.status, event.errorMessage, event.createdAt, event.updatedAt); return event; }, 'Failed to create notification attempt'); },
-  async updateNotificationStatus(id, status, errorMessage, updatedAt) { return safe(() => { db.prepare('UPDATE notification_attempts SET status = ?, error_message = ?, updated_at = ? WHERE id = ?').run(status, errorMessage, updatedAt, id); const row = db.prepare('SELECT * FROM notification_attempts WHERE id = ?').get(id); return row ? mapNotification(row) : null; }, 'Failed to update notification status'); },
-  async listFailedNotifications() { return safe(() => db.prepare("SELECT * FROM notification_attempts WHERE status = 'failed' ORDER BY updated_at DESC").all().map(mapNotification), 'Failed to list failed notifications'); },
-};
+const mapPayment = (r: any) => ({
+  id: r.id,
+  rideId: r.ride_id,
+  amountMinor: r.amount_minor ?? r.amount ?? 0,
+  amount: r.amount ?? r.amount_minor ?? 0,
+  currency: r.currency ?? 'EUR',
+  status: r.status,
+  invoiceReference: r.invoice_reference ?? undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at
+});
 
-export const recoveryRepository: RecoveryRepository = {
-  async createRecoveryEvent(event) { return safe(() => { db.prepare('INSERT INTO recovery_events (id, incident_code, status, notes, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?)').run(event.id, event.incidentCode, event.status, event.notes, event.createdAt, event.updatedAt); return event; }, 'Failed to create recovery event'); },
-  async listRecoveryEvents(status) { return safe(() => { const rows = status ? db.prepare('SELECT * FROM recovery_events WHERE status = ? ORDER BY created_at DESC').all(status) : db.prepare('SELECT * FROM recovery_events ORDER BY created_at DESC').all(); return rows.map(mapRecovery); }, 'Failed to list recovery events'); },
-  async updateRecoveryStatus(id, status, notes, updatedAt) { return safe(() => { db.prepare('UPDATE recovery_events SET status = ?, notes = ?, updated_at = ? WHERE id = ?').run(status, notes, updatedAt, id); const row = db.prepare('SELECT * FROM recovery_events WHERE id = ?').get(id); return row ? mapRecovery(row) : null; }, 'Failed to update recovery status'); },
-};
-import { dirname, resolve } from 'node:path';
-import { mkdirSync } from 'node:fs';
-import { DatabaseSync } from 'node:sqlite';
+const mapAudit = (r: any) => ({
+  id: r.id,
+  entityType: r.entity_type,
+  entityId: r.entity_id,
+  action: r.action,
+  actorId: r.actor_id ?? undefined,
+  payload: r.payload ? JSON.parse(r.payload) : undefined,
+  createdAt: r.created_at
+});
 
-const DEFAULT_DB_PATH = resolve(process.cwd(), '.data/lvtransport.sqlite');
-const DB_PATH = process.env.LVTRANSPORT_DB_PATH?.trim() || DEFAULT_DB_PATH;
+const mapMessage = (r: any) => ({
+  id: r.id,
+  rideId: r.ride_id,
+  channel: r.channel ?? 'system',
+  direction: r.direction ?? 'outbound',
+  content: r.content ?? '',
+  status: r.status ?? 'created',
+  createdAt: r.created_at
+});
 
-const sanitizePersistenceError = (error: unknown): Error => {
-  const message = error instanceof Error ? error.message : 'Unknown SQLite persistence error';
-  return new Error(`PERSISTENCE_ERROR: ${message}`);
-};
+const mapNotification = (r: any) => ({
+  id: r.id,
+  notificationType: r.notification_type,
+  recipient: r.recipient,
+  channel: r.channel ?? 'system',
+  status: r.status,
+  errorMessage: r.error_message ?? undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at
+});
 
-const ensureParentDirectory = (filePath: string): void => {
-  mkdirSync(dirname(filePath), { recursive: true });
-};
+const mapRecovery = (r: any) => ({
+  id: r.id,
+  incidentCode: r.incident_code,
+  status: r.status,
+  notes: r.notes ?? undefined,
+  createdAt: r.created_at,
+  updatedAt: r.updated_at
+});
 
-const initializeSqlite = (): DatabaseSync => {
-  try {
-    ensureParentDirectory(DB_PATH);
-    const db = new DatabaseSync(DB_PATH);
+export const rideRepository = {
+  async createRide(ride: any) {
+    const createdAt = ride.createdAt ?? now();
+    const updatedAt = ride.updatedAt ?? createdAt;
+    run(
+      `INSERT OR REPLACE INTO rides
+      (id, code, customer_id, customer_name, pickup, destination, status, assigned_driver_id, assigned_driver_name, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      ride.id,
+      ride.code,
+      ride.customerId ?? ride.customer_id ?? '',
+      ride.customerName ?? ride.customer_name ?? '',
+      ride.pickup ?? '',
+      ride.destination ?? '',
+      ride.status ?? 'pending',
+      ride.assignedDriverId ?? null,
+      ride.assignedDriverName ?? null,
+      createdAt,
+      updatedAt
+    );
+    return { ...ride, createdAt, updatedAt };
+  },
 
-    db.exec('PRAGMA foreign_keys = ON;');
-    db.exec('PRAGMA journal_mode = WAL;');
-    db.exec('PRAGMA synchronous = NORMAL;');
+  async getRideById(id: string) {
+    const r = row(`SELECT * FROM rides WHERE id = ?`, id);
+    return r ? mapRide(r) : null;
+  },
 
-    db.exec(`
-      CREATE TABLE IF NOT EXISTS rides (
-        id TEXT PRIMARY KEY,
-        ride_code TEXT,
-        status TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL
-      );
+  async getRideByCode(code: string) {
+    const r = row(`SELECT * FROM rides WHERE code = ?`, code);
+    return r ? mapRide(r) : null;
+  },
 
-      CREATE TABLE IF NOT EXISTS payments (
-        id TEXT PRIMARY KEY,
-        ride_id TEXT,
-        status TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        created_at TEXT NOT NULL,
-        updated_at TEXT NOT NULL,
-        FOREIGN KEY (ride_id) REFERENCES rides(id) ON DELETE SET NULL
-      );
+  async updateRideStatus(id: string, status: string) {
+    const updatedAt = now();
+    run(`UPDATE rides SET status = ?, updated_at = ? WHERE id = ?`, status, updatedAt, id);
+    return this.getRideById(id);
+  },
 
-      CREATE TABLE IF NOT EXISTS audit_events (
-        id TEXT PRIMARY KEY,
-        entity_type TEXT,
-        entity_id TEXT,
-        event_type TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS message_events (
-        id TEXT PRIMARY KEY,
-        event_type TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS notification_attempts (
-        id TEXT PRIMARY KEY,
-        status TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-      );
-
-      CREATE TABLE IF NOT EXISTS recovery_events (
-        id TEXT PRIMARY KEY,
-        status TEXT NOT NULL,
-        payload_json TEXT NOT NULL,
-        timestamp TEXT NOT NULL
-      );
-
-      CREATE INDEX IF NOT EXISTS idx_rides_status ON rides(status);
-      CREATE INDEX IF NOT EXISTS idx_rides_ride_code ON rides(ride_code);
-      CREATE INDEX IF NOT EXISTS idx_payments_status ON payments(status);
-      CREATE INDEX IF NOT EXISTS idx_payments_ride_id ON payments(ride_id);
-      CREATE INDEX IF NOT EXISTS idx_audit_events_timestamp ON audit_events(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_audit_events_entity_type ON audit_events(entity_type);
-      CREATE INDEX IF NOT EXISTS idx_audit_events_entity_id ON audit_events(entity_id);
-      CREATE INDEX IF NOT EXISTS idx_message_events_timestamp ON message_events(timestamp);
-      CREATE INDEX IF NOT EXISTS idx_notification_attempts_status ON notification_attempts(status);
-      CREATE INDEX IF NOT EXISTS idx_recovery_events_status ON recovery_events(status);
-      CREATE INDEX IF NOT EXISTS idx_recovery_events_timestamp ON recovery_events(timestamp);
-    `);
-
-    return db;
-  } catch (error) {
-    throw sanitizePersistenceError(error);
+  async assignDriver(id: string, driverId: string, driverName = '') {
+    const updatedAt = now();
+    run(
+      `UPDATE rides SET assigned_driver_id = ?, assigned_driver_name = ?, status = ?, updated_at = ? WHERE id = ?`,
+      driverId,
+      driverName,
+      'assigned',
+      updatedAt,
+      id
+    );
+    return this.getRideById(id);
   }
 };
 
-export const sqliteDb = initializeSqlite();
-export const sqliteDbPath = DB_PATH;
+export const paymentRepository = {
+  async createPayment(payment: any) {
+    const createdAt = payment.createdAt ?? now();
+    const updatedAt = payment.updatedAt ?? createdAt;
+    run(
+      `INSERT OR REPLACE INTO payments
+      (id, ride_id, amount_minor, amount, currency, status, invoice_reference, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      payment.id,
+      payment.rideId,
+      payment.amountMinor ?? payment.amount ?? 0,
+      payment.amount ?? payment.amountMinor ?? 0,
+      payment.currency ?? 'EUR',
+      payment.status ?? 'pending',
+      payment.invoiceReference ?? null,
+      createdAt,
+      updatedAt
+    );
+    return { ...payment, createdAt, updatedAt };
+  },
+
+  async listPayments() {
+    return rows(`SELECT * FROM payments`).map(mapPayment);
+  },
+
+  async getPaymentById(id: string) {
+    const r = row(`SELECT * FROM payments WHERE id = ?`, id);
+    return r ? mapPayment(r) : null;
+  },
+
+  async updatePaymentStatus(id: string, status: string) {
+    const updatedAt = now();
+    run(`UPDATE payments SET status = ?, updated_at = ? WHERE id = ?`, status, updatedAt, id);
+    return this.getPaymentById(id);
+  },
+
+  async attachInvoiceReference(id: string, invoiceReference: string) {
+    const updatedAt = now();
+    run(`UPDATE payments SET invoice_reference = ?, updated_at = ? WHERE id = ?`, invoiceReference, updatedAt, id);
+    return this.getPaymentById(id);
+  }
+};
+
+export const auditRepository = {
+  async recordAuditEvent(event: any) {
+    const createdAt = event.createdAt ?? event.at ?? now();
+    const id = event.id ?? randomUUID();
+    run(
+      `INSERT OR REPLACE INTO audit_events (id, entity_type, entity_id, action, actor_id, payload, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      id,
+      event.entityType ?? event.entity_type ?? 'system',
+      event.entityId ?? event.entity_id ?? 'unknown',
+      event.action ?? event.type ?? 'event',
+      event.actorId ?? event.actor_id ?? null,
+      json(event.payload ?? event.data ?? {}),
+      createdAt
+    );
+    return { ...event, id, createdAt };
+  },
+
+  async listAuditEvents() {
+    return rows(`SELECT * FROM audit_events ORDER BY created_at DESC`).map(mapAudit);
+  }
+};
+
+export const messageRepository = {
+  async recordMessageEvent(event: any) {
+    const id = event.id ?? randomUUID();
+    const createdAt = event.createdAt ?? event.at ?? now();
+    run(
+      `INSERT OR REPLACE INTO message_events (id, ride_id, channel, direction, content, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      id,
+      event.rideId ?? event.ride_id ?? event.bookingId ?? '',
+      event.channel ?? 'system',
+      event.direction ?? 'outbound',
+      event.content ?? event.body ?? '',
+      event.status ?? 'created',
+      createdAt
+    );
+    return { ...event, id, createdAt };
+  },
+
+  async listMessageEvents() {
+    return rows(`SELECT * FROM message_events ORDER BY created_at DESC`).map(mapMessage);
+  }
+};
+
+export const notificationRepository = {
+  async recordNotificationAttempt(attempt: any) {
+    const id = attempt.id ?? randomUUID();
+    const createdAt = attempt.createdAt ?? now();
+    const updatedAt = attempt.updatedAt ?? createdAt;
+    run(
+      `INSERT OR REPLACE INTO notification_attempts
+      (id, notification_type, recipient, channel, status, error_message, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+      id,
+      attempt.notificationType ?? attempt.type ?? 'notification',
+      attempt.recipient ?? attempt.recipientId ?? '',
+      attempt.channel ?? 'system',
+      attempt.status ?? 'queued',
+      attempt.errorMessage ?? null,
+      createdAt,
+      updatedAt
+    );
+    return { ...attempt, id, createdAt, updatedAt };
+  },
+
+  async updateNotificationStatus(id: string, status: string, errorMessage?: string) {
+    const updatedAt = now();
+    run(
+      `UPDATE notification_attempts SET status = ?, error_message = ?, updated_at = ? WHERE id = ?`,
+      status,
+      errorMessage ?? null,
+      updatedAt,
+      id
+    );
+    const r = row(`SELECT * FROM notification_attempts WHERE id = ?`, id);
+    return r ? mapNotification(r) : null;
+  },
+
+  async listFailedNotifications() {
+    return rows(`SELECT * FROM notification_attempts WHERE status = ?`, 'failed').map(mapNotification);
+  }
+};
+
+export const recoveryRepository = {
+  async createRecoveryEvent(event: any) {
+    const id = event.id ?? randomUUID();
+    const createdAt = event.createdAt ?? now();
+    const updatedAt = event.updatedAt ?? createdAt;
+    run(
+      `INSERT OR REPLACE INTO recovery_events (id, incident_code, status, notes, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?)`,
+      id,
+      event.incidentCode ?? event.incident_code ?? 'incident',
+      event.status ?? 'open',
+      event.notes ?? null,
+      createdAt,
+      updatedAt
+    );
+    return { ...event, id, createdAt, updatedAt };
+  },
+
+  async listRecoveryEvents() {
+    return rows(`SELECT * FROM recovery_events ORDER BY created_at DESC`).map(mapRecovery);
+  },
+
+  async updateRecoveryStatus(id: string, status: string, notes?: string) {
+    const updatedAt = now();
+    run(`UPDATE recovery_events SET status = ?, notes = ?, updated_at = ? WHERE id = ?`, status, notes ?? null, updatedAt, id);
+    const r = row(`SELECT * FROM recovery_events WHERE id = ?`, id);
+    return r ? mapRecovery(r) : null;
+  }
+};
+
+export const persistenceRepositories = {
+  rides: rideRepository,
+  payments: paymentRepository,
+  audit: auditRepository,
+  messages: messageRepository,
+  notifications: notificationRepository,
+  recovery: recoveryRepository
+};
+
+export const sqliteRepositories = persistenceRepositories;
+
+export default persistenceRepositories;
