@@ -18,3 +18,10 @@ tmp
 .temp
 
 .DS_Store
+
+# Moni / API runtime diagnostics
+runtime/build/*.log
+moni-core/founder/live/last-api-build.log
+moni-core/founder/live/*-build.log
+api-build-report*.txt
+api-errors*.txt

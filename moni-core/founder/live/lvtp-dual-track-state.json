@@ -1,0 +1,23 @@
+{
+  "timestamp": "2026-06-03T18:59:47+02:00",
+  "track_a_platform": {
+    "status": "BLOCKED",
+    "target": "API Build Green",
+    "api_build_errors": 14,
+    "current_blocker": "apps/api/src/modules/persistence/sqlite.repositories.ts",
+    "next_action": "Persistence Contract Reconciliation"
+  },
+  "track_b_founder_awareness": {
+    "status": "ACTIVE",
+    "target": "Watcher to Dashboard to Notifications to MONI Edge",
+    "next_action": "Create awareness loop integration map"
+  },
+  "forbidden_until_api_green": [
+    "Dispatch Migration",
+    "Booking Migration",
+    "Tracking Migration",
+    "Driver Migration",
+    "Moni Verified Context Migration",
+    "Legacy Cleanup"
+  ]
+}

@@ -1,0 +1,14 @@
+{
+  "timestamp": "2026-06-03T18:59:50+02:00",
+  "status": "MAPPED",
+  "loop": [
+    "Watcher",
+    "Severity Model",
+    "Founder Notifications",
+    "Founder Dashboard",
+    "MONI Edge",
+    "Founder Awareness"
+  ],
+  "next_action": "Wire test event from watcher into dashboard and notification policy",
+  "success_condition": "Founder receives a classified actionable summary"
+}
