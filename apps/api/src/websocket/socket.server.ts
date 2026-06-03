@@ -15,43 +15,50 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
 
   const heartbeatInterval = setInterval(() => {
     const threshold = Date.now() - 45_000;
+
     for (const client of wss.clients) {
-      const lastBeat = clientHeartbeats.get(client) ?? 0;
+      const lastBeat = clientHeartbeats.get(client) ?? Date.now();
+
       if (lastBeat < threshold) {
         logger.warn('WebSocket stale client terminated', { staleMs: Date.now() - lastBeat });
         client.terminate();
         continue;
       }
+
       if (client.readyState === client.OPEN) {
         client.ping();
       }
     }
   }, 15_000);
 
-  const broadcast = (payload: Record<string, unknown>): void => {
-    const encoded = JSON.stringify(payload);
+  const broadcast = (event: string, payload: unknown): void => {
+    const message = JSON.stringify({
+      event,
+      payload,
+      emittedAt: new Date().toISOString(),
+    });
+
     for (const client of wss.clients) {
       if (client.readyState === client.OPEN) {
-        client.send(encoded);
+        client.send(message);
       }
     }
   };
 
-  eventBus.on(WS_EVENTS.BOOKING_UPDATED, (snapshot) => {
-    broadcast({ type: WS_EVENTS.BOOKING_UPDATED, payload: snapshot });
+  eventBus.on(WS_EVENTS.BOOKING_UPDATED, (payload) => {
+    broadcast(WS_EVENTS.BOOKING_UPDATED, payload);
   });
-
-  const broadcast = (event: string, payload: unknown) => {
-    const message = JSON.stringify({ event, payload, emittedAt: new Date().toISOString() });
-    wss.clients.forEach((client) => client.send(message));
-  };
-
-  eventBus.on(WS_EVENTS.BOOKING_UPDATED, (payload) => broadcast(WS_EVENTS.BOOKING_UPDATED, payload));
 
   wss.on('connection', (socket) => {
     logger.info('WebSocket client connected');
-    socket.send(JSON.stringify({ event: WS_EVENTS.CONNECTION, payload: { ok: true } }));
+
     clientHeartbeats.set(socket, Date.now());
+
+    socket.send(JSON.stringify({
+      event: WS_EVENTS.CONNECTION,
+      payload: { ok: true },
+    }));
+
     socket.send(JSON.stringify({
       type: 'connection.ack',
       message: 'WebSocket realtime channel ready',
@@ -65,10 +72,12 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
       try {
         const payload = JSON.parse(raw) as { type?: string; bookingId?: string };
         clientHeartbeats.set(socket, Date.now());
+
         if (payload.type === 'ping') {
           socket.send(JSON.stringify({ type: 'pong', serverTime: new Date().toISOString() }));
           return;
         }
+
         if (payload.type === 'booking.lifecycle.recover' && payload.bookingId) {
           const snapshot = bookingLifecycleRealtimeService.getSnapshot(payload.bookingId);
           socket.send(JSON.stringify({
@@ -82,22 +91,26 @@ export const bootstrapHttpAndWebSocketServer = (app: Express) => {
     });
 
     realtimeOrchestratorService.registerClient(socket);
+
     socket.on('pong', () => clientHeartbeats.set(socket, Date.now()));
     socket.on('close', () => logger.info('WebSocket client disconnected'));
   });
 
   const start = (): void => {
-    server.listen(env.port, () => logger.info(`API + WebSocket server listening on port ${env.port}`));
-  };
-
-  const stop = async (): Promise<void> => {
-    await new Promise<void>((resolve) => {
-      wss.close(() => {
-        clearInterval(heartbeatInterval);
-        server.close(() => resolve());
-      });
+    server.listen(env.port, () => {
+      logger.info(`API + WebSocket server listening on port ${env.port}`);
     });
   };
 
-  return { server, wss, start, stop };
+  const stop = async (): Promise<void> => {
+    clearInterval(heartbeatInterval);
+    realtimeOrchestratorService.shutdown?.();
+    wss.close();
+
+    await new Promise<void>((resolve) => {
+      server.close(() => resolve());
+    });
+  };
+
+  return { start, stop };
 };
