@@ -1,0 +1,58 @@
+{
+  "timestamp": "2026-06-03T19:02:37+02:00",
+  "status": "BLOCKED",
+  "api_build_errors": 14,
+  "recommended_order": [
+    {
+      "priority": "P1",
+      "domain": "Booking contract alignment",
+      "files": [
+        "apps/api/src/bookings/booking.service.ts",
+        "apps/api/src/modules/bookings/service.ts",
+        "apps/api/src/persistence/repository-contracts.ts"
+      ],
+      "errors": [
+        "bookingCode not in BookingRecord",
+        "BookingLifecycle missing",
+        "driverId not in BookingRecord",
+        "BookingRepository.getById missing",
+        "RideStatus missing"
+      ]
+    },
+    {
+      "priority": "P2",
+      "domain": "Payment architecture record alignment",
+      "files": [
+        "apps/api/src/modules/payments/payment.routes.ts",
+        "apps/api/src/modules/payments/services/payment-architecture.service.ts"
+      ],
+      "errors": [
+        "sessionId possibly undefined",
+        "TransactionHistoryEntry missing customerId",
+        "RefundRecord missing requestedBy",
+        "PaymentProvider missing"
+      ]
+    },
+    {
+      "priority": "P3",
+      "domain": "Dispatch import alignment",
+      "files": [
+        "apps/api/src/dispatch/dispatch.service.ts"
+      ],
+      "errors": [
+        "bookingsService export mismatch"
+      ]
+    },
+    {
+      "priority": "P4",
+      "domain": "Websocket lifecycle alignment",
+      "files": [
+        "apps/api/src/websocket/socket.server.ts"
+      ],
+      "errors": [
+        "shutdown missing from booking service object"
+      ]
+    }
+  ],
+  "decision": "Do not start migrations. Fix remaining API build errors in order."
+}
