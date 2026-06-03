@@ -6,5 +6,15 @@
     "result": "synced",
     "currentBottleneck": "Legacy Booking Runtime",
     "nextDecision": "repair_vs_retire"
+  },
+  {
+    "timestamp": "2026-06-03T21:14:07.451Z",
+    "forge": "FORGE_V1_SAFE_EXECUTOR",
+    "status": "NOOP_ALREADY_APPLIED",
+    "repairId": "P0_BOOKING_REPOSITORY_GETBYID",
+    "target": "apps/api/src/modules/bookings/repository.ts",
+    "errorsBefore": 8,
+    "errorsAfter": 8,
+    "rollbackAvailable": false
   }
 ]

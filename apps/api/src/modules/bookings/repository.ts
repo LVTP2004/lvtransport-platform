@@ -3,6 +3,7 @@ import { dirname, resolve } from 'node:path';
 import type { BookingRecord } from './dto.js';
 
 export interface BookingRepository {
+  getById(id: string): Promise<BookingRecord | null>;
   create(record: BookingRecord): Promise<BookingRecord>;
   update(record: BookingRecord): Promise<BookingRecord>;
   findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
@@ -42,6 +43,11 @@ class FileBookingRepository implements BookingRepository {
     const temp = `${this.storageFile}.tmp`;
     writeFileSync(temp, JSON.stringify(store, null, 2), 'utf-8');
     renameSync(temp, this.storageFile);
+  }
+
+  async getById(id: string): Promise<BookingRecord | null> {
+    const store = this.readStore();
+    return store.bookings.find((booking) => booking.id === id) ?? null;
   }
 
   async create(record: BookingRecord): Promise<BookingRecord> {
