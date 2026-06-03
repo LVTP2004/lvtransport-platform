@@ -1,0 +1,27 @@
+{
+  "version": "MONI_REPAIR_POLICY_V1",
+  "status": "ACTIVE",
+  "memories": {
+    "founder": "moni-core/founder/live/moni-repair-state.json",
+    "repair": "moni-core/repair/repair-history.json",
+    "runtime": "runtime/build/repair-log.json"
+  },
+  "autonomy": {
+    "level_0": "observe_only",
+    "level_1": "safe_repair",
+    "level_2": "controlled_refactor_requires_founder",
+    "level_3": "structural_change_requires_founder"
+  },
+  "safe_repair": {
+    "min_confidence": 95,
+    "max_files": 1,
+    "requires_backup": true,
+    "requires_build_validation": true,
+    "approval_required": false
+  },
+  "retire_candidate": {
+    "allowed_to_detect": true,
+    "allowed_to_delete": false,
+    "approval_required": true
+  }
+}

@@ -1,166 +1,18 @@
 {
-  "timestamp": "2026-06-03T18:06:21.264Z",
+  "timestamp": "2026-06-03T21:24:17+02:00",
+  "policy": "MONI_REPAIR_POLICY_V1",
   "status": "BLOCKED",
-  "buildErrors": 10,
+  "buildErrors": 8,
+  "currentBottleneck": "Legacy Booking Runtime",
+  "nextDecision": "repair_vs_retire",
   "autonomy": {
-    "current": 15,
-    "recommended": 15,
-    "reason": "API build is still blocked; Moni may propose but should not freely execute."
+    "current": 25,
+    "recommended": 25,
+    "reason": "Safe auto patch succeeded; legacy retirement still requires Founder approval."
   },
-  "nextRepair": {
-    "priority": "P0",
-    "domain": "Booking Repository Contract",
-    "file": "src/modules/bookings/repository.ts",
-    "confidence": 98,
-    "approvalRequired": false,
-    "action": "Implement missing getById method in FileBookingRepository and align BookingRepository interface.",
-    "errors": [
-      {
-        "code": "TS2420",
-        "line": 20,
-        "column": 7,
-        "message": "Class 'FileBookingRepository' incorrectly implements interface 'BookingRepository'.",
-        "raw": "src/modules/bookings/repository.ts(20,7): error TS2420: Class 'FileBookingRepository' incorrectly implements interface 'BookingRepository'."
-      },
-      {
-        "code": "TS2741",
-        "line": 96,
-        "column": 14,
-        "message": "Property 'getById' is missing in type 'FileBookingRepository' but required in type 'BookingRepository'.",
-        "raw": "src/modules/bookings/repository.ts(96,14): error TS2741: Property 'getById' is missing in type 'FileBookingRepository' but required in type 'BookingRepository'."
-      }
-    ]
-  },
-  "queue": [
-    {
-      "priority": "P0",
-      "domain": "Booking Repository Contract",
-      "file": "src/modules/bookings/repository.ts",
-      "confidence": 98,
-      "approvalRequired": false,
-      "action": "Implement missing getById method in FileBookingRepository and align BookingRepository interface.",
-      "errors": [
-        {
-          "code": "TS2420",
-          "line": 20,
-          "column": 7,
-          "message": "Class 'FileBookingRepository' incorrectly implements interface 'BookingRepository'.",
-          "raw": "src/modules/bookings/repository.ts(20,7): error TS2420: Class 'FileBookingRepository' incorrectly implements interface 'BookingRepository'."
-        },
-        {
-          "code": "TS2741",
-          "line": 96,
-          "column": 14,
-          "message": "Property 'getById' is missing in type 'FileBookingRepository' but required in type 'BookingRepository'.",
-          "raw": "src/modules/bookings/repository.ts(96,14): error TS2741: Property 'getById' is missing in type 'FileBookingRepository' but required in type 'BookingRepository'."
-        }
-      ]
-    },
-    {
-      "priority": "P1",
-      "domain": "Booking Runtime Contract",
-      "file": "src/bookings/booking.service.ts",
-      "confidence": 82,
-      "approvalRequired": true,
-      "action": "Align legacy BookingService record shape with active BookingRecord contract without deleting runtime booking layer.",
-      "errors": [
-        {
-          "code": "TS2353",
-          "line": 36,
-          "column": 7,
-          "message": "Object literal may only specify known properties, and 'customerId' does not exist in type 'LegacyBookingRecord'.",
-          "raw": "src/bookings/booking.service.ts(36,7): error TS2353: Object literal may only specify known properties, and 'customerId' does not exist in type 'LegacyBookingRecord'."
-        }
-      ]
-    },
-    {
-      "priority": "P2",
-      "domain": "Dispatch Import Alignment",
-      "file": "src/dispatch/dispatch.service.ts",
-      "confidence": 90,
-      "approvalRequired": true,
-      "action": "Replace bookingsService import with the actual exported booking engine or booking flow service.",
-      "errors": [
-        {
-          "code": "TS2305",
-          "line": 2,
-          "column": 10,
-          "message": "Module '\"../bookings/bookings.service.js\"' has no exported member 'bookingsService'.",
-          "raw": "src/dispatch/dispatch.service.ts(2,10): error TS2305: Module '\"../bookings/bookings.service.js\"' has no exported member 'bookingsService'."
-        }
-      ]
-    },
-    {
-      "priority": "P3",
-      "domain": "Payment Architecture Contract",
-      "file": "src/modules/payments/payment.routes.ts",
-      "confidence": 88,
-      "approvalRequired": true,
-      "action": "Add required customerId/requestedBy fields and restore/replace PaymentProvider type.",
-      "errors": [
-        {
-          "code": "TS2345",
-          "line": 14,
-          "column": 96,
-          "message": "Argument of type 'string | undefined' is not assignable to parameter of type 'string'.",
-          "raw": "src/modules/payments/payment.routes.ts(14,96): error TS2345: Argument of type 'string | undefined' is not assignable to parameter of type 'string'."
-        }
-      ]
-    },
-    {
-      "priority": "P3",
-      "domain": "Payment Architecture Contract",
-      "file": "src/modules/payments/services/payment-architecture.service.ts",
-      "confidence": 88,
-      "approvalRequired": true,
-      "action": "Add required customerId/requestedBy fields and restore/replace PaymentProvider type.",
-      "errors": [
-        {
-          "code": "TS2345",
-          "line": 44,
-          "column": 29,
-          "message": "Argument of type '{ id: string; paymentSessionId: string; bookingId: string; type: \"authorization\"; status: PaymentSessionStatus.CREATED; amount: MoneyAmount; createdAt: string; }' is not assignable to parameter of type 'TransactionHistoryEntry'.",
-          "raw": "src/modules/payments/services/payment-architecture.service.ts(44,29): error TS2345: Argument of type '{ id: string; paymentSessionId: string; bookingId: string; type: \"authorization\"; status: PaymentSessionStatus.CREATED; amount: MoneyAmount; createdAt: string; }' is not assignable to parameter of type 'TransactionHistoryEntry'."
-        },
-        {
-          "code": "TS2345",
-          "line": 72,
-          "column": 29,
-          "message": "Argument of type '{ id: string; paymentSessionId: string; bookingId: string; type: \"capture\"; status: PaymentSessionStatus.CAPTURED; amount: MoneyAmount; createdAt: string; }' is not assignable to parameter of type 'TransactionHistoryEntry'.",
-          "raw": "src/modules/payments/services/payment-architecture.service.ts(72,29): error TS2345: Argument of type '{ id: string; paymentSessionId: string; bookingId: string; type: \"capture\"; status: PaymentSessionStatus.CAPTURED; amount: MoneyAmount; createdAt: string; }' is not assignable to parameter of type 'TransactionHistoryEntry'."
-        },
-        {
-          "code": "TS2741",
-          "line": 96,
-          "column": 11,
-          "message": "Property 'requestedBy' is missing in type '{ id: string; transactionId: string; reason: \"duplicate\" | \"customer_request\" | \"fraud_suspected\" | \"service_issue\"; state: RefundState.REQUESTED; amount: { currency: string; valueMinor: number; }; }' but required in type 'RefundRecord'.",
-          "raw": "src/modules/payments/services/payment-architecture.service.ts(96,11): error TS2741: Property 'requestedBy' is missing in type '{ id: string; transactionId: string; reason: \"duplicate\" | \"customer_request\" | \"fraud_suspected\" | \"service_issue\"; state: RefundState.REQUESTED; amount: { currency: string; valueMinor: number; }; }' but required in type 'RefundRecord'."
-        },
-        {
-          "code": "TS2304",
-          "line": 121,
-          "column": 21,
-          "message": "Cannot find name 'PaymentProvider'.",
-          "raw": "src/modules/payments/services/payment-architecture.service.ts(121,21): error TS2304: Cannot find name 'PaymentProvider'."
-        }
-      ]
-    },
-    {
-      "priority": "P4",
-      "domain": "WebSocket Lifecycle Contract",
-      "file": "src/websocket/socket.server.ts",
-      "confidence": 86,
-      "approvalRequired": true,
-      "action": "Add or guard shutdown() call against booking service lifecycle object.",
-      "errors": [
-        {
-          "code": "TS2339",
-          "line": 107,
-          "column": 33,
-          "message": "Property 'shutdown' does not exist on type '{ initialize(): void; registerClient(socket: WebSocket): void; createBooking(input: { customerName?: string | undefined; pickup: string; destination: string; serviceType?: \"standard\" | ... 2 more ... | undefined; scheduledAt?: string | undefined; paymentStatus?: \"pending\" | ... 4 more ... | undefined; }): BookingRec...'.",
-          "raw": "src/websocket/socket.server.ts(107,33): error TS2339: Property 'shutdown' does not exist on type '{ initialize(): void; registerClient(socket: WebSocket): void; createBooking(input: { customerName?: string | undefined; pickup: string; destination: string; serviceType?: \"standard\" | ... 2 more ... | undefined; scheduledAt?: string | undefined; paymentStatus?: \"pending\" | ... 4 more ... | undefined; }): BookingRec...'."
-        }
-      ]
-    }
+  "memoriesSynced": [
+    "founder",
+    "repair",
+    "runtime"
   ]
 }

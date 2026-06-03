@@ -1,0 +1,10 @@
+[
+  {
+    "timestamp": "2026-06-03T19:24:17.974787Z",
+    "policy": "MONI_REPAIR_POLICY_V1",
+    "event": "three_memory_sync",
+    "result": "synced",
+    "currentBottleneck": "Legacy Booking Runtime",
+    "nextDecision": "repair_vs_retire"
+  }
+]
