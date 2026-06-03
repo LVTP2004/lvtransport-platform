@@ -1,0 +1,22 @@
+{
+  "timestamp": "2026-06-03T22:14:57.310Z",
+  "auditor": "AUDITOR_V1",
+  "verdict": "REJECT_ROLLBACK_RECOMMENDED",
+  "errorsBefore": 8,
+  "errorsAfter": 10,
+  "resolvedCount": 1,
+  "introducedCount": 3,
+  "forgeStatus": "REJECTED_ROLLBACK_EXECUTED",
+  "applied": [
+    "TS2305_DISPATCH_BOOKINGS_SERVICE_IMPORT"
+  ],
+  "resolved": [
+    "src/dispatch/dispatch.service.ts(2,10): error TS2305: Module '\"../bookings/bookings.service.js\"' has no exported member 'bookingsService'."
+  ],
+  "introduced": [
+    "src/dispatch/dispatch.service.ts(7,21): error TS2339: Property 'publishBookingState' does not exist on type '{ createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord>; listBookings(): Promise<BookingRecord[]>; getAirportIntelligence(bookingId: string): Promise<...>; updateBookingLifecycle(bookingId: string, nextState: \"pending\" | ... 7 more ... | \"failed\", actor: \"customer\" | ... 2 more ... |...'.",
+    "src/dispatch/dispatch.service.ts(21,21): error TS2339: Property 'publishBookingState' does not exist on type '{ createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord>; listBookings(): Promise<BookingRecord[]>; getAirportIntelligence(bookingId: string): Promise<...>; updateBookingLifecycle(bookingId: string, nextState: \"pending\" | ... 7 more ... | \"failed\", actor: \"customer\" | ... 2 more ... |...'.",
+    "src/dispatch/dispatch.service.ts(34,21): error TS2339: Property 'publishBookingState' does not exist on type '{ createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord>; listBookings(): Promise<BookingRecord[]>; getAirportIntelligence(bookingId: string): Promise<...>; updateBookingLifecycle(bookingId: string, nextState: \"pending\" | ... 7 more ... | \"failed\", actor: \"customer\" | ... 2 more ... |...'."
+  ],
+  "nextRecommendation": "Do not proceed until rollback or manual review."
+}
