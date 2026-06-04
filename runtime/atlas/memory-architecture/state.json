@@ -1,0 +1,15 @@
+{
+  "system": "ATLAS_MEMORY_ARCHITECTURE_V1",
+  "status": "ACTIVE",
+  "createdAt": "2026-06-04T12:59:48+02:00",
+  "domains": [
+    "LAW_MEMORY",
+    "PROTOCOL_MEMORY",
+    "CASE_MEMORY",
+    "LESSON_MEMORY",
+    "ARCHAEOLOGY_MEMORY",
+    "DECISION_MEMORY"
+  ],
+  "nextOfficialAction": "Atlas canonical mapping: Booking, Dispatch, Payments, Websocket",
+  "expansionFrozen": true
+}
