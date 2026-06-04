@@ -1,0 +1,6 @@
+100.71.225.29   leonardovargas-aspire-e1-470p  leovargashinojosa@  linux    -                                                        
+100.67.50.57    beam-pro                       leovargashinojosa@  android  -                                                        
+100.96.209.5    f109-s                         leovargashinojosa@  android  active; direct 217.181.103.50:37702, tx 159608 rx 41696  
+100.113.204.28  tab-a9-van-leo                 leovargashinojosa@  android  idle; offline, last seen 4m ago, tx 209592 rx 161080     
+100.102.11.128  viviana-p6812                  leovargashinojosa@  linux    -                                                        
+100.68.11.73    vps-96d17c46                   leovargashinojosa@  linux    -                                                        

@@ -1,0 +1,61 @@
+{
+  "timestamp": "2026-06-04T20:19:08.321Z",
+  "totalNodes": 6,
+  "onlineNodes": 6,
+  "nodes": [
+    {
+      "node": "moni-core-canada-vps",
+      "label": "MONI Core Canada VPS",
+      "role": "core",
+      "location": "canada",
+      "environment": "production",
+      "status": "online",
+      "criticality": "very-high"
+    },
+    {
+      "node": "aspire",
+      "label": "Aspire",
+      "role": "development-edge",
+      "location": "home",
+      "environment": "development",
+      "status": "online",
+      "criticality": "medium"
+    },
+    {
+      "node": "viviana",
+      "label": "Viviana",
+      "role": "factory",
+      "location": "home",
+      "environment": "factory",
+      "status": "online",
+      "criticality": "medium"
+    },
+    {
+      "node": "beam",
+      "label": "Beam",
+      "role": "edge",
+      "location": "home",
+      "environment": "edge",
+      "status": "online",
+      "criticality": "medium"
+    },
+    {
+      "node": "fossibot-edge",
+      "label": "Fossibot Edge",
+      "role": "edge-alerts",
+      "location": "home",
+      "environment": "edge",
+      "status": "online",
+      "criticality": "medium"
+    },
+    {
+      "node": "galaxy",
+      "label": "Galaxy",
+      "role": "mobile",
+      "location": "home",
+      "environment": "mobile",
+      "status": "online",
+      "criticality": "low"
+    }
+  ]
+}
