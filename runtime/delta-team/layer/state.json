@@ -1,0 +1,27 @@
+{
+  "system": "DELTA_TEAM_LAYER_V1",
+  "status": "ACTIVE",
+  "createdAt": "2026-06-04T12:47:16+02:00",
+  "mode": "DELIBERATION_LAYER",
+  "executionAllowed": false,
+  "finalAuthority": "Founder OS",
+  "participants": [
+    "Atlas",
+    "MONI",
+    "Oracle",
+    "Nexus",
+    "Forge",
+    "Auditor",
+    "Founder OS"
+  ],
+  "activationTriggers": [
+    "HIGH_RISK",
+    "CRITICAL_FAILURE",
+    "UNKNOWN_PATTERN",
+    "FAILED_AUTONOMOUS_REPAIR",
+    "REPEATED_INCIDENT",
+    "MISSING_PROTOCOL",
+    "DEPENDENCY_COMPATIBILITY_FAILURE"
+  ],
+  "activeCase": "DELTA_CASE_0001_BOOKING_SERVICE_COMPATIBILITY_FAILURE"
+}
