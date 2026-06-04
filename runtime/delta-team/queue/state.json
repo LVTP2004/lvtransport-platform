@@ -1,0 +1,9 @@
+{
+  "system": "DELTA_QUEUE_PROTOCOL_V1",
+  "status": "ACTIVE",
+  "createdAt": "2026-06-04T12:51:49+02:00",
+  "executionAllowed": false,
+  "purpose": "Prevent uncontrolled protocol growth and route unknown problems through Delta review.",
+  "folders": ["open", "review", "closed", "rejected"],
+  "law": "Unknown problems enter Delta Queue before new protocols are created."
+}

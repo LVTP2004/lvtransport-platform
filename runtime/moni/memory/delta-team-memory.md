@@ -24,3 +24,30 @@ DELTA_CASE_0001_BOOKING_SERVICE_COMPATIBILITY_FAILURE
 
 State:
 runtime/delta-team/layer/state.json
+
+---
+
+# DELTA QUEUE PROTOCOL V1
+
+Recorded: 2026-06-04T12:51:49+02:00
+
+Decision:
+Delta Team now requires a queue before creating new protocols.
+
+Purpose:
+Prevent uncontrolled protocol growth.
+
+Law:
+Unknown problems enter Delta Queue before new protocols are created.
+
+Folders:
+- open
+- review
+- closed
+- rejected
+
+Initial queue item:
+QUEUE_ITEM_0001_PROTOCOL_GROWTH_CONTROL
+
+State:
+runtime/delta-team/queue/state.json
