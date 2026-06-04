@@ -1,0 +1,133 @@
+apps/api/src/bookings/booking.service.ts:17:type LegacyBookingRecord = BookingRecord & {
+apps/api/src/bookings/booking.service.ts:33:    const booking: LegacyBookingRecord = {
+apps/api/src/bookings/booking.service.ts:3:import type { BookingLifecycleStatus, BookingRecord, BookingTimelineEntry } from '@lvtransport/realtime';
+apps/api/src/bookings/booking.service.ts:9:const bookingStore = new Map<string, LegacyBookingRecord>();
+apps/api/src/bookings/booking.service.ts.bak.20260603-191723:25:    const booking: BookingRecord = {
+apps/api/src/bookings/booking.service.ts.bak.20260603-191723:3:import type { BookingLifecycleStatus, BookingRecord } from '@lvtransport/realtime';
+apps/api/src/bookings/booking.service.ts.bak.20260603-191723:9:const bookingStore = new Map<string, BookingRecord>();
+apps/api/src/bookings/booking.service.ts.bak.p1-20260603-194925:25:    const booking: BookingRecord = {
+apps/api/src/bookings/booking.service.ts.bak.p1-20260603-194925:3:import type { BookingLifecycleStatus, BookingRecord } from '@lvtransport/realtime';
+apps/api/src/bookings/booking.service.ts.bak.p1-20260603-194925:9:const bookingStore = new Map<string, BookingRecord>();
+apps/api/src/bookings/bookings.service.ts:3:import type { BookingRecord, BookingTimelineEntry } from '@lvtransport/realtime';
+apps/api/src/bookings/bookings.service.ts:5:export const emitBookingEvent = (booking: BookingRecord, timelineEntry: BookingTimelineEntry): void => {
+apps/api/src/dispatch/dispatch.service.ts:21:    bookingsService.publishBookingState({
+apps/api/src/dispatch/dispatch.service.ts:34:    bookingsService.publishBookingState({
+apps/api/src/dispatch/dispatch.service.ts:7:    bookingsService.publishBookingState({
+apps/api/src/dispatch/dispatch.service.ts.bak.forge-v12-2026-06-03T22-01-28-734Z:21:    bookingsService.publishBookingState({
+apps/api/src/dispatch/dispatch.service.ts.bak.forge-v12-2026-06-03T22-01-28-734Z:34:    bookingsService.publishBookingState({
+apps/api/src/dispatch/dispatch.service.ts.bak.forge-v12-2026-06-03T22-01-28-734Z:7:    bookingsService.publishBookingState({
+apps/api/src/modules/airport-intelligence/service.ts:2:import type { AirportCoordinationInput, AirportIntelligenceState, BookingRecord, FlightOperationalStatus, LVMessage } from '../bookings/dto.js';
+apps/api/src/modules/airport-intelligence/service.ts:30:  applyFlightSignal(booking: BookingRecord, signal: { delayMin?: number; terminal?: string; cancelled?: boolean; source?: string }): LVMessage[] {
+apps/api/src/modules/bookings/dto.ts:31:export interface CreateBookingDto {
+apps/api/src/modules/bookings/dto.ts:82:export interface BookingRecord extends CreateBookingDto {
+apps/api/src/modules/bookings/moni-assistant.adapter.ts:14:  async createBookingFromAssistant(payload: MoniBookingCreatePayload, idempotencyKey: string): Promise<BookingRecord> {
+apps/api/src/modules/bookings/moni-assistant.adapter.ts:15:    const dto: CreateBookingDto = {
+apps/api/src/modules/bookings/moni-assistant.adapter.ts:2:import type { BookingRecord, CreateBookingDto } from './dto.js';
+apps/api/src/modules/bookings/repository.ts:10:  findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts:11:  list(): Promise<BookingRecord[]>;
+apps/api/src/modules/bookings/repository.ts:15:  bookings: BookingRecord[];
+apps/api/src/modules/bookings/repository.ts:3:import type { BookingRecord } from './dto.js';
+apps/api/src/modules/bookings/repository.ts:48:  async getById(id: string): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts:53:  async create(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts:6:  getById(id: string): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts:70:  async update(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts:79:  async findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts:7:  create(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts:86:  async list(): Promise<BookingRecord[]> {
+apps/api/src/modules/bookings/repository.ts:8:  update(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts:91:  async findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts:9:  findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:10:  list(): Promise<BookingRecord[]>;
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:14:  bookings: BookingRecord[];
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:3:import type { BookingRecord } from './dto.js';
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:47:  async create(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:64:  async update(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:6:  create(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:73:  async findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:7:  update(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:80:  async list(): Promise<BookingRecord[]> {
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:85:  async findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:8:  findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925:9:  findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:10:  findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:11:  list(): Promise<BookingRecord[]>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:15:  bookings: BookingRecord[];
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:3:import type { BookingRecord } from './dto.js';
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:48:  async create(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:65:  async update(record: BookingRecord): Promise<BookingRecord> {
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:6:  getById(id: string): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:74:  async findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:7:  create(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:81:  async list(): Promise<BookingRecord[]> {
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:86:  async findRecentDuplicateFingerprint(fingerprint: string, maxAgeMs: number): Promise<BookingRecord | null> {
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:8:  update(record: BookingRecord): Promise<BookingRecord>;
+apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300:9:  findByIdempotencyKey(idempotencyKey: string): Promise<BookingRecord | null>;
+apps/api/src/modules/bookings/service.ts:106:    airportIntel?: BookingRecord['airportIntel'];
+apps/api/src/modules/bookings/service.ts:107:    airportIntelligence?: BookingRecord['airportIntelligence'];
+apps/api/src/modules/bookings/service.ts:108:    generatedLVMessages: BookingRecord['lvMessenger']['messages'];
+apps/api/src/modules/bookings/service.ts:132:  ): Promise<BookingRecord> {
+apps/api/src/modules/bookings/service.ts:23:  async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
+apps/api/src/modules/bookings/service.ts:24:    const hydrateRealtimeLifecycle = (booking: BookingRecord) => {
+apps/api/src/modules/bookings/service.ts:2:import type { BookingRecord, CreateBookingDto } from './dto.js';
+apps/api/src/modules/bookings/service.ts:53:    const booking: BookingRecord = {
+apps/api/src/modules/bookings/service.ts:99:  async listBookings(): Promise<BookingRecord[]> {
+apps/api/src/modules/bookings/validation.ts:1:import type { CreateBookingDto, ServiceType } from './dto.js';
+apps/api/src/modules/bookings/validation.ts:5:export const validateCreateBookingPayload = (payload: unknown): CreateBookingDto => {
+apps/api/src/modules/bookings/validation.ts:7:  const candidate = payload as Partial<CreateBookingDto> & { scheduledAt?: string };
+apps/api/src/modules/lv-messenger/service.ts:21:  append(booking: BookingRecord, message: LVMessage): void {
+apps/api/src/modules/lv-messenger/service.ts:26:  appendBatch(booking: BookingRecord, messages: LVMessage[]): void {
+apps/api/src/modules/lv-messenger/service.ts:2:import type { BookingRecord, LVMessage } from '../bookings/dto.js';
+apps/api/src/services/booking.service.ts:30:export const bookingService = {
+apps/api/src/services/operational-analytics.service.ts:110:  rebuildFromSnapshots(bookings: BookingRecord[], drivers: DriverRealtimeState[]): void {
+apps/api/src/services/operational-analytics.service.ts:1:import type { BookingLifecycleStatus, BookingRecord, DriverRealtimeState } from './realtime-orchestrator.service.js';
+apps/api/src/services/operational-analytics.service.ts:200:  private deriveFare(_booking: BookingRecord): number {
+apps/api/src/services/operational-analytics.service.ts:70:  trackBookingCreated(booking: BookingRecord): void {
+apps/api/src/services/operational-analytics.service.ts:83:  trackBookingTransition(booking: BookingRecord, previousStatus?: BookingLifecycleStatus): void {
+apps/api/src/services/realtime-orchestrator.service.ts:127:const bookings = new Map<string, BookingRecord>();
+apps/api/src/services/realtime-orchestrator.service.ts:159:  booking: BookingRecord,
+apps/api/src/services/realtime-orchestrator.service.ts:185:const reportLifecycleAnomaly = (booking: BookingRecord, from: BookingLifecycleStatus, to: BookingLifecycleStatus) => {
+apps/api/src/services/realtime-orchestrator.service.ts:239:const reconcileDriverLifecycleState = (booking: BookingRecord) => {
+apps/api/src/services/realtime-orchestrator.service.ts:261:const transitionBySystemRule = (booking: BookingRecord, nextStatus: BookingLifecycleStatus, note: string) => {
+apps/api/src/services/realtime-orchestrator.service.ts:276:const snapshotByDeterministicWindow = (windowStartAt: string, windowEndAt: string, limit = MAX_SYNCHRONIZATION_BOOKINGS): BookingRecord[] => {
+apps/api/src/services/realtime-orchestrator.service.ts:336:  createBooking(input: { customerName?: string; pickup: string; destination: string; serviceType?: 'standard' | 'airport' | 'vip'; scheduledAt?: string; paymentStatus?: 'pending' | 'authorized' | 'paid' | 'failed' | 'cancelled' }): BookingRecord {
+apps/api/src/services/realtime-orchestrator.service.ts:339:    const booking: BookingRecord = {
+apps/api/src/services/realtime-orchestrator.service.ts:350:  upsertExternalBooking(input: { id: string; referenceCode: string; pickup: string; destination: string; serviceType: 'standard' | 'airport' | 'vip'; scheduledAt: string; customerName?: string; status?: BookingLifecycleStatus }): BookingRecord {
+apps/api/src/services/realtime-orchestrator.service.ts:364:    const booking: BookingRecord = {
+apps/api/src/services/realtime-orchestrator.service.ts:38:export type BookingRecord = {
+apps/api/src/services/realtime-orchestrator.service.ts:396:  assignDriver(params: { bookingId: string; driverId: string; driverName: string; idempotencyKey?: string }): BookingRecord {
+apps/api/src/services/realtime-orchestrator.service.ts:444:  driverRespondToAssignment(params: { bookingId: string; driverId: string; action: 'accept' | 'reject'; expectedVersion?: number; idempotencyKey?: string; eventAt?: string }): BookingRecord {
+apps/api/src/services/realtime-orchestrator.service.ts:492:  transitionStatus(params: { bookingId: string; status: string; actor: string; expectedVersion?: number; idempotencyKey?: string; eventAt?: string }): BookingRecord {
+apps/api/src/services/realtime-orchestrator.service.ts:614:  restoreDriverAssignments(driverId: string): { recoveredBookings: BookingRecord[]; driverState: DriverRealtimeState | null } {
+apps/api/src/services/realtime-orchestrator.service.ts:623:  refreshControlledSnapshot(params?: { nowAt?: string; windowMs?: number; limit?: number }): { windowStartAt: string; windowEndAt: string; bookings: BookingRecord[]; audit: SynchronizationAuditRecord } {
+apps/api/src/services/realtime-orchestrator.service.ts:644:  synchronizeDeterministically(params: { windowStartAt: string; windowEndAt: string; limit?: number }): { bookings: BookingRecord[]; audit: SynchronizationAuditRecord } {
+apps/web/src/pages/home/HomeOriginal.tsx:12:type BookingRecord = {
+apps/web/src/pages/home/HomeOriginal.tsx:196:    const payload: BookingRecord = { ...form, name: identity.name, phone: identity.phone || form.phone, code, createdAt: new Date().toISOString(), status: 'submitted' };
+apps/web/src/pages/home/HomeOriginal.tsx:198:    const existing = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+apps/web/src/pages/home/HomeOriginal.tsx:238:    const records = JSON.parse(localStorage.getItem('lvtransport_bookings') ?? '[]') as BookingRecord[];
+packages/moni-assistent/src/ai-operations/ai-operations-architecture.ts:12:  booking?: BookingRecord;
+packages/moni-assistent/src/ai-operations/ai-operations-architecture.ts:1:import type { BookingRecord } from '../types';
+packages/moni-assistent/src/bookingFlow.ts:133:const applyAssignedDriver = (booking: BookingRecord, decision: DispatchDecision, timestamp: string) => {
+packages/moni-assistent/src/bookingFlow.ts:145:  booking: BookingRecord,
+packages/moni-assistent/src/bookingFlow.ts:15:const newBookingRecord = (id: string, request: BookingRequest, now: string): BookingRecord => ({
+packages/moni-assistent/src/bookingFlow.ts:32:const scoreCandidate = (candidate: DriverCandidate, booking: BookingRecord, context: DispatchContext): DispatchDecision => {
+packages/moni-assistent/src/bookingFlow.ts:4:  BookingRecord,
+packages/moni-assistent/src/bookingFlow.ts:64:  const booking = newBookingRecord(bookingId, request, now());
+packages/moni-assistent/src/bookingIntegration.ts:1:import type { BookingRecord as MoniBookingRecord, BookingStatus, NotificationEvent } from "./types";
+packages/moni-assistent/src/dispatcher.ts:18:  updateBookingStatus(booking: BookingRecord, update: DriverStatusUpdate): DispatchOutcome {
+packages/moni-assistent/src/dispatcher.ts:5:  BookingRecord,
+packages/moni-assistent/src/notifications.ts:18:export const buildDriverAssignmentNotification = (booking: BookingRecord): NotificationEvent => ({
+packages/moni-assistent/src/notifications.ts:1:import type { BookingRecord, NotificationEvent } from "./types";
+packages/moni-assistent/src/notifications.ts:4:  booking: BookingRecord,
+packages/moni-assistent/src/statusFlow.ts:19:  booking: BookingRecord,
+packages/moni-assistent/src/statusFlow.ts:1:import type { AdminAlert, BookingRecord, DriverStatusUpdate } from "./types";
+packages/moni-assistent/src/statusFlow.ts:21:): { booking: BookingRecord; notification: ReturnType<typeof buildCustomerStatusNotification>; adminAlert?: AdminAlert } => {
+packages/moni-assistent/src/statusFlow.ts:4:const statusTransitions: Record<BookingRecord["status"], BookingRecord["status"][]> = {
+packages/moni-assistent/src/types.ts:119:  requestDriverAssignment: (booking: BookingRecord) => Promise<DriverCandidate[] | null>;
+packages/moni-assistent/src/types.ts:120:  dispatchContext?: (booking: BookingRecord) => Promise<DispatchContext>;
+packages/moni-assistent/src/types.ts:142:  booking: BookingRecord;
+packages/moni-assistent/src/types.ts:43:export interface BookingRecord {
+packages/realtime/src/bookings/lifecycle.ts:23:export type BookingRecord = {
+packages/realtime/src/bookings/lifecycle.ts.bak.20260601212917:21:export type BookingRecord = {
+packages/realtime/src/models/realtime.ts:12:export type BookingRecord = {
+packages/realtime/src/models/realtime.ts.bak.20260601212917:12:export type BookingRecord = {
+packages/shared/src/booking.types.ts:26:export type BookingRecord = CreateBookingRequest & {

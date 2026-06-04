@@ -1,0 +1,15 @@
+{
+  "generatedAt": "2026-06-04T12:26:15+02:00",
+  "system": "ATLAS_AUDITOR_LAYER_V1",
+  "status": "ACTIVE",
+  "mode": "READ_ONLY",
+  "repo": "/home/leonardo-vargas/lvtransport-platform",
+  "focus": [
+    "BOOKING",
+    "DISPATCH",
+    "PAYMENTS",
+    "WEBSOCKET"
+  ],
+  "rule": "Atlas maps. Founder OS approves. Nexus fabricates. Forge executes. Auditor validates.",
+  "report": "runtime/atlas-auditor/ATLAS_AUDITOR_LAYER_V1_20260604-122615/atlas-auditor-report.md"
+}
