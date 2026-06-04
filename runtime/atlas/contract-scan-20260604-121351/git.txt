@@ -1,0 +1,117 @@
+===== GIT =====
+implementation/moni-repair-orchestrator-v1
+ M apps/admin/src/app/App.js
+ M apps/admin/tsconfig.tsbuildinfo
+ M apps/api/package.json
+ M apps/api/src/auth/middleware/authenticate.ts
+ M apps/api/src/auth/middleware/authorize.ts
+ M apps/api/src/auth/services/access-control.service.ts
+ M apps/api/src/bookings/booking.service.ts
+ M apps/api/src/modules/payments/interfaces/payment.interfaces.ts
+ M apps/api/src/modules/payments/services/payment-architecture.service.ts
+ M apps/api/src/modules/persistence/in-memory-empty.repository.ts
+ M apps/api/src/modules/persistence/sqlite.repositories.ts
+ M apps/api/src/notifications/notification.types.ts
+ M apps/api/src/persistence/repository-contracts.ts
+ M apps/api/src/routes/v1/persistence.routes.ts
+ M apps/api/src/server.ts
+ M apps/api/src/tracking/tracking.service.ts
+ M docs/moni/MONI_REPAIR_ORCHESTRATOR_V1.md
+ M moni-core/founder/live/moni-repair-queue.json
+ M packages/auth/src/index.ts
+ M packages/realtime/src/bookings/lifecycle.ts
+ M packages/realtime/src/models/realtime.ts
+ M pnpm-lock.yaml
+?? apps/api/src/bookings/booking.service.ts.bak.20260603-191723
+?? apps/api/src/bookings/booking.service.ts.bak.p1-20260603-194925
+?? apps/api/src/dispatch/dispatch.service.ts.bak.forge-v12-2026-06-03T22-01-28-734Z
+?? apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925
+?? apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300
+?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713
+?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802
+?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252
+?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-113755
+?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-120051
+?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-183457
+?? apps/api/src/modules/persistence/sqlite.repositories.ts.bak.20260602-183927
+?? apps/api/src/operational-memory/cli.ts.bak.20260602-205451
+?? apps/api/src/persistence/repository-contracts.ts.bak.20260603-191723
+?? apps/api/src/routes/v1/persistence.routes.ts.bak.20260602-120051
+?? apps/api/src/websocket/socket.server.ts.bak.forge-v12-2026-06-03T22-01-28-756Z
+?? docs/architecture/bootstrap/MONI_API_STABILIZATION_SEQUENCE_V1.md
+?? docs/architecture/bootstrap/MONI_AUTONOMOUS_REPAIR_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_AUTOPILOT_SAFE_V1.md
+?? docs/architecture/bootstrap/MONI_BOTTLENECK_SURGICAL_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_COGNITIVE_DIRECTOR_V2.md
+?? docs/architecture/bootstrap/MONI_CONTRACT_RECONCILIATION_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_DECISION_PATTERN_ENGINE_V1.md
+?? docs/architecture/bootstrap/MONI_ERROR_CLASSIFIER_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_EXECUTION_MENTOR_V1.md
+?? docs/architecture/bootstrap/MONI_FIXER_PROMOTION_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_FIXER_REGISTRY_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_FIX_STRATEGY_POLICY_V1.md
+?? docs/architecture/bootstrap/MONI_LIVE_QUEUE_V3.md
+?? docs/architecture/bootstrap/MONI_OBSTACLE_ENGINE_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_SAFE_CYCLE_V2.md
+?? docs/architecture/bootstrap/MONI_SURGICAL_LOOP_REPORT_V1.md
+?? docs/architecture/bootstrap/MONI_V2_OBSERVER_MENTOR_OPERATOR.md
+?? docs/architecture/bootstrap/MONI_WORK_QUEUE_V1.md
+?? docs/architecture/bootstrap/PAYMENT_SERVICE_ADAPTER_FIX_V1.md
+?? docs/architecture/bootstrap/PAYMENT_SERVICE_ADAPTER_PLAN_V1.md
+?? docs/founder/MONI_APPROVAL_AUTOMATION_V1.md
+?? docs/moni/MONI_EXECUTIVE_CONTROLLER_V2.md
+?? forge/forge-risk-policy-v1.json
+?? moni-core/engines/
+?? moni-core/fixers/
+?? moni-core/founder/live/decision-pattern-brief.md
+?? moni-core/founder/live/execution-mentor-brief.md
+?? moni-core/founder/live/execution-mentor-state.json
+?? moni-core/founder/live/forge-risk-report.json
+?? moni-core/founder/live/moni-v2-brief.md
+?? moni-core/organization/
+?? moni-core/policies/fix-strategy-policy-v1.json
+?? moni-core/queue/moni-work-queue.mjs
+?? moni-core/runtime/autonomous/watchdog/
+?? moni-core/v2/
+?? packages/realtime/src/bookings/lifecycle.ts.bak.20260601212917
+?? packages/realtime/src/models/realtime.ts.bak.20260601212917
+?? runtime/atlas/
+?? runtime/autopilot/
+?? runtime/build/booking-legacy-usage.txt
+?? runtime/build/booking-record-inventory.txt
+?? runtime/build/moni-bottleneck-now.txt
+?? runtime/build/sqlite.repositories.before-root-fix.ts
+?? runtime/decisions/
+?? runtime/fixes/
+?? runtime/moni-v2/
+?? runtime/moni/
+?? runtime/queue/
+?? scripts/forge/forge-risk-scan.sh
+?? scripts/moni-api-stabilization-sequence.sh
+?? scripts/moni-autonomous-repair.sh
+?? scripts/moni-autopilot-safe.sh
+?? scripts/moni-bottleneck-surgical.sh
+?? scripts/moni-cognitive-director-v2.sh
+?? scripts/moni-contract-reconciliation.sh
+?? scripts/moni-decision-pattern.sh
+?? scripts/moni-engine-suite.sh
+?? scripts/moni-error-classifier.sh
+?? scripts/moni-fix-payment-service-adapters.sh
+?? scripts/moni-fixer-promotion.sh
+?? scripts/moni-fixer-registry.sh
+?? scripts/moni-live-queue.sh
+?? scripts/moni-mentor.sh
+?? scripts/moni-next-fix.sh
+?? scripts/moni-obstacle-engine.sh
+?? scripts/moni-organization-engine.sh
+?? scripts/moni-payment-adapter-plan.sh
+?? scripts/moni-safe-cycle-v2.sh
+?? scripts/moni-surgical-loop.sh
+?? scripts/moni-system-scan.sh
+?? scripts/moni-v2.sh
+?? scripts/moni-work-queue.sh
+8b46565 feat(auditor): add auditor v1
+891b595 feat(forge): add low-risk autofix v1.2
+eb588a4 feat(forge): add approval gate v1.1
+bb1f060 feat(forge): add safe executor v1
+65dd1a1 feat(moni): add repair policy and three memory sync

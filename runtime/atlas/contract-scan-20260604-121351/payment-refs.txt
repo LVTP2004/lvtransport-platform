@@ -1,0 +1,131 @@
+apps/api/src/routes/v1/payments.routes.ts:14:router.post('/checkout/:sessionId/confirm', (req, res) => {
+apps/api/src/routes/v1/payments.routes.ts:15:  res.status(200).json(paymentArchitectureService.confirmPayment(req.params.sessionId));
+apps/api/src/modules/security/interfaces/security.interfaces.ts:6:  sessionId: string;
+apps/api/src/modules/security/validation/request.validation.ts:6:    required: ['transactionId', 'reasonCode', 'requestedBy'],
+apps/api/src/modules/payments/models/payment.models.ts:1:import { PaymentSessionStatus } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/models/payment.models.ts:4:export interface TransactionHistoryEntry {
+apps/api/src/modules/payments/models/payment.models.ts:11:  status: PaymentSessionStatus;
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:3:  PaymentProvider,
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:5:  PaymentSessionStatus,
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:15:export interface PaymentSession {
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:19:  provider: PaymentProvider;
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:20:  status: PaymentSessionStatus;
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:33:  activePaymentSessionId?: string;
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:41:export interface RefundRecord {
+apps/api/src/modules/payments/interfaces/payment.interfaces.ts:47:  requestedBy: string;
+apps/api/src/modules/payments/dto/payment.dto.ts:1:import { PaymentProvider } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/dto/payment.dto.ts:6:  provider: PaymentProvider;
+apps/api/src/modules/payments/dto/payment.dto.ts:14:  sessionId: string;
+apps/api/src/modules/payments/dto/payment.dto.ts:22:  requestedBy: string;
+apps/api/src/modules/payments/webhooks/webhook.models.ts:1:import { PaymentProvider } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/webhooks/webhook.models.ts:5:  provider: PaymentProvider;
+apps/api/src/modules/payments/enums/payment.enums.ts:1:export enum PaymentProvider {
+apps/api/src/modules/payments/enums/payment.enums.ts:6:export enum PaymentSessionStatus {
+apps/api/src/modules/payments/payment.routes.ts:11:router.post('/checkout/:sessionId/confirm', (req, res) => {
+apps/api/src/modules/payments/payment.routes.ts:12:  const session = paymentArchitectureService.confirmSession(req.params.sessionId);
+apps/api/src/modules/payments/payment.routes.ts:19:router.post('/webhooks/:provider', (req, res) => res.json(paymentArchitectureService.handleWebhookEvent(req.body.eventType, req.body.sessionId)));
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:3:import { BookingPaymentState, PaymentRetryStrategy, PaymentSessionStatus, RefundState } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:4:import type { BookingPaymentSnapshot, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:5:import type { TransactionHistoryEntry } from '../models/payment.models.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:8:const sessions = new Map<string, PaymentSession>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:10:const transactionHistory: TransactionHistoryEntry[] = [];
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:11:const refunds = new Map<string, RefundRecord>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:19:      checkoutState: PaymentSessionStatus.CHECKOUT_PENDING,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:27:    const session: PaymentSession = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:32:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:49:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:61:  confirmSession(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:62:    return this.confirmPayment(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:66:  confirmPayment(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:67:    const session = sessions.get(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:70:    session.status = PaymentSessionStatus.CAPTURED;
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:71:    bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.PAID, lastTransactionId: sessionId });
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:77:      status: PaymentSessionStatus.CAPTURED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:88:      sessionId: dto.sessionId,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:96:    const record: RefundRecord = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:117:  handleWebhookEvent(envelope: PaymentWebhookEnvelope | string, sessionId?: string): PaymentWebhookHandlerResult {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:121:          provider: PaymentProvider.STRIPE,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:126:          replayGuardKey: `manual_${envelope}_${sessionId ?? 'none'}`,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:127:          data: { sessionId },
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:173:  restoreAfterReconnect(dto: { bookingId?: string; sessionId?: string }) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252:175:      ?? (dto.sessionId ? sessions.get(dto.sessionId)?.bookingId : undefined);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:3:import { BookingPaymentState, PaymentSessionStatus } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:4:import type { BookingPaymentSnapshot, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:5:import type { TransactionHistoryEntry } from '../models/payment.models.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:8:const sessions = new Map<string, PaymentSession>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:10:const transactionHistory: TransactionHistoryEntry[] = [];
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:11:const refunds = new Map<string, RefundRecord>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:19:      checkoutState: PaymentSessionStatus.CHECKOUT_PENDING,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:27:    const session: PaymentSession = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:32:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:45:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:57:  confirmSession(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:58:    return this.confirmPayment(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:62:  confirmPayment(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:63:    const session = sessions.get(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:66:    session.status = PaymentSessionStatus.CAPTURED;
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:67:    bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.PAID, lastTransactionId: sessionId });
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:73:      status: PaymentSessionStatus.CAPTURED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:84:      sessionId: dto.sessionId,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:92:    const record: RefundRecord = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:113:  handleWebhookEvent(envelope: PaymentWebhookEnvelope | string, sessionId?: string): PaymentWebhookHandlerResult {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:115:      ? ({ eventType: envelope, sessionId, signatureValidated: true } as PaymentWebhookEnvelope)
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:160:  restoreAfterReconnect(dto: { bookingId?: string; sessionId?: string }) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713:162:      ?? (dto.sessionId ? sessions.get(dto.sessionId)?.bookingId : undefined);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:3:import { BookingPaymentState, PaymentSessionStatus } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:4:import type { BookingPaymentSnapshot, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:5:import type { TransactionHistoryEntry } from '../models/payment.models.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:8:const sessions = new Map<string, PaymentSession>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:10:const transactionHistory: TransactionHistoryEntry[] = [];
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:11:const refunds = new Map<string, RefundRecord>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:19:      checkoutState: PaymentSessionStatus.CHECKOUT_PENDING,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:32:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:45:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:57:  confirmSession(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:58:    return this.confirmPayment(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:62:  confirmPayment(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:63:    const session = sessions.get(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:66:    session.status = PaymentSessionStatus.CAPTURED;
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:67:    bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.PAID, lastTransactionId: sessionId });
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:73:      status: PaymentSessionStatus.CAPTURED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:84:      sessionId: dto.sessionId,
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:92:    const record: RefundRecord = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:113:  handleWebhookEvent(envelope: PaymentWebhookEnvelope | string, sessionId?: string): PaymentWebhookHandlerResult {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:115:      ? ({ eventType: envelope, sessionId, signatureValidated: true } as PaymentWebhookEnvelope)
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:160:  restoreAfterReconnect(dto: { bookingId?: string; sessionId?: string }) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802:162:      ?? (dto.sessionId ? sessions.get(dto.sessionId)?.bookingId : undefined);
+apps/api/src/modules/payments/services/payment-architecture.service.ts:3:import { BookingPaymentState, PaymentRetryStrategy, PaymentSessionStatus, RefundState } from '../enums/payment.enums.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts:4:import type { BookingPaymentSnapshot, PaymentSession, RefundRecord } from '../interfaces/payment.interfaces.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts:5:import type { TransactionHistoryEntry } from '../models/payment.models.js';
+apps/api/src/modules/payments/services/payment-architecture.service.ts:8:const sessions = new Map<string, PaymentSession>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts:10:const transactionHistory: TransactionHistoryEntry[] = [];
+apps/api/src/modules/payments/services/payment-architecture.service.ts:11:const refunds = new Map<string, RefundRecord>();
+apps/api/src/modules/payments/services/payment-architecture.service.ts:19:      checkoutState: PaymentSessionStatus.CHECKOUT_PENDING,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:27:    const session: PaymentSession = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:32:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:49:      status: PaymentSessionStatus.CREATED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:61:  confirmSession(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:62:    return this.confirmPayment(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts:66:  confirmPayment(sessionId: string) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:67:    const session = sessions.get(sessionId);
+apps/api/src/modules/payments/services/payment-architecture.service.ts:70:    session.status = PaymentSessionStatus.CAPTURED;
+apps/api/src/modules/payments/services/payment-architecture.service.ts:71:    bookingStates.set(session.bookingId, { bookingId: session.bookingId, state: BookingPaymentState.PAID, lastTransactionId: sessionId });
+apps/api/src/modules/payments/services/payment-architecture.service.ts:77:      status: PaymentSessionStatus.CAPTURED,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:88:      sessionId: dto.sessionId,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:96:    const record: RefundRecord = {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:117:  handleWebhookEvent(envelope: PaymentWebhookEnvelope | string, sessionId?: string): PaymentWebhookHandlerResult {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:121:          provider: PaymentProvider.STRIPE,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:126:          replayGuardKey: `manual_${envelope}_${sessionId ?? 'none'}`,
+apps/api/src/modules/payments/services/payment-architecture.service.ts:127:          data: { sessionId },
+apps/api/src/modules/payments/services/payment-architecture.service.ts:173:  restoreAfterReconnect(dto: { bookingId?: string; sessionId?: string }) {
+apps/api/src/modules/payments/services/payment-architecture.service.ts:175:      ?? (dto.sessionId ? sessions.get(dto.sessionId)?.bookingId : undefined);
+apps/api/src/auth/middleware/authenticate.ts:58:      sessionId: claims.sessionId,
+packages/moni-assistent/src/operationsManager.ts:146:  requestedBy: "moni_assistant" | MoniBranch;
+packages/maps/src/models/tracking.ts:30:  sessionId: string;
+packages/maps/src/sessions/live-trip-session.ts:6:  sessionId: string;
+packages/auth/src/security/jwt.service.ts:8:  sessionId: string;
+packages/auth/src/models/session.models.ts:9:  sessionId?: string;
+packages/auth/src/interfaces/auth-provider.interface.ts:19:  signOut(sessionId?: string): Promise<void>;
+packages/auth/src/providers/firebase-auth.provider.ts:47:      sessionId: 'runtime-session',
+packages/auth/src/services/auth-service.ts:10:  signOut(sessionId?: string) {
+packages/auth/src/services/auth-service.ts:11:    return this.provider.signOut(sessionId);

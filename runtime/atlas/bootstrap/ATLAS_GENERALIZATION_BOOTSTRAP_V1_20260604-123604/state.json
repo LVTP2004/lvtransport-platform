@@ -1,0 +1,25 @@
+{
+  "system": "ATLAS_GENERALIZATION_BOOTSTRAP_V1",
+  "status": "ACTIVE",
+  "createdAt": "2026-06-04T12:36:04+02:00",
+  "mode": "GOVERNANCE_BOOTSTRAP",
+  "executionAllowed": false,
+  "sourceCodeModified": false,
+  "activeLaws": [
+    "ATLAS_LAW_V1",
+    "CANONICAL_CONTRACT_FIRST_PROTOCOL_V1",
+    "DEPENDENCY_COMPATIBILITY_PROTOCOL_V1",
+    "ATLAS_INCIDENT_PROTOCOL_V1"
+  ],
+  "activeCase": "CASE_0001_BOOKING_SERVICE_COMPATIBILITY_FAILURE",
+  "activeLesson": "LESSON_0001_DEPENDENCY_COMPATIBILITY",
+  "chain": [
+    "Atlas maps",
+    "Founder OS approves",
+    "Nexus fabricates",
+    "Forge executes",
+    "Auditor validates",
+    "MONI remembers"
+  ],
+  "currentBottleneck": "Dependency compatibility before autonomous execution"
+}
