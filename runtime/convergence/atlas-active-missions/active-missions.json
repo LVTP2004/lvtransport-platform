@@ -1,0 +1,96 @@
+{
+  "generatedAt": "2026-06-05T09:52:05.731Z",
+  "system": "ATLAS_ACTIVE_MISSIONS_EXPORT_V1",
+  "missionCount": 5,
+  "missions": [
+    {
+      "missionId": "MISSION_ACTIVE_MISSIONS_EXPORT_V1",
+      "sourceFile": "runtime/convergence/atlas-code-delivery/inbox/MISSION_ACTIVE_MISSIONS_EXPORT_V1.md",
+      "status": "RECEIVED",
+      "currentStage": "Atlas",
+      "routedTo": [
+        "Atlas"
+      ],
+      "deliverables": [
+        "activeMissions section in atlas-latest.json",
+        "activeMissions section in Knowledge Gateway latest.json"
+      ],
+      "resultFiles": [],
+      "nextAction": "Atlas should classify and route the mission.",
+      "lastUpdated": "2026-06-05T09:52:05.729Z"
+    },
+    {
+      "missionId": "MISSION_ATLAS_RESPONSE_CHANNEL_V1",
+      "sourceFile": "runtime/convergence/atlas-code-delivery/inbox/MISSION_ATLAS_RESPONSE_CHANNEL_V1.md",
+      "status": "RECEIVED",
+      "currentStage": "Atlas",
+      "routedTo": [
+        "Atlas"
+      ],
+      "deliverables": [
+        "activeMissions section in atlas-latest.json",
+        "activeMissions section in Knowledge Gateway latest.json"
+      ],
+      "resultFiles": [],
+      "nextAction": "Atlas should classify and route the mission.",
+      "lastUpdated": "2026-06-05T09:52:05.730Z"
+    },
+    {
+      "missionId": "MISSION_LVTP_DUPLICATE_DISCOVERY",
+      "sourceFile": "runtime/convergence/atlas-code-delivery/inbox/MISSION_LVTP_DUPLICATE_DISCOVERY.md",
+      "status": "ROUTED",
+      "currentStage": "Leonidas/Nexus",
+      "routedTo": [
+        "Atlas",
+        "Oracle",
+        "Leonidas",
+        "Nexus"
+      ],
+      "deliverables": [
+        "LVTP_DUPLICATE_DISCOVERY_REPORT_V1.md",
+        "LVTP_DUPLICATE_RISK_REGISTER_V1.json",
+        "LVTP_ARCHIVE_PROPOSAL_V1.md"
+      ],
+      "resultFiles": [
+        "runtime/convergence/lvtp-execution-chain/outbox/MISSION_LVTP_DUPLICATE_DISCOVERY_ROUTED.md"
+      ],
+      "nextAction": "Nexus should generate requested proposal/specification artifacts.",
+      "lastUpdated": "2026-06-05T09:52:05.730Z"
+    },
+    {
+      "missionId": "MISSION_RESTORE_MONI_CONSOLE",
+      "sourceFile": "runtime/convergence/atlas-code-delivery/inbox/MISSION_RESTORE_MONI_CONSOLE.md",
+      "status": "ROUTED",
+      "currentStage": "Leonidas/Nexus",
+      "routedTo": [
+        "Atlas",
+        "Oracle",
+        "Leonidas",
+        "Nexus"
+      ],
+      "deliverables": [
+        "ASK_MONI_ROOT_CAUSE_V1.md",
+        "ASK_MONI_RECOVERY_PLAN_V1.md",
+        "ASK_MONI_VALIDATION_V1.md"
+      ],
+      "resultFiles": [
+        "runtime/convergence/lvtp-execution-chain/outbox/MISSION_RESTORE_MONI_CONSOLE_ROUTED.md"
+      ],
+      "nextAction": "Nexus should generate requested proposal/specification artifacts.",
+      "lastUpdated": "2026-06-05T09:52:05.731Z"
+    },
+    {
+      "missionId": "PING_FROM_CHATGPT",
+      "sourceFile": "runtime/convergence/atlas-code-delivery/inbox/PING_FROM_CHATGPT.md",
+      "status": "RECEIVED",
+      "currentStage": "Atlas",
+      "routedTo": [
+        "Atlas"
+      ],
+      "deliverables": [],
+      "resultFiles": [],
+      "nextAction": "Atlas should classify and route the mission.",
+      "lastUpdated": "2026-06-05T09:52:05.731Z"
+    }
+  ]
+}
