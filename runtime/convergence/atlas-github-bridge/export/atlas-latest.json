@@ -1,10 +1,10 @@
 {
-  "generatedAt": "2026-06-05T09:34:58.907Z",
+  "generatedAt": "2026-06-05T09:41:54.934Z",
   "root": "/home/leonardo-vargas/lvtransport-platform",
   "canonicalProducer": "aspire",
-  "latestZip": "runtime/convergence/atlas-chatgpt-bridge/outbox/ATLAS_CHATGPT_BRIDGE_2026-06-05T09-34-58-642Z.zip",
-  "latestZipName": "ATLAS_CHATGPT_BRIDGE_2026-06-05T09-34-58-642Z.zip",
-  "latestZipHash": "676256cb77158eda0d5d421ae93a753e6276da21442f5c3b5830939e591fb172",
+  "latestZip": "runtime/convergence/atlas-chatgpt-bridge/outbox/ATLAS_CHATGPT_BRIDGE_2026-06-05T09-41-54-645Z.zip",
+  "latestZipName": "ATLAS_CHATGPT_BRIDGE_2026-06-05T09-41-54-645Z.zip",
+  "latestZipHash": "7589ee3a2289c108ee5131bb14682abe728f09ed391c49ffc7b4bf36a5b81de9",
   "directivesCount": 26,
   "directives": [
     {
@@ -220,22 +220,22 @@
     "commandCenter": {
       "path": "runtime/convergence/atlas-command-center/reports/ATLAS_COMMAND_CENTER_REPORT.md",
       "present": true,
-      "sha256": "5e3f26fff78ac73971c13007ad05d74d7854e36b3d8ce44d8fb9c0b500d2ca6a"
+      "sha256": "0ab40a5e6d1d3523602c8e604b923fd7929b6faf83dd262dfc82144e9680738c"
     },
     "drift": {
       "path": "runtime/convergence/atlas-drift-detector/reports/ATLAS_DRIFT_DETECTOR_REPORT.md",
       "present": true,
-      "sha256": "9e657918ddb87bd782fa960cfa4c76ea3ff71b15634576cc86bb7fee3766e8d5"
+      "sha256": "e6569bdc75e2ee6dd3c9af6156e593c9e8d9e2869f8132760dfd36ef3141a335"
     },
     "alerts": {
       "path": "runtime/convergence/atlas-alert-engine/reports/ATLAS_ALERT_ENGINE_REPORT.md",
       "present": true,
-      "sha256": "730b36a7506bc49e2c0b5efa7b40cf249c2ab8115fd20fe2c784f43379005765"
+      "sha256": "64cca74ed7c1a18cbc0e3c296c3d48dfead6c07868b3817bb87af1dec09c44c2"
     },
     "healing": {
       "path": "runtime/convergence/atlas-self-healing/reports/ATLAS_SELF_HEALING_REPORT.md",
       "present": true,
-      "sha256": "0cb00d77c9f17d54cd144fbe2e7e1bada5ea419b6a3128e119d5ac4fedc237b2"
+      "sha256": "b10517856405b1d8d394ded9d606968a765596ff19bdeecbed2bc16d5a1f6b26"
     },
     "confirmations": {
       "path": "runtime/convergence/atlas-replica-confirmation/reports/ATLAS_REPLICA_CONFIRMATION_REPORT.md",
@@ -245,17 +245,17 @@
     "scheduler": {
       "path": "runtime/convergence/atlas-scheduler/reports/ATLAS_SCHEDULER_REPORT.md",
       "present": true,
-      "sha256": "4b2db34d412939f27a1d8e36447f794a2aacc12b5c492f87f662ca45177f18d0"
+      "sha256": "47b2dc9cc08eecdaaf0b134b9659e6ab456652191ad8da9d71ed7ed76ac634f3"
     },
     "directivesRegistry": {
       "path": "runtime/convergence/atlas-directives-registry/reports/ATLAS_DIRECTIVES_REGISTRY_REPORT.md",
       "present": true,
-      "sha256": "7000b1837dd2421adbf395ce287919f2ce3deaadd58580a737fe4a90a0f21096"
+      "sha256": "06dc46d393a3d6fde43a48faffc6c546119484897b410e30ccab80739255dc48"
     },
     "chatgptBridgeState": {
       "path": "runtime/convergence/atlas-chatgpt-bridge/state/chatgpt-bridge-state.json",
       "present": true,
-      "sha256": "c15cefed3822bf9ab56d809adf6f86f9c3f852906f0aaf35e6858d37eaa2f27a"
+      "sha256": "7e799f9fc401bf39744624917fbec4edb175d7dacad258808ecce58aa681d597"
     }
   },
   "gitStatus": "M apps/admin/src/app/App.js\n M apps/admin/tsconfig.tsbuildinfo\n M apps/api/package.json\n M apps/api/src/auth/middleware/authenticate.ts\n M apps/api/src/auth/middleware/authorize.ts\n M apps/api/src/auth/services/access-control.service.ts\n M apps/api/src/bookings/booking.service.ts\n M apps/api/src/modules/payments/interfaces/payment.interfaces.ts\n M apps/api/src/modules/payments/services/payment-architecture.service.ts\n M apps/api/src/modules/persistence/in-memory-empty.repository.ts\n M apps/api/src/modules/persistence/sqlite.repositories.ts\n M apps/api/src/notifications/notification.types.ts\n M apps/api/src/persistence/repository-contracts.ts\n M apps/api/src/routes/v1/persistence.routes.ts\n M apps/api/src/server.ts\n M apps/api/src/tracking/tracking.service.ts\n M docs/moni/MONI_REPAIR_ORCHESTRATOR_V1.md\n M moni-core/founder/live/moni-repair-queue.json\n M packages/auth/src/index.ts\n M packages/realtime/src/bookings/lifecycle.ts\n M packages/realtime/src/models/realtime.ts\n M pnpm-lock.yaml\n?? apps/api/src/bookings/booking.service.ts.bak.20260603-191723\n?? apps/api/src/bookings/booking.service.ts.bak.p1-20260603-194925\n?? apps/api/src/dispatch/dispatch.service.ts.bak.forge-v12-2026-06-03T22-01-28-734Z\n?? apps/api/src/modules/bookings/repository.ts.bak.p1-20260603-194925\n?? apps/api/src/modules/bookings/repository.ts.bak.safe-autopatch-20260603-203300\n?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-054713\n?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-064802\n?? apps/api/src/modules/payments/services/payment-architecture.service.ts.bak.20260603-085252\n?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-113755\n?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-120051\n?? apps/api/src/modules/persistence/in-memory-empty.repository.ts.bak.20260602-183457\n?? apps/api/src/modules/persistence/sqlite.repositories.ts.bak.20260602-183927\n?? apps/api/src/operational-memory/cli.ts.bak.20260602-205451\n?? apps/api/src/persistence/repository-contracts.ts.bak.20260603-191723\n?? apps/api/src/routes/v1/persistence.routes.ts.bak.20260602-120051\n?? apps/api/src/websocket/socket.server.ts.bak.forge-v12-2026-06-03T22-01-28-756Z\n?? atlas-report.sh\n?? atlas-serve-bridge\n?? bootstrap-convergence-v1.sh\n?? docs/architecture/bootstrap/MONI_API_STABILIZATION_SEQUENCE_V1.md\n?? docs/architecture/bootstrap/MONI_AUTONOMOUS_REPAIR_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_AUTOPILOT_SAFE_V1.md\n?? docs/architecture/bootstrap/MONI_BOTTLENECK_SURGICAL_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_COGNITIVE_DIRECTOR_V2.md\n?? docs/architecture/bootstrap/MONI_CONTRACT_RECONCILIATION_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_DECISION_PATTERN_ENGINE_V1.md\n?? docs/architecture/bootstrap/MONI_ERROR_CLASSIFIER_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_EXECUTION_MENTOR_V1.md\n?? docs/architecture/bootstrap/MONI_FIXER_PROMOTION_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_FIXER_REGISTRY_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_FIX_STRATEGY_POLICY_V1.md\n?? docs/architecture/bootstrap/MONI_LIVE_QUEUE_V3.md\n?? docs/architecture/bootstrap/MONI_OBSTACLE_ENGINE_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_SAFE_CYCLE_V2.md\n?? docs/architecture/bootstrap/MONI_SURGICAL_LOOP_REPORT_V1.md\n?? docs/architecture/bootstrap/MONI_V2_OBSERVER_MENTOR_OPERATOR.md\n?? docs/architecture/bootstrap/MONI_WORK_QUEUE_V1.md\n?? docs/architecture/bootstrap/PAYMENT_SERVICE_ADAPTER_FIX_V1.md\n?? docs/architecture/bootstrap/PAYMENT_SERVICE_ADAPTER_PLAN_V1.md\n?? docs/founder/ATLAS_FOUNDER_DIRECTIVE_V1.md\n?? docs/founder/directives/\n?? docs/governance/\n?? docs/moni/MONI_EXECUTIVE_CONTROLLER_V2.md\n?? forge/forge-risk-policy-v1.json\n?? founder\n?? moni-core/engines/\n?? moni-core/fixers/\n?? moni-core/founder/live/decision-pattern-brief.md\n?? moni-core/founder/live/execution-mentor-brief.md\n?? moni-core/founder/live/execution-mentor-state.json\n?? moni-core/founder/live/forge-risk-report.json\n?? moni-core/founder/live/moni-v2-brief.md\n?? moni-core/organization/\n?? moni-core/policies/fix-strategy-policy-v1.json\n?? moni-core/queue/moni-work-queue.mjs\n?? moni-core/runtime/autonomous/watchdog/\n?? moni-core/v2/\n?? operator\n?? packages/realtime/src/bookings/lifecycle.ts.bak.20260601212917\n?? packages/realtime/src/models/realtime.ts.bak.20260601212917\n?? runtime/autopilot/\n?? runtime/build/booking-legacy-usage.txt\n?? runtime/build/booking-record-inventory.txt\n?? runtime/build/moni-bottleneck-now.txt\n?? runtime/build/sqlite.repositories.before-root-fix.ts\n?? runtime/convergence/ARCHITECTURE.json\n?? runtime/convergence/atlas-alert-engine/\n?? runtime/convergence/atlas-auto-sync-controller/\n?? runtime/convergence/atlas-bloodstream-transfer/\n?? runtime/convergence/atlas-bloodstream/\n?? runtime/convergence/atlas-chatgpt-bridge/\n?? runtime/convergence/atlas-code-delivery/bootstrap-code-delivery.mjs\n?? runtime/convergence/atlas-code-delivery/reports/\n?? runtime/convergence/atlas-code-delivery/state/\n?? runtime/convergence/atlas-command-center/\n?? runtime/convergence/atlas-directives-registry/\n?? runtime/convergence/atlas-distribution/\n?? runtime/convergence/atlas-drift-detector/\n?? runtime/convergence/atlas-edge-agent/\n?? runtime/convergence/atlas-github-bridge/export-atlas-state.sh\n?? runtime/convergence/atlas-global-registry/\n?? runtime/convergence/atlas-global/\n?? runtime/convergence/atlas-heartbeat/\n?? runtime/convergence/atlas-knowledge-gateway/\n?? runtime/convergence/atlas-life-cycle/\n?? runtime/convergence/atlas-memory-graph/\n?? runtime/convergence/atlas-node-enrollment/\n?? runtime/convergence/atlas-operator-bridge/\n?? runtime/convergence/atlas-replica-confirmation/\n?? runtime/convergence/atlas-replica-manager/\n?? runtime/convergence/atlas-role-discovery/\n?? runtime/convergence/atlas-role-registry/\n?? runtime/convergence/atlas-scheduler/\n?? runtime/convergence/atlas-self-healing/\n?? runtime/convergence/atlas-sync-hub/\n?? runtime/convergence/atlas-universal-scanner/\n?? runtime/convergence/atlas-watcher/\n?? runtime/convergence/atlas/\n?? runtime/convergence/auditor/\n?? runtime/convergence/check-convergence.sh\n?? runtime/convergence/delta/\n?? runtime/convergence/forge/\n?? runtime/convergence/fossibot-transfer/\n?? runtime/convergence/laws/\n?? runtime/convergence/moni-cluster/reports/MONI_CAPABILITY_REGISTRY_V1.md\n?? runtime/convergence/moni-cluster/reports/moni-capabilities.txt\n?? runtime/convergence/moni/\n?? runtime/convergence/oracle/\n?? runtime/convergence/protocols/\n?? runtime/convergence/report-bundles/\n?? runtime/convergence/reports/\n?? runtime/decisions/\n?? runtime/fixes/\n?? runtime/moni-v2/\n?? runtime/moni/backups/\n?? runtime/moni/cognitive/\n?? runtime/moni/cycles/\n?? runtime/moni/learning/\n?? runtime/queue/\n?? scripts/forge/forge-risk-scan.sh\n?? scripts/moni-api-stabilization-sequence.sh\n?? scripts/moni-autonomous-repair.sh\n?? scripts/moni-autopilot-safe.sh\n?? scripts/moni-bottleneck-surgical.sh\n?? scripts/moni-cognitive-director-v2.sh\n?? scripts/moni-contract-reconciliation.sh\n?? scripts/moni-decision-pattern.sh\n?? scripts/moni-engine-suite.sh\n?? scripts/moni-error-classifier.sh\n?? scripts/moni-fix-payment-service-adapters.sh\n?? scripts/moni-fixer-promotion.sh\n?? scripts/moni-fixer-registry.sh\n?? scripts/moni-live-queue.sh\n?? scripts/moni-mentor.sh\n?? scripts/moni-next-fix.sh\n?? scripts/moni-obstacle-engine.sh\n?? scripts/moni-organization-engine.sh\n?? scripts/moni-payment-adapter-plan.sh\n?? scripts/moni-safe-cycle-v2.sh\n?? scripts/moni-surgical-loop.sh\n?? scripts/moni-system-scan.sh\n?? scripts/moni-v2.sh\n?? scripts/moni-work-queue.sh"

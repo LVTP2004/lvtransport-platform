@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-05T09:34:59.295Z",
+  "generatedAt": "2026-06-05T09:41:55.312Z",
   "system": "ATLAS_LIFE_CYCLE_V1",
   "nodes": [
     {
@@ -12,7 +12,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     },
     {
       "id": "fossibot-edge",
@@ -24,7 +24,7 @@
       "confirmed": true,
       "lifeState": "ALIVE",
       "reason": "reachable_and_confirmed",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     },
     {
       "id": "galaxy",
@@ -36,7 +36,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     },
     {
       "id": "beam",
@@ -48,7 +48,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     },
     {
       "id": "viviana",
@@ -60,7 +60,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     },
     {
       "id": "canada-vps",
@@ -72,7 +72,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:34:59.295Z"
+      "checkedAt": "2026-06-05T09:41:55.312Z"
     }
   ],
   "counts": {
