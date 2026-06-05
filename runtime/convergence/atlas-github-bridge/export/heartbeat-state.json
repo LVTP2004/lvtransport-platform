@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-06-05T09:25:21.701Z",
+  "generatedAt": "2026-06-05T09:34:59.209Z",
   "system": "ATLAS_HEARTBEAT_V1",
   "status": "warning",
   "canonicalProducer": "aspire",
   "gateway": {
     "latestJson": "runtime/convergence/atlas-knowledge-gateway/public/latest.json",
-    "sha256": "74e6f85c1d18d46fb95adc182665331105545e2d6dafa26b94481ab7c3487d56"
+    "sha256": "80f5b6ed1ccfc489998e3706a4401462db690e25f0283f62c40998b1ca4bc909"
   },
   "bloodstream": {
     "status": "ready",
