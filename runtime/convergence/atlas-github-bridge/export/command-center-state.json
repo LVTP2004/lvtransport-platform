@@ -1,0 +1,74 @@
+{
+  "generatedAt": "2026-06-05T04:05:19.238Z",
+  "status": "yellow",
+  "canonicalProducer": "aspire",
+  "totalNodes": 6,
+  "healthy": 2,
+  "warning": 4,
+  "critical": 0,
+  "replicationCoveragePercent": 33,
+  "schedulerStatus": "green",
+  "schedulerOk": true,
+  "alerts": {
+    "total": 4,
+    "warnings": 4,
+    "critical": 0
+  },
+  "selfHealing": {
+    "totalActions": 4,
+    "planned": 4
+  },
+  "confirmations": 1,
+  "manifestHash": "969eab4942877d9fd2b0a1f68d9de0e83d93cfa7cf035187ec8365f2723abed4",
+  "bundleHash": "99b55d4b70be572397bfddf57159ea0dac3afa134fd707c76ccdaa3ce13d3dfb",
+  "nodes": [
+    {
+      "node": "moni-core-canada-vps",
+      "label": "MONI Core Canada VPS",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "WARNING",
+      "reason": "Replication state unknown"
+    },
+    {
+      "node": "aspire",
+      "label": "Aspire",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "NONE",
+      "reason": "Canonical producer"
+    },
+    {
+      "node": "viviana",
+      "label": "Viviana",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "WARNING",
+      "reason": "Replication state unknown"
+    },
+    {
+      "node": "beam",
+      "label": "Beam",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "WARNING",
+      "reason": "Replication state unknown"
+    },
+    {
+      "node": "fossibot-edge",
+      "label": "Fossibot Edge",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "NONE",
+      "reason": "Replica confirmed sync"
+    },
+    {
+      "node": "galaxy",
+      "label": "Galaxy",
+      "status": "online",
+      "replication": "unknown",
+      "drift": "WARNING",
+      "reason": "Replication state unknown"
+    }
+  ]
+}

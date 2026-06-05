@@ -1,0 +1,90 @@
+{
+  "generatedAt": "2026-06-05T04:05:19.957Z",
+  "system": "ATLAS_LIFE_CYCLE_V1",
+  "nodes": [
+    {
+      "id": "aspire",
+      "name": "leonardovargas-aspire-e1-470p",
+      "ip": "100.71.225.29",
+      "role": "canonical-producer",
+      "sleepCapable": false,
+      "reachable": true,
+      "confirmed": false,
+      "lifeState": "UNENROLLED",
+      "reason": "reachable_but_no_confirmation",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    },
+    {
+      "id": "fossibot-edge",
+      "name": "f109-s",
+      "ip": "100.96.209.5",
+      "role": "mobile-edge",
+      "sleepCapable": true,
+      "reachable": true,
+      "confirmed": true,
+      "lifeState": "ALIVE",
+      "reason": "reachable_and_confirmed",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    },
+    {
+      "id": "galaxy",
+      "name": "tab-a9-van-leo",
+      "ip": "100.113.204.28",
+      "role": "tablet-edge",
+      "sleepCapable": true,
+      "reachable": true,
+      "confirmed": false,
+      "lifeState": "UNENROLLED",
+      "reason": "reachable_but_no_confirmation",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    },
+    {
+      "id": "beam",
+      "name": "beam-pro",
+      "ip": "100.67.50.57",
+      "role": "edge-node",
+      "sleepCapable": true,
+      "reachable": false,
+      "confirmed": false,
+      "lifeState": "SLEEPING",
+      "reason": "sleep_capable_not_reachable",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    },
+    {
+      "id": "viviana",
+      "name": "viviana-p6812",
+      "ip": "100.102.11.128",
+      "role": "factory-replica",
+      "sleepCapable": false,
+      "reachable": true,
+      "confirmed": false,
+      "lifeState": "UNENROLLED",
+      "reason": "reachable_but_no_confirmation",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    },
+    {
+      "id": "canada-vps",
+      "name": "vps-96d17c46",
+      "ip": "100.68.11.73",
+      "role": "remote-vps",
+      "sleepCapable": false,
+      "reachable": true,
+      "confirmed": false,
+      "lifeState": "UNENROLLED",
+      "reason": "reachable_but_no_confirmation",
+      "checkedAt": "2026-06-05T04:05:19.957Z"
+    }
+  ],
+  "counts": {
+    "UNENROLLED": 4,
+    "ALIVE": 1,
+    "SLEEPING": 1
+  },
+  "contract": {
+    "ALIVE": "reachable and confirmed",
+    "UNENROLLED": "reachable but not yet enrolled",
+    "SLEEPING": "sleep-capable node not reachable",
+    "OFFLINE": "always-on node not reachable",
+    "CRITICAL": "reserved for failure conditions"
+  }
+}

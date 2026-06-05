@@ -1,0 +1,30 @@
+{
+  "generatedAt": "2026-06-05T04:05:19.870Z",
+  "system": "ATLAS_HEARTBEAT_V1",
+  "status": "warning",
+  "canonicalProducer": "aspire",
+  "gateway": {
+    "latestJson": "runtime/convergence/atlas-knowledge-gateway/public/latest.json",
+    "sha256": "9a573639acda3daed110d13ec45f633d136c0882a187eab3bb2876ca2bb67b05"
+  },
+  "bloodstream": {
+    "status": "ready",
+    "packageReady": true
+  },
+  "commandCenter": {
+    "status": "yellow",
+    "healthy": 2,
+    "warning": 4,
+    "critical": 0,
+    "coverage": 33
+  },
+  "confirmations": {
+    "count": 1,
+    "nodes": [
+      {
+        "node": "fossibot-edge",
+        "status": "confirmed"
+      }
+    ]
+  }
+}

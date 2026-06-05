@@ -1,0 +1,76 @@
+ATLAS OPERATOR BRIDGE V1
+Generated: 2026-06-05T04:05:22Z
+Command: verify
+Target: heartbeat
+
+== Heartbeat report ==
+# ATLAS HEARTBEAT V1
+
+Generated: 2026-06-05T04:05:19.870Z
+
+## Pulse
+
+- Status: warning
+- Canonical Producer: aspire
+
+## Gateway
+
+- latest.json SHA256: 9a573639acda3daed110d13ec45f633d136c0882a187eab3bb2876ca2bb67b05
+
+## Bloodstream
+
+- Status: ready
+- Package Ready: true
+
+## Command Center
+
+- Status: yellow
+- Healthy: 2
+- Warning: 4
+- Critical: 0
+- Coverage: 33%
+
+## Confirmations
+
+- Count: 1
+
+- fossibot-edge | confirmed
+
+## Contract
+
+- Heartbeat observes Atlas liveness.
+- Heartbeat does not mutate production.
+- Heartbeat publishes pulse state for Founder OS and Bloodstream.
+- A missing gateway hash means the Knowledge Gateway is stale or unavailable.
+
+== Heartbeat state ==
+{
+  "generatedAt": "2026-06-05T04:05:19.870Z",
+  "system": "ATLAS_HEARTBEAT_V1",
+  "status": "warning",
+  "canonicalProducer": "aspire",
+  "gateway": {
+    "latestJson": "runtime/convergence/atlas-knowledge-gateway/public/latest.json",
+    "sha256": "9a573639acda3daed110d13ec45f633d136c0882a187eab3bb2876ca2bb67b05"
+  },
+  "bloodstream": {
+    "status": "ready",
+    "packageReady": true
+  },
+  "commandCenter": {
+    "status": "yellow",
+    "healthy": 2,
+    "warning": 4,
+    "critical": 0,
+    "coverage": 33
+  },
+  "confirmations": {
+    "count": 1,
+    "nodes": [
+      {
+        "node": "fossibot-edge",
+        "status": "confirmed"
+      }
+    ]
+  }
+}
