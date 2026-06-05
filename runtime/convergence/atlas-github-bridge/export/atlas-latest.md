@@ -1,13 +1,13 @@
 # ATLAS KNOWLEDGE GATEWAY
 
-Generated: 2026-06-05T04:20:48.888Z
+Generated: 2026-06-05T06:28:53.041Z
 
 ## Canonical Truth
 
 - Canonical Producer: aspire
 - Gateway: ATLAS Knowledge Gateway
-- Latest ZIP: ATLAS_CHATGPT_BRIDGE_2026-06-05T04-20-48-609Z.zip
-- Latest ZIP SHA256: 1339d2520c487ea345851d7e4c9fdbcb05ae028547830d2c83abc0fdf952f17a
+- Latest ZIP: ATLAS_CHATGPT_BRIDGE_2026-06-05T06-28-52-777Z.zip
+- Latest ZIP SHA256: c1902926c40e2c0748708d9b36f666351ff8e013c7c77431a8a702e305b706e7
 
 ## Access
 
@@ -82,6 +82,7 @@ M apps/admin/src/app/App.js
 ?? docs/architecture/bootstrap/PAYMENT_SERVICE_ADAPTER_PLAN_V1.md
 ?? docs/founder/ATLAS_FOUNDER_DIRECTIVE_V1.md
 ?? docs/founder/directives/
+?? docs/governance/
 ?? docs/moni/MONI_EXECUTIVE_CONTROLLER_V2.md
 ?? forge/forge-risk-policy-v1.json
 ?? founder
@@ -111,6 +112,9 @@ M apps/admin/src/app/App.js
 ?? runtime/convergence/atlas-bloodstream-transfer/
 ?? runtime/convergence/atlas-bloodstream/
 ?? runtime/convergence/atlas-chatgpt-bridge/
+?? runtime/convergence/atlas-code-delivery/bootstrap-code-delivery.mjs
+?? runtime/convergence/atlas-code-delivery/reports/
+?? runtime/convergence/atlas-code-delivery/state/
 ?? runtime/convergence/atlas-command-center/
 ?? runtime/convergence/atlas-directives-registry/
 ?? runtime/convergence/atlas-distribution/
@@ -127,6 +131,7 @@ M apps/admin/src/app/App.js
 ?? runtime/convergence/atlas-operator-bridge/
 ?? runtime/convergence/atlas-replica-confirmation/
 ?? runtime/convergence/atlas-replica-manager/
+?? runtime/convergence/atlas-role-registry/
 ?? runtime/convergence/atlas-scheduler/
 ?? runtime/convergence/atlas-self-healing/
 ?? runtime/convergence/atlas-sync-hub/
@@ -218,7 +223,7 @@ M apps/admin/src/app/App.js
 
 # ATLAS REPLICATION COMMAND CENTER V1
 
-Generated: 2026-06-05T04:20:48.522Z
+Generated: 2026-06-05T06:28:52.692Z
 
 ## Cluster Health
 
@@ -240,8 +245,8 @@ Generated: 2026-06-05T04:20:48.522Z
 
 ## Canonical Artifacts
 
-- Manifest Hash: 1be722d12e4b5bd953f24b150faad1943be4d27d03aded4d37f209043742a60c
-- Bundle Hash: d298e521db8d6e85fbe3184c178d3fefe117024c3a17de34ba24e43e0f697232
+- Manifest Hash: b905c90f7025916f318157f7fb64690213893ce63db6e8845120fc13f1d03758
+- Bundle Hash: c65705fdeae984d937a54d3db1717d30b08bea933130594de2cf87e2f25f095a
 
 ## Nodes
 
@@ -267,13 +272,13 @@ Generated: 2026-06-05T04:20:48.522Z
 
 # ATLAS DRIFT DETECTOR REPORT V1
 
-Generated: 2026-06-05T04:20:48.225Z
+Generated: 2026-06-05T06:28:52.411Z
 
 ## Canonical Source
 
 - Node: aspire
-- Manifest Hash: 1be722d12e4b5bd953f24b150faad1943be4d27d03aded4d37f209043742a60c
-- Bundle Hash: d298e521db8d6e85fbe3184c178d3fefe117024c3a17de34ba24e43e0f697232
+- Manifest Hash: b905c90f7025916f318157f7fb64690213893ce63db6e8845120fc13f1d03758
+- Bundle Hash: c65705fdeae984d937a54d3db1717d30b08bea933130594de2cf87e2f25f095a
 
 ## Summary
 
@@ -306,7 +311,7 @@ Generated: 2026-06-05T04:20:48.225Z
 
 # ATLAS ALERT ENGINE REPORT V1
 
-Generated: 2026-06-05T04:20:48.330Z
+Generated: 2026-06-05T06:28:52.508Z
 
 ## Summary
 
@@ -336,14 +341,14 @@ Generated: 2026-06-05T04:20:48.330Z
 
 # ATLAS SELF HEALING REPORT V1
 
-Generated: 2026-06-05T04:20:48.424Z
+Generated: 2026-06-05T06:28:52.597Z
 
 ## Canonical Inputs
 
 - Manifest Present: true
-- Manifest Hash: 1be722d12e4b5bd953f24b150faad1943be4d27d03aded4d37f209043742a60c
+- Manifest Hash: b905c90f7025916f318157f7fb64690213893ce63db6e8845120fc13f1d03758
 - Bundle Present: true
-- Bundle Hash: d298e521db8d6e85fbe3184c178d3fefe117024c3a17de34ba24e43e0f697232
+- Bundle Hash: c65705fdeae984d937a54d3db1717d30b08bea933130594de2cf87e2f25f095a
 
 ## Summary
 
@@ -386,7 +391,7 @@ Confirmations: 1
 
 # ATLAS SCHEDULER REPORT V1
 
-Generated: 2026-06-05T04:20:46.449Z
+Generated: 2026-06-05T06:28:50.666Z
 
 ## Status
 
@@ -414,7 +419,7 @@ node runtime/convergence/atlas-auto-sync-controller/controller.mjs
 
 # ATLAS DIRECTIVES REGISTRY V1
 
-Generated: 2026-06-05T04:20:48.768Z
+Generated: 2026-06-05T06:28:52.937Z
 
 ## Summary
 
@@ -465,8 +470,8 @@ Generated: 2026-06-05T04:20:48.768Z
 ## chatgptBridgeState
 
 {
-  "generatedAt": "2026-06-05T04:20:48.609Z",
-  "report": "runtime/convergence/atlas-chatgpt-bridge/reports/ATLAS_CHATGPT_BRIDGE_REPORT_2026-06-05T04-20-48-609Z.md",
+  "generatedAt": "2026-06-05T06:28:52.777Z",
+  "report": "runtime/convergence/atlas-chatgpt-bridge/reports/ATLAS_CHATGPT_BRIDGE_REPORT_2026-06-05T06-28-52-777Z.md",
   "includedFiles": [
     "runtime/convergence/atlas-command-center/reports/ATLAS_COMMAND_CENTER_REPORT.md",
     "runtime/convergence/atlas-drift-detector/reports/ATLAS_DRIFT_DETECTOR_REPORT.md",

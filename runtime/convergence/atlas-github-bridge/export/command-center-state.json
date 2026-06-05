@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-05T04:20:48.522Z",
+  "generatedAt": "2026-06-05T06:28:52.692Z",
   "status": "yellow",
   "canonicalProducer": "aspire",
   "totalNodes": 6,
@@ -19,8 +19,8 @@
     "planned": 4
   },
   "confirmations": 1,
-  "manifestHash": "1be722d12e4b5bd953f24b150faad1943be4d27d03aded4d37f209043742a60c",
-  "bundleHash": "d298e521db8d6e85fbe3184c178d3fefe117024c3a17de34ba24e43e0f697232",
+  "manifestHash": "b905c90f7025916f318157f7fb64690213893ce63db6e8845120fc13f1d03758",
+  "bundleHash": "c65705fdeae984d937a54d3db1717d30b08bea933130594de2cf87e2f25f095a",
   "nodes": [
     {
       "node": "moni-core-canada-vps",
