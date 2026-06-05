@@ -1,0 +1,21 @@
+{
+  "status": "ACTIVE",
+  "createdAt": "2026-06-05T09:24:42Z",
+  "law": "Founder decides. Founder OS governs. Atlas understands. Oracle prioritizes. Leonidas directs. Nexus builds. Auditor validates. Forge executes.",
+  "chain": [
+    "Founder",
+    "Founder OS",
+    "Atlas",
+    "Oracle",
+    "Leonidas",
+    "Nexus",
+    "Auditor",
+    "Forge",
+    "Knowledge Gateway",
+    "Bloodstream",
+    "GitHub",
+    "Nodes"
+  ],
+  "mode": "activation_not_creation",
+  "execution": "blocked_until_auditor_validation"
+}
