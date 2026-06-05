@@ -1,0 +1,10 @@
+{
+  "id": "NEXUS_LINUX_ENGINE_V1",
+  "status": "FORMAL_ACTIVE",
+  "owner": "Nexus",
+  "authority": "Founder OS",
+  "approval": "Founder",
+  "executes": false,
+  "validates": false,
+  "firstMission": "MISSION_RESTORE_MONI_CONSOLE"
+}
