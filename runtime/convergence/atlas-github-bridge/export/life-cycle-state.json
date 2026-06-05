@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-06-05T09:41:55.312Z",
+  "generatedAt": "2026-06-05T09:52:21.396Z",
   "system": "ATLAS_LIFE_CYCLE_V1",
   "nodes": [
     {
@@ -12,7 +12,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     },
     {
       "id": "fossibot-edge",
@@ -24,7 +24,7 @@
       "confirmed": true,
       "lifeState": "ALIVE",
       "reason": "reachable_and_confirmed",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     },
     {
       "id": "galaxy",
@@ -36,7 +36,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     },
     {
       "id": "beam",
@@ -48,7 +48,7 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     },
     {
       "id": "viviana",
@@ -56,11 +56,11 @@
       "ip": "100.102.11.128",
       "role": "factory-replica",
       "sleepCapable": false,
-      "reachable": true,
+      "reachable": false,
       "confirmed": false,
-      "lifeState": "UNENROLLED",
-      "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "lifeState": "OFFLINE",
+      "reason": "expected_always_on_not_reachable",
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     },
     {
       "id": "canada-vps",
@@ -72,12 +72,13 @@
       "confirmed": false,
       "lifeState": "UNENROLLED",
       "reason": "reachable_but_no_confirmation",
-      "checkedAt": "2026-06-05T09:41:55.312Z"
+      "checkedAt": "2026-06-05T09:52:21.396Z"
     }
   ],
   "counts": {
-    "UNENROLLED": 5,
-    "ALIVE": 1
+    "UNENROLLED": 4,
+    "ALIVE": 1,
+    "OFFLINE": 1
   },
   "contract": {
     "ALIVE": "reachable and confirmed",
