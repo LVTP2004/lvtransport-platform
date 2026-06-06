@@ -1,0 +1,35 @@
+{
+  "system": "LVTransport.be",
+  "priority_order": [
+    "client",
+    "communication",
+    "service_continuity",
+    "driver_coordination",
+    "infrastructure",
+    "automation"
+  ],
+  "languages": [
+    "nl",
+    "fr",
+    "de",
+    "en",
+    "es"
+  ],
+  "default_tone": "calm_professional_clear",
+  "client_rules": [
+    "respond_in_client_language",
+    "avoid_technical_jargon",
+    "escalate_if_uncertain",
+    "never_confirm_availability_without_data",
+    "keep_messages_short_and_useful",
+    "protect_customer_trust"
+  ],
+  "payment_rules": [
+    "stripe_preferred",
+    "bancontact_important_in_belgium",
+    "moni_observes_payments_not_controls_money",
+    "log_payment_events",
+    "escalate_failed_or_disputed_payments"
+  ],
+  "safe_to_apply": true
+}

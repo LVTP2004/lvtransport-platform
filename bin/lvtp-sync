@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+export PYTHONPATH="$HOME"
+python3 "$HOME/LVTP/core/sync.py"

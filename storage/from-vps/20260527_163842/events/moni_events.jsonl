@@ -1,0 +1,193 @@
+{"timestamp": "2026-05-27T16:11:02.909029+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:11:14.243534+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 5}}
+{"timestamp": "2026-05-27T16:20:27.448176+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:20:39.619074+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:20:40.632313+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:20:50.429048+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:20:51.521351+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:00.067557+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:01.096041+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:10.901626+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:11.887989+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:21.736240+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:22.750018+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:32.340651+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:33.316813+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:42.275272+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:43.297320+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:21:52.456201+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:21:53.490686+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:05.522932+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:22:06.504589+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:14.146498+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:22:15.131584+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:28.265698+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:22:29.281648+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:36.555270+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:22:37.553372+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:46.381507+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:22:47.379012+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:22:59.295765+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:23:00.303752+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:23:11.122351+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:23:12.169809+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:23:22.236853+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:23:23.242737+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:23:35.357231+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:23:36.431581+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:23:47.992227+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:23:48.981592+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:00.830085+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:24:01.927652+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:13.294059+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:24:14.264985+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:24.628288+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:24:25.621002+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:37.597281+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:24:38.607743+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:46.408518+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:24:47.407191+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:24:59.664655+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:25:00.629249+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:25:11.019376+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:25:11.974268+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:25:22.534964+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:25:23.548621+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:25:34.782794+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:25:35.752063+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:25:51.498169+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:25:52.555920+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:01.171679+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:02.240646+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:10.644955+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:11.690487+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:23.494017+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:24.517318+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:39.245710+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:40.231002+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:49.502576+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:50.508780+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:26:58.276339+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:26:59.253666+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:27:09.062966+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:27:10.085270+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:27:20.737454+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:27:21.723252+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:27:33.135883+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:27:34.146476+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:27:43.017984+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:27:44.026978+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:27:51.694864+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:27:52.668285+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:01.827313+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:02.876458+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:12.151628+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:13.187001+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:21.369454+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:22.324891+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:33.894215+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:34.811318+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:43.963476+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:44.915486+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:28:58.518393+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:28:59.541305+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:29:08.896237+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:29:09.947427+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:29:24.401791+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 6}}
+{"timestamp": "2026-05-27T16:29:25.355763+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:29:34.529128+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:29:35.478020+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:29:51.591021+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:29:52.546666+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:00.499194+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:01.655339+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:10.045272+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:11.053916+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:17.236226+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:18.218969+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:30.414934+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:31.388293+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:41.409470+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:42.465749+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:30:58.600609+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:30:59.607564+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:31:09.683658+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:31:10.653943+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:31:23.990109+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:31:24.933188+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:31:37.010404+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:31:38.002472+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:31:47.956987+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:31:49.018506+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:31:58.600467+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:31:59.613041+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:32:07.206465+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:32:08.154033+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:32:16.578699+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:32:17.540861+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:32:27.537808+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:32:28.520827+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:32:37.548292+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:32:38.609821+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:32:48.779985+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:32:49.793722+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:33:03.385646+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:33:04.524929+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:33:17.140040+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:33:18.207542+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:33:30.432719+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:33:31.449147+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:33:40.290493+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:33:41.296307+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:33:51.254428+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:33:52.250527+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:34:00.711985+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:34:01.754409+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:34:11.688400+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:34:12.659348+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:34:34.359234+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:34:35.304146+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:34:45.974139+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:34:47.004533+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:34:56.218892+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:34:57.183805+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:35:07.003621+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:35:07.976162+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:35:17.612955+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:35:18.629345+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:35:34.691864+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:35:35.658514+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:35:46.058534+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:35:47.052032+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:35:55.337106+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:35:56.316408+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:06.126651+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:07.136991+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:17.993865+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:19.015447+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:26.342411+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:27.296652+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:36.969711+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:37.948420+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:48.217909+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:49.213551+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:36:58.004524+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:36:58.986235+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:37:10.525607+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:37:11.541185+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:37:24.893823+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:37:25.848425+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:37:36.182098+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:37:37.198098+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:37:47.358928+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:37:48.371143+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:37:57.188180+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:37:58.206749+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:38:07.288204+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:38:08.338921+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:38:19.105393+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:38:20.100398+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:38:31.495302+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:38:32.460108+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}
+{"timestamp": "2026-05-27T16:38:40.423756+00:00", "node": "vps-96d17c46", "kind": "MONI_ANALYSIS_COMPLETE", "data": {"report": "/home/ubuntu/LVTP/memory/logs/2026-05-27-moni-report.md", "files_indexed": 7}}
+{"timestamp": "2026-05-27T16:38:41.418111+00:00", "node": "vps-96d17c46", "kind": "MONI_DAEMON_START", "data": {"status": "starting"}}

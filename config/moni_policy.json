@@ -1,0 +1,17 @@
+{
+  "storage_max_percent": 85,
+  "watched_processes": [
+    "MONI",
+    "MONI_LOOP",
+    "MONI_EVENT_WORKER",
+    "MONI_WATCHDOG"
+  ],
+  "actions": {
+    "storage_high": "storage_status",
+    "process_down": "pm2_list",
+    "routine": "healthcheck"
+  },
+  "mode": "safe",
+  "auto_restart": true,
+  "auto_offload": false
+}

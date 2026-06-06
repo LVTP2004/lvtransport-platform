@@ -1,0 +1,67 @@
+{
+  "lessons": [
+    {
+      "topic": "Inestabilidad del proceso MONI (reinicios frecuentes)",
+      "lesson": "Los eventos muestran un patrón claro de MONI_DAEMON_START repetido y avisos de WATCHDOG_HIGH_RESTARTS con el contador subiendo rápidamente (de 163 a 433 en ~1 hora). Esto indica que el servicio MONI entra en un bucle de reinicio/crash en lugar de estabilizarse. Es imprescindible detener el ciclo automático y recopilar trazas antes de permitir más reinicios.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Riesgo de thrashing y consumo de recursos",
+      "lesson": "Los reinicios continuos consumen CPU, memoria y generan gran cantidad de operaciones de indexado/archivo (muchos MONI_ANALYSIS_COMPLETE y acciones INDEX_MEMORY/OBSERVE). Sin control, esto puede agotar I/O y almacenamiento o enmascarar la causa raíz del fallo.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Falta de información de fallo accionable",
+      "lesson": "Aunque hay informes MONI_ANALYSIS_COMPLETE exitosos (report path y files_indexed), no hay eventos visibles que documenten la causa del crash. Se necesita capturar stderr, core dumps y últimas líneas de log al crash para diagnóstico.",
+      "confidence": "medium"
+    },
+    {
+      "topic": "Umbrales y alertas insuficientes",
+      "lesson": "El watchdog está notificando reinicios altos, pero aparentemente no hay escalado humano tempranero. Es necesario definir umbrales bajos que disparen alertas antes de que el contador alcance centenas.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Gestión de almacenamiento",
+      "lesson": "Policy rutinario indica storage_percent 78%. Aunque no crítico, combinado con logs y dumps generados por reinicios podría llevar a llenado de disco. Implementar políticas de rotación/descarga cuando el uso sea alto.",
+      "confidence": "medium"
+    }
+  ],
+  "proposed_policies": [
+    {
+      "name": "MONI_restart_backoff_and_cap",
+      "rule": "Si MONI se reinicia más de 5 veces en 10 minutos, deshabilitar reinicios automáticos (poner MONI en estado de 'stopped' por el orquestador) y crear un incidente que requiera intervención humana. Aplicar backoff exponencial al reintentar (ej. 30s, 2m, 8m) y límite máximo de reintentos en 24h.",
+      "safe": true
+    },
+    {
+      "name": "Crash_capture_and_retention",
+      "rule": "En cada caída/crash de MONI, recopilar automáticamente: last 500 líneas de stdout/stderr, archivo de log rotado, y (si está habilitado y seguro) core dump en /var/crash/moni/<timestamp>. Comprimir y offload a almacenamiento de incidentes. Mantener retención limitada (p.ej. 30 días) y rotación para evitar llenado.",
+      "safe": true
+    },
+    {
+      "name": "Watchdog_alert_escalation",
+      "rule": "Generar alerta de prioridad alta y notificación a on-call si MONI supera 10 reinicios en 15 minutos. Incluir: contador de reinicios, timestamps de reinicio, último /home/.../moni-report.md y logs adjuntos. Requerir ack manual para desactivar alertas repetidas.",
+      "safe": true
+    },
+    {
+      "name": "Auto_index_throttle_on_instability",
+      "rule": "Si se detectan reinicios frecuentes (p.ej. >3 en 5 minutos), pausar acciones automáticas de INDEX_MEMORY/OBSERVE duplicadas para evitar sobrecarga. Reanudar indexado sólo cuando MONI lleve X minutos estable (p.ej. 10 minutos) y tras ver logs de integridad.",
+      "safe": true
+    },
+    {
+      "name": "Resource_limits_and_pm2_config",
+      "rule": "Configurar límites de CPU/mem y política de max_restarts en el gestor de procesos (pm2/systemd) para MONI. Establecer max_restarts razonable y intervalos de restart_delay para prevenir bucles rápidos. Registrar los límites en la configuración de despliegue.",
+      "safe": true
+    },
+    {
+      "name": "Storage_threshold_auto_offload",
+      "rule": "Si storage_percent >= 75%, activar offload/archivado automático de artefactos antiguos (logs, reportes, dumps) a almacenamiento externo y generar notificación. Implementar limpieza segura y mantener índice mínimo local.",
+      "safe": true
+    },
+    {
+      "name": "Postmortem_and_runbook_trigger",
+      "rule": "Al superar N reinicios (configurable, p.ej. 10 en 30 minutos) o tras un downtime, crear automáticamente un entrada de postmortem con logs, dumps y pasos de diagnóstico predefinidos. Incluir runbook: (1) revisar error, (2) aplicar parche/rollback, (3) aprobar reinicio manual.",
+      "safe": true
+    }
+  ],
+  "summary": "Se observa un patrón de reinicios masivos del servicio MONI: eventos MONI_DAEMON_START repetidos junto con aumentos continuos en WATCHDOG_HIGH_RESTARTS. Aunque aparecen análisis completados e indexados, el servicio parece inestable y entra en bucle de reinicio. Recomendaciones inmediatas: detener reinicios automáticos (backoff y cap), capturar trazas/crash dumps, activar alertas tempranas y pausar operaciones de indexado repetitivo hasta estabilizar. Además, aplicar límites de recursos y políticas de gestión de almacenamiento para evitar degradación del nodo."
+}

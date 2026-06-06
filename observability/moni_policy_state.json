@@ -1,0 +1,15 @@
+{
+  "timestamp": "2026-05-27T16:57:25.311555+00:00",
+  "node": "leonardovargas-Aspire-E1-470P",
+  "status": "OK",
+  "storage_percent": 78,
+  "findings": [],
+  "actions": [
+    {
+      "timestamp": "2026-05-27T16:57:25.310852+00:00",
+      "source": "leonardovargas-Aspire-E1-470P",
+      "target": "local",
+      "action": "healthcheck"
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "platform": "LVTP",
+  "environment": "local_aspire",
+  "priority": "local development only; production is VPS",
+  "canonical": {
+    "web": {
+      "path": "/home/leonardo-vargas/LVTP",
+      "type": "local_workspace",
+      "health": "file:///home/leonardo-vargas/LVTP",
+      "owner": "local_user",
+      "recovery": "verify_local_workspace"
+    },
+    "api": {
+      "path": "/home/leonardo-vargas/LVTP",
+      "type": "local_workspace",
+      "health": "file:///home/leonardo-vargas/LVTP",
+      "pm2_name": null,
+      "port": null,
+      "script": null,
+      "recovery": "manual_sync_to_vps"
+    },
+    "ops": {
+      "path": "/home/leonardo-vargas/LVTP/ops-manager",
+      "type": "local_ops_workspace",
+      "recovery": "verify_ops"
+    },
+    "moni": {
+      "path": "/home/leonardo-vargas/LVTP/agents",
+      "type": "local_workspace",
+      "recovery": "verify_local_agents"
+    }
+  },
+  "forbidden_paths": [
+    "/var/www",
+    "/home/ubuntu",
+    "/root"
+  ]
+}

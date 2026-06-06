@@ -1,0 +1,33 @@
+{
+  "source": "chatgpt_mentor",
+  "type": "business_operational_lesson",
+  "topic": "lvtransport_client_first_communication",
+  "lesson": "LVTransport debe madurar primero alrededor de comunicación con clientes. El cliente es el primer contacto operacional. Moni debe priorizar idioma, claridad, confianza, estado del servicio y escalamiento humano antes que automatización técnica.",
+  "priority": "critical",
+  "safe_to_apply": true,
+  "principles": [
+    "cliente primero",
+    "comunicación antes que automatización",
+    "claridad antes que complejidad",
+    "confianza antes que velocidad",
+    "multilingüe por diseño",
+    "infraestructura al servicio de la operación"
+  ],
+  "languages": [
+    "Nederlands",
+    "Français",
+    "Deutsch",
+    "English",
+    "Español"
+  ],
+  "applies_to": [
+    "lvtransport.be",
+    "Moni Communication Core",
+    "customer support",
+    "reservation flow",
+    "payment and billing",
+    "driver coordination"
+  ],
+  "ingested_at": "2026-05-27T18:24:14.788200+00:00",
+  "ingested_by_node": "leonardovargas-Aspire-E1-470P"
+}

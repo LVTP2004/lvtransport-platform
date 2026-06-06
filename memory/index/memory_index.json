@@ -1,0 +1,108 @@
+{
+  "timestamp": "2026-05-29T17:06:47.948319+00:00",
+  "node": "leonardovargas-Aspire-E1-470P",
+  "items": [
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/storage_offload.jsonl",
+      "hash": "82016d71dc6cd4d7",
+      "size": 216,
+      "updated": "2026-05-27T16:38:57.505361+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/openai_healthcheck.jsonl",
+      "hash": "95bda7c5027dadfb",
+      "size": 664,
+      "updated": "2026-05-27T16:58:22.416900+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_memory_summarizer.jsonl",
+      "hash": "e687bef38788658f",
+      "size": 236,
+      "updated": "2026-05-27T17:00:53.204216+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/lvtransport_blueprint.jsonl",
+      "hash": "a2e8f208f45dad4d",
+      "size": 406,
+      "updated": "2026-05-27T18:24:14.710742+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_loop.jsonl",
+      "hash": "d70b05a5739bbc19",
+      "size": 218181,
+      "updated": "2026-05-29T17:05:19.810360+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_events.jsonl",
+      "hash": "00019878a08eb85f",
+      "size": 4521702,
+      "updated": "2026-05-29T17:06:47.864115+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_learning_loop.jsonl",
+      "hash": "2e02a9261542a79d",
+      "size": 502,
+      "updated": "2026-05-27T17:55:52.897969+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_sync.jsonl",
+      "hash": "e8bba1ee76bfac5b",
+      "size": 134,
+      "updated": "2026-05-27T16:03:39.610875+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_watchdog.jsonl",
+      "hash": "00fbe351e0382280",
+      "size": 487551,
+      "updated": "2026-05-29T17:06:41.991132+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_routed_events.jsonl",
+      "hash": "b2483119514c4263",
+      "size": 34234,
+      "updated": "2026-05-27T16:29:35.633408+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_policy.jsonl",
+      "hash": "363f88039b18929c",
+      "size": 306,
+      "updated": "2026-05-27T16:57:25.310194+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/events/moni_mentor_ingestor.jsonl",
+      "hash": "baa87a2853944dea",
+      "size": 903,
+      "updated": "2026-05-27T18:24:14.788578+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/logs/2026-05-27-moni-report.md",
+      "hash": "48a027a655825f7a",
+      "size": 1397000,
+      "updated": "2026-05-27T21:59:50.865417+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/logs/2026-05-27-moni-cognition.md",
+      "hash": "4f52dbff2e5d319c",
+      "size": 79939,
+      "updated": "2026-05-27T21:59:08.097523+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/logs/2026-05-28-moni-report.md",
+      "hash": "a5dd0a35f47a7a2b",
+      "size": 1223215,
+      "updated": "2026-05-28T03:01:44.561195+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/logs/2026-05-27-node-bootstrap.md",
+      "hash": "acb50d4a755f73b1",
+      "size": 339,
+      "updated": "2026-05-27T16:00:38.140807+00:00"
+    },
+    {
+      "file": "/home/leonardo-vargas/LVTP/memory/logs/2026-05-28-moni-cognition.md",
+      "hash": "fd6eaa6f8e3f8a57",
+      "size": 76973,
+      "updated": "2026-05-28T03:01:03.450725+00:00"
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+#!/usr/bin/env python3
+from LVTP.core.registry import load_registry
+from pathlib import Path
+import datetime, json, sys, subprocess
+
+def sh(cmd):
+    return subprocess.run(cmd, shell=True, text=True, capture_output=True)
+
+def health():
+    reg = load_registry()
+    lines = [
+        "# LVTPCTL HEALTH",
+        f"time={datetime.datetime.now().isoformat()}",
+        f"environment={reg.get('environment','unknown')}",
+        ""
+    ]
+    verdict = "OK"
+    for name, svc in reg.get("canonical", {}).items():
+        path = svc.get("path")
+        status = "unknown"
+        if path:
+            status = "ok" if Path(path).exists() else "missing"
+        lines.append(f"{name}={status}")
+        if status == "missing":
+            verdict = "ATTENTION_REQUIRED"
+    lines += ["", f"verdict={verdict}"]
+    return "\n".join(lines)
+
+def registry():
+    print(json.dumps(load_registry(), indent=2))
+
+cmd = sys.argv[1] if len(sys.argv) > 1 else "health"
+
+if cmd == "health":
+    body = health()
+    print(body)
+    reports = Path.home() / "LVTP/ops-manager/reports"
+    reports.mkdir(parents=True, exist_ok=True)
+    stamp = datetime.datetime.now().strftime("%Y%m%d-%H%M%S")
+    p = reports / f"{stamp}-lvtpctl-health.md"
+    p.write_text(body + "\n")
+    print(f"REPORT={p}")
+elif cmd == "registry":
+    registry()
+else:
+    print("usage: lvtpctl health|registry")
+    sys.exit(2)

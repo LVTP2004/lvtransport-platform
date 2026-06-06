@@ -1,0 +1,95 @@
+{
+  "platform": "LVTP",
+  "priority": "lvtransport.be must work first",
+  "canonical": {
+    "web": {
+      "path": "/var/www/lvtransport",
+      "type": "static_web",
+      "health": "https://lvtransport.be",
+      "owner": "nginx",
+      "recovery": "verify_nginx"
+    },
+    "api": {
+      "path": "/var/www/lvtransport-api",
+      "type": "node_pm2",
+      "pm2_name": "lvtransport-api",
+      "port": 3000,
+      "health": "http://127.0.0.1:3000/health",
+      "script": "server.js",
+      "recovery": "restart_canonical_api"
+    },
+    "ops": {
+      "path": "/var/www/lvtransport-ops",
+      "type": "ops_workspace",
+      "recovery": "verify_ops"
+    },
+    "moni": {
+      "path": "/home/ubuntu/LVTP/agents/moni_daemon.py",
+      "type": "python_pm2",
+      "pm2_name": "MONI",
+      "health_files": [
+        "/home/ubuntu/LVTP/memory/index/memory_index.json",
+        "/home/ubuntu/LVTP/observability/moni_state.json"
+      ],
+      "recovery": "restart_moni"
+    },
+    "moni_loop": {
+      "path": "/home/ubuntu/LVTP/agents/moni_loop.py",
+      "type": "python_pm2",
+      "pm2_name": "MONI_LOOP",
+      "recovery": "restart_pm2"
+    },
+    "moni_watchdog": {
+      "path": "/home/ubuntu/LVTP/agents/moni_watchdog.py",
+      "type": "python_pm2",
+      "pm2_name": "MONI_WATCHDOG",
+      "recovery": "restart_pm2"
+    },
+    "moni_event_worker": {
+      "path": "/home/ubuntu/LVTP/agents/moni_event_worker.py",
+      "type": "python_pm2",
+      "pm2_name": "MONI_EVENT_WORKER",
+      "recovery": "restart_pm2"
+    },
+    "ops_api": {
+      "path": "/home/ubuntu/lvtransport-platform/apps/ops-api",
+      "type": "node_pm2",
+      "pm2_name": "lvtp-ops-api",
+      "port": 3010,
+      "recovery": "restart_pm2"
+    },
+    "control_ui": {
+      "path": "/home/ubuntu/lvtransport-platform/apps/control-tower-ui",
+      "type": "pm2",
+      "pm2_name": "lvtp-control-tower-ui",
+      "recovery": "restart_pm2"
+    },
+    "booking_event_server": {
+      "path": "/home/ubuntu/lvtransport-platform/packages/realtime/src/booking-event-server.cjs",
+      "type": "node_pm2",
+      "pm2_name": "booking-event-server",
+      "recovery": "restart_pm2"
+    },
+    "ollama": {
+      "type": "systemd",
+      "service": "ollama",
+      "port": 11434,
+      "health": "http://127.0.0.1:11434/api/tags",
+      "recovery": "restart_ollama"
+    },
+    "nginx": {
+      "type": "systemd",
+      "service": "nginx",
+      "config_test": "nginx -t",
+      "recovery": "reload_nginx"
+    }
+  },
+  "forbidden_paths": [
+    "/home/ubuntu/lvtransport-platform",
+    "/var/www/lvtransport-platform",
+    "/var/www/lvtransport-platform_clean_runtime",
+    "/var/www/staging-grey",
+    "/home/ubuntu/backups",
+    "/home/ubuntu/.pm2/logs"
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "lessons": [
+    {
+      "topic": "Bucle de reinicios del proceso MONI",
+      "lesson": "Los eventos muestran que el servicio MONI se está iniciando y completando análisis repetidamente (MONI_DAEMON_START / MONI_ANALYSIS_COMPLETE) y la vigilancia (WATCHDOG_HIGH_RESTARTS) registra un contador de reinicios que sube rápidamente (de ~163 a ~453). Indica un crash-loop o reinicios continuos del agente MONI.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Reinicios gestionados pero sin mitigación de backoff",
+      "lesson": "PM2 y el watchdog permiten reinicios continuos (↺ en pm2 y alertas WATCHDOG_HIGH_RESTARTS) pero no hay evidencia de backoff exponencial, límites de reinicio efectivos ni escalado automático. Reinicios sin backoff aumentan la carga y entorpecen diagnóstico.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Operaciones de indexado repetidas",
+      "lesson": "Se observan muchas acciones INDEX_MEMORY y MONI_ANALYSIS_COMPLETE en cortos periodos con números de archivos indexados cambiantes (5 → 12/13). Esto puede indicar indexados redundantes o triggers demasiado frecuentes del pipeline de análisis.",
+      "confidence": "medium"
+    },
+    {
+      "topic": "Almacenamiento cercano a umbrales",
+      "lesson": "La rutina de políticas reporta storage_percent = 78%. No crítico hoy, pero combinado con logs y archivos crecientes puede acercar a límites; es necesario control y limpieza/rotación antes de que afecte procesos.",
+      "confidence": "medium"
+    },
+    {
+      "topic": "Telemetría y salud del API externa",
+      "lesson": "Las comprobaciones de OpenAI muestran el servicio operativo (models_available: 118). Esto descarta problemas de disponibilidad del API externo como causa primaria del crash-loop de MONI.",
+      "confidence": "high"
+    },
+    {
+      "topic": "Aviso deprecación en agente de salud",
+      "lesson": "El healthcheck emite DeprecationWarning por uso de datetime.utcnow(). Conviene corregir para evitar ruido en logs y futuros fallos al migrar a versiones de Python que eliminen la API.",
+      "confidence": "low"
+    }
+  ],
+  "proposed_policies": [
+    {
+      "name": "restart_backoff_limit",
+      "rule": "Aplicar política de reinicio con backoff exponencial y límite máximo de reinicios por ventana (ej. no más de 5 reinicios en 10 minutos). Tras alcanzar el límite, poner MONI en estado 'failed' y notificar al equipo de operaciones con logs y core-dump.",
+      "safe": true
+    },
+    {
+      "name": "crash_escalation_and_dump",
+      "rule": "Al detectar reinicios repetidos, capturar stack trace/core dump y volcar logs relevantes a almacenamiento persistente antes de reiniciar. Enviar alerta con enlaces a artefactos de diagnóstico (logs, core) para análisis humano.",
+      "safe": true
+    },
+    {
+      "name": "index_rate_limit_and_batching",
+      "rule": "Limitar la frecuencia de INDEX_MEMORY: agrupar archivos/changes y ejecutar indexado por lotes (ej. máximo 1 index job cada 30s-2min, configurable). Evitar re-indexar sin cambios detectados mediante hash/ETag o marcadores de estado.",
+      "safe": true
+    },
+    {
+      "name": "persistent_queue_with_dedup",
+      "rule": "Usar una cola persistente para eventos de análisis/indexado con deduplicación por ID/huella. Si MONI se reinicia, la cola garantiza continuidad y evita repetir trabajos ya completados.",
+      "safe": true
+    },
+    {
+      "name": "storage_monitoring_and_autoclean",
+      "rule": "Monitoreo proactivo de uso de disco con escalado de alertas (ej. 75%, 85%, 92%). Implementar política de rotación y retención de logs y offload automático de datos antiguos a almacenamiento externo cuando se cruce el primer umbral.",
+      "safe": true
+    },
+    {
+      "name": "enhanced_logging_and_rate_limit_logs",
+      "rule": "Aumentar nivel de logging al detectar reinicios (temporariamente) y añadir metadata de contexto (PID, uptime, reason/exceptions). Limitar la tasa de eventos de logging para evitar llenar disco durante bucles de error.",
+      "safe": true
+    },
+    {
+      "name": "fix_deprecations_and_ci_checks",
+      "rule": "Corregir warnings deprecados (ej. usar datetime.now(timezone.UTC)) y añadir chequeos en CI que fallen la build si se introducen llamadas deprecadas para reducir ruido y futuros fallos.",
+      "safe": true
+    },
+    {
+      "name": "alerting_on_watchdog_threshold",
+      "rule": "Cuando WATCHDOG_HIGH_RESTARTS supere un umbral configurable (ej. 10 reinicios en 10 min), generar alerta crítica (pagina/Slack/Email) con estado del servicio, conteo de reinicios y últimos logs.",
+      "safe": true
+    }
+  ],
+  "summary": "Se detecta un crash-loop del agente MONI: inicio/fin de análisis repetidos con un contador de reinicios que crece rápidamente. OpenAI está operativo y el uso de disco está en ~78%. Recomendación inmediata: aplicar límite de reinicios con backoff, activar captura de core/stack traces y aumentar telemetría; añadir rate-limiting y batching para INDEX_MEMORY y usar una cola persistente con deduplicación. Corregir el warning deprecación en healthcheck y configurar alertas en el watchdog cuando se superen umbrales."
+}
