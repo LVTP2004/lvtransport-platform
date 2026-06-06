@@ -436,3 +436,4 @@ export class PaymentArchitectureService {
 }
 
 export const paymentArchitectureService = new PaymentArchitectureService();
+}

@@ -52,3 +52,4 @@ export interface BookingEventPayload {
 export const emitBookingEvent = (payload: BookingEventPayload): void => {
   eventBus.emit(WS_EVENTS.BOOKING_UPDATED, payload);
 };
+}
