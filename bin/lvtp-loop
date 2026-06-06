@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+set -euo pipefail
+export PYTHONPATH="$HOME"
+python3 "$HOME/LVTP/core/autonomous_loop.py"

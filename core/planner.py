@@ -7,9 +7,14 @@ def build_plan():
 
     actions = []
 
-    for d in report["decisions"]:
+    for d in report.get("decisions", []):
 
-        if d["action"] == "SYNC_TO_VPS":
+        action = d.get("action")
+
+        if not action:
+            continue
+
+        if action == "SYNC_TO_VPS":
 
             actions.append({
                 "step": 1,
@@ -26,7 +31,7 @@ def build_plan():
             })
 
     return {
-        "environment": report["environment"],
+        "environment": report.get("environment"),
         "actions": actions
     }
 
