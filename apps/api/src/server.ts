@@ -1,17 +1,18 @@
 import { createApp } from './app.js';
 
 const app = createApp();
-const demo = app.createBooking({
+
+const booking = app.createBooking({
   customerId: 'demo-customer',
-  pickup: 'Antwerp',
-  destination: 'Brussels'
+  pickupAddress: 'Antwerp',
+  dropoffAddress: 'Brussels',
+  distanceKm: 42
 });
 
 console.log(JSON.stringify({
   ok: true,
-  service: '@lvtransport/api',
   health: app.health(),
-  demoBooking: demo,
-  tracking: app.track(demo.trackingCode),
-  time: new Date().toISOString()
+  booking,
+  tracking: app.track(booking.trackingCode),
+  driverAccepted: app.driverResponse(booking.id, 'demo-driver', 'accept')
 }, null, 2));

@@ -1,40 +1,36 @@
-import { bookingsService, type BookingStatus } from './bookings/bookings.service.js';
-import { trackingService } from './tracking/tracking.service.js';
-
-export type RouteResponse = {
-  ok: boolean;
-  service: string;
-  version: string;
-  mode: string;
-  time: string;
-};
+import { bookingEngineService } from './bookings/booking-engine.service.js';
 
 export function createApp() {
   return {
-    health(): RouteResponse {
+    health() {
       return {
         ok: true,
         service: '@lvtransport/api',
         version: '0.1.0',
-        mode: 'safe-bookings-baseline',
+        mode: 'booking-engine-baseline',
         time: new Date().toISOString()
       };
     },
 
-    createBooking(input: { customerId: string; pickup: string; destination: string }) {
-      return bookingsService.createBooking(input);
+    createBooking(input: {
+      customerId: string;
+      pickupAddress: string;
+      dropoffAddress: string;
+      distanceKm: number;
+    }) {
+      return bookingEngineService.createBooking(input);
     },
 
     listBookings() {
-      return bookingsService.listBookings();
-    },
-
-    updateBookingStatus(bookingId: string, status: BookingStatus) {
-      return bookingsService.updateStatus(bookingId, status);
+      return bookingEngineService.listBookings();
     },
 
     track(code: string) {
-      return trackingService.findByCode(code);
+      return bookingEngineService.findByTrackingCode(code);
+    },
+
+    driverResponse(bookingId: string, driverId: string, action: 'accept' | 'reject') {
+      return bookingEngineService.respondToRide(bookingId, driverId, action);
     }
   };
 }
