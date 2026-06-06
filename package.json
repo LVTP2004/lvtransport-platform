@@ -35,8 +35,11 @@
     "policy:explain": "pnpm --filter @lvtransport/api exec tsx src/ops-cli.ts policy:explain"
   },
   "devDependencies": {
+    "@types/node": "^25.9.2",
     "@types/react": "^18.3.12",
-    "@types/react-dom": "^18.3.1"
+    "@types/react-dom": "^18.3.1",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3"
   },
   "dependencies": {
     "express": "^4.21.1",
