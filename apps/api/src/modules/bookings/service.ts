@@ -73,6 +73,7 @@ export const bookingFlowService = {
             synchronizedAt: now,
             pickupBufferMin: 20,
             monitoring: {
+              providerPriority: ['manual'],
               status: 'unknown',
               delayMin: 0,
               terminal: input.airportIntel.terminal ?? null,
