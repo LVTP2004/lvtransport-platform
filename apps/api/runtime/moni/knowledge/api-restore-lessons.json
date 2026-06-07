@@ -1,0 +1,17 @@
+{
+  "domain": "apps/api restore",
+  "date": "2026-06-08",
+  "backup_source": "apps/api/.broken-src-backup/src-20260606-200557",
+  "operational_rule": "Restore one subsystem at a time; run build and typecheck before commit.",
+  "validation_commands": [
+    "../../node_modules/.bin/tsc -p tsconfig.json",
+    "../../node_modules/.bin/tsc --noEmit"
+  ],
+  "lessons": [
+    "Do not bulk-copy backup source into src.",
+    "Commit only green states.",
+    "Use safe baseline stubs when restored historical code conflicts.",
+    "When TypeScript reports object-literal missing fields sequentially, inspect and align the full interface instead of patching field by field.",
+    "sqlite.repositories.ts can safely re-export in-memory repositories for baseline recovery."
+  ]
+}
