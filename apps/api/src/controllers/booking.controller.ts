@@ -13,29 +13,26 @@ export const createBookingController = (input: {
   return app.createBooking({
     customerId: input.customerId,
     pickupAddress: input.pickupAddress ?? input.pickup ?? 'unknown-pickup',
-    dropoffAddress: input.dropoffAddress ?? input.destination ?? 'unknown-dropoff',
+    dropoffAddress: input.dropoffAddress ?? input.destination ?? 'unknown-destination',
     distanceKm: input.distanceKm ?? 0
   });
 };
 
-export const listBookingsController = () => {
-  return app.listBookings();
-};
+export const listBookingsController = () => app.listBookings();
 
-export const bookingMetricsController = () => {
-  return {
-    totalBookings: app.listBookings().length
-  };
-};
+export const updateBookingLifecycleController = (
+  bookingId: string,
+  driverId: string,
+  action: 'accept' | 'reject'
+) => app.respondToRide(bookingId, driverId, action);
 
-export const updateBookingLifecycleController = (bookingId: string, action: 'accept' | 'reject', driverId = 'system') => {
-  return app.respondToRide(bookingId, driverId, action);
-};
+export const bookingMetricsController = () => ({
+  totalBookings: app.listBookings().length,
+  time: new Date().toISOString()
+});
 
-export const bookingAirportIntelligenceController = (bookingId: string) => {
-  return {
-    bookingId,
-    airportIntelligence: null,
-    mode: 'safe-baseline'
-  };
-};
+export const bookingAirportIntelligenceController = (bookingId: string) => ({
+  bookingId,
+  airportIntelligence: null,
+  mode: 'safe-controller-baseline'
+});
