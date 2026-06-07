@@ -1,70 +1,28 @@
 import crypto from 'node:crypto';
-import { emitNotificationEvent } from './notification.events.js';
-import type { NotificationDeliveryLogEntry, NotificationMessage } from './notification.types.js';
+import type { NotificationMessage, NotificationDeliveryLog, NotificationQueueEntry, NotificationLifecycleStatus } from './notification.types.js';
 
-const MAX_RETRIES = 3;
+const DEFAULT_MAX_ATTEMPTS = 4;
 
-export class NotificationService {
-  private readonly deliveryLog: NotificationDeliveryLogEntry[] = [];
-
-  queue(input: Omit<NotificationMessage, 'status' | 'retryCount' | 'occurredAt'>) {
-    const message: NotificationMessage = {
-      ...input,
-      notificationId: input.notificationId ?? crypto.randomUUID(),
-      status: 'queued',
-      retryCount: 0,
-      occurredAt: new Date().toISOString()
-    };
-
-    return this.deliver(message);
-  }
-
-  private deliver(message: NotificationMessage): { queued: boolean; delivered: boolean; message: NotificationMessage } {
-    const forceFailure = message.data?.forceFailure === true;
-    const retryCount = message.retryCount ?? 0;
-
-    if (forceFailure && retryCount < MAX_RETRIES) {
-      const retrying = { ...message, status: 'retrying' as const, retryCount: retryCount + 1 };
-      this.log(retrying, 'Forced mock provider failure.');
-      return this.deliver(retrying);
-    }
-
-    const finalMessage = {
-      ...message,
-      status: forceFailure ? 'failed' as const : 'sent' as const
-    };
-
-    this.log(finalMessage, forceFailure ? 'Max retries reached in mock provider.' : undefined);
-
-    emitNotificationEvent({
-      notificationId: finalMessage.notificationId!,
-      type: finalMessage.template,
-      status: finalMessage.status,
-      occurredAt: new Date().toISOString(),
-      payload: finalMessage.data
-    });
-
+export const notificationService = {
+  queue(input: Omit<NotificationMessage, 'notificationId' | 'createdAt' | 'provider' | 'lifecycle'>) {
+    const now = new Date().toISOString();
     return {
-      queued: finalMessage.status !== 'failed',
-      delivered: finalMessage.status === 'sent',
-      message: finalMessage
+      queued: true,
+      message: {
+        ...input,
+        notificationId: crypto.randomUUID(),
+        createdAt: now,
+        provider: 'internal_push_router',
+        lifecycle: { status: 'queued' as NotificationLifecycleStatus, attempts: 0, maxAttempts: DEFAULT_MAX_ATTEMPTS, updatedAt: now },
+      },
     };
-  }
-
-  getDeliveryLog() {
-    return this.deliveryLog;
-  }
-
-  private log(message: NotificationMessage, error?: string) {
-    this.deliveryLog.push({
-      notificationId: message.notificationId!,
-      status: message.status ?? 'queued',
-      provider: 'mock_dev',
-      attempts: (message.retryCount ?? 0) + 1,
-      lastAttemptAt: new Date().toISOString(),
-      error
-    });
-  }
-}
-
-export const notificationService = new NotificationService();
+  },
+  getDeliveryLogs(): NotificationDeliveryLog[] { return []; },
+  getOperationalQueue(): NotificationQueueEntry[] { return []; },
+  getDiagnostics() { return { staleAfterMs: 600000, stale: [] }; },
+  restoreActiveNotifications(_recipientId: string, _checkpoint?: string) { return []; },
+  archiveOperationalAlertsForBooking(_bookingId: string) {},
+  createDriverAssignmentDispatchNotification(input: { bookingId: string; customerId: string; driverId: string; adminId: string }) {
+    return { customer: this.queue({ ...input, recipientId: input.customerId, audience: 'customer', type: 'driver_assigned', channels: ['in_app'], title: 'Driver assigned', body: 'Driver assigned.' }), driver: null, admin: null };
+  },
+};

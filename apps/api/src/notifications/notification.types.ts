@@ -1,54 +1,67 @@
-export type NotificationChannel = 'email' | 'push' | 'sms' | 'whatsapp' | 'webhook';
-export type NotificationAudience = 'customer' | 'driver' | 'admin' | 'support' | 'business';
-export type DeliveryStatus = 'queued' | 'sent' | 'failed' | 'retrying';
-export type NotificationProvider = 'mock_dev' | 'internal_push_router';
-export type NotificationType =
-  | 'booking_confirmation'
-  | 'booking_status_update'
-  | 'driver_assigned'
-  | 'admin_new_booking_alert'
-  | 'driver_assignment';
+export type NotificationChannel = 'email' | 'in_app' | 'push' | 'sms' | 'whatsapp';
+export type NotificationLifecycleStatus = 'queued' | 'retrying' | 'delivered' | 'failed' | 'archived';
+export type NotificationProvider = 'internal_push_router' | 'mock_dev' | string;
 
 export interface NotificationMessage {
-  notificationId?: string;
+  notificationId: string;
   bookingId?: string;
   recipientId: string;
-  audience: NotificationAudience;
-  channel: NotificationChannel;
-  template: NotificationType;
+  audience: 'customer' | 'driver' | 'admin';
+  type: string;
+  channels: NotificationChannel[];
   title: string;
   body: string;
   data?: Record<string, unknown>;
-  retryCount?: number;
-  status?: DeliveryStatus;
-  occurredAt?: string;
+  createdAt: string;
+  provider: NotificationProvider;
+  lifecycle: {
+    status: NotificationLifecycleStatus;
+    attempts: number;
+    maxAttempts: number;
+    updatedAt: string;
+    failureReason?: string;
+    retryAt?: string;
+    archivedAt?: string;
+  };
 }
 
-export interface NotificationDeliveryLogEntry {
+export interface NotificationDeliveryLog {
+  id: string;
   notificationId: string;
-  status: DeliveryStatus;
+  bookingId?: string;
+  channel: NotificationChannel;
   provider: NotificationProvider;
-  attempts: number;
-  lastAttemptAt: string;
-  error?: string;
+  status: NotificationLifecycleStatus;
+  attempt: number;
+  createdAt: string;
+}
+
+export interface NotificationQueueEntry {
+  queueId: string;
+  notificationId: string;
+  state: NotificationLifecycleStatus;
+  enqueuedAt: string;
+  audience: string;
+}
+
+export type NotificationType = string;
+
+export interface NotificationEventEnvelope {
+  eventId: string;
+  notificationId: string;
+  status: NotificationLifecycleStatus;
+  emittedAt: string;
+  payload?: Record<string, unknown>;
 }
 
 export interface NotificationTemplate {
   id: string;
-  type: NotificationType;
+  type: string;
   channel: NotificationChannel;
-  subject?: string;
+  subject: string;
   bodyText: string;
-  bodyHtml?: string;
+  bodyHtml: string;
   placeholders: string[];
   enabled: boolean;
   version: number;
-}
-
-export interface NotificationEventEnvelope {
-  notificationId: string;
-  type: NotificationType;
-  status: DeliveryStatus;
-  occurredAt: string;
-  payload?: Record<string, unknown>;
 }
