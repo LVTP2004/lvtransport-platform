@@ -1,3 +1,8 @@
-export * from './health.routes.js';
-export * from './booking.routes.js';
-export * from './tracking.routes.js';
+import { Router } from 'express';
+import healthRoutes from './health.routes.js';
+
+const router = Router();
+
+router.use('/health', healthRoutes);
+
+export default router;

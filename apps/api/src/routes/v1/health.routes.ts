@@ -1,9 +1,10 @@
-import { createApp } from '../../app.js';
+import { Router } from 'express';
+import { healthController, readinessController, startupValidationController } from '../../controllers/health.controller.js';
 
-const app = createApp();
+const router = Router();
 
-export const healthRoutes = {
-  health() {
-    return app.health();
-  }
-};
+router.get('/health', healthController);
+router.get('/health/readiness', readinessController);
+router.get('/health/startup-validation', startupValidationController);
+
+export default router;
