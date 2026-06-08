@@ -1,18 +1,23 @@
+import express from 'express';
+import cors from 'cors';
+import morgan from 'morgan';
+import routes from './routes/index.js';
 import { createApp } from './app.js';
 
-const app = createApp();
+const port = Number(process.env.PORT ?? 3000);
+const domainApp = createApp();
+const server = express();
 
-const booking = app.createBooking({
-  customerId: 'demo-customer',
-  pickupAddress: 'Antwerp',
-  dropoffAddress: 'Brussels',
-  distanceKm: 42
+server.use(cors());
+server.use(express.json());
+server.use(morgan('dev'));
+
+server.get('/health', (_req, res) => {
+  res.json(domainApp.health());
 });
 
-console.log(JSON.stringify({
-  ok: true,
-  health: app.health(),
-  booking,
-  tracking: app.track(booking.trackingCode),
-  driverAccepted: app.driverResponse(booking.id, 'demo-driver', 'accept')
-}, null, 2));
+server.use('/api', routes);
+
+server.listen(port, '0.0.0.0', () => {
+  console.log(`LVTP API listening on 0.0.0.0:${port}`);
+});
