@@ -1,23 +1,72 @@
 import crypto from 'node:crypto';
 import type { TrackingEventName, TrackingEventPayload } from './tracking.events.js';
 
+const trackingStore = new Map<string, TrackingEventPayload>();
+
+const generateTrackingCode = (bookingId: string) =>
+  `trk_${bookingId.replace(/[^a-zA-Z0-9]/g, '').toLowerCase()}_${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+
 export interface TrackingLink {
   bookingId: string;
-  customerId: string;
   trackingCode: string;
   publicUrl: string;
+  customerId: string;
   expiresAt: string;
   createdAt: string;
 }
 
-const trackingEvents = new Map<string, TrackingEventPayload>();
 const trackingLinks = new Map<string, TrackingLink>();
 
 export class TrackingService {
-  createTrackingLink(bookingId: string, customerId: string, driverId?: string) {
+  createTrackingLink(
+    bookingId: string,
+    customerId: string,
+    driverId?: string
+  ) {
+    const trackingCode = generateTrackingCode(bookingId);
+    const trackingUrl = `/tracking/${trackingCode}`;
+
+    const payload: TrackingEventPayload = {
+      bookingId,
+      customerId,
+      driverId,
+      trackingCode,
+      trackingUrl,
+      timestamp: new Date().toISOString()
+    };
+
+    trackingStore.set(trackingCode, payload);
+
+    return payload;
+  }
+
+  findByTrackingCode(trackingCode: string) {
+    return trackingStore.get(trackingCode) ?? null;
+  }
+
+  publishEvent(
+    event: TrackingEventName,
+    payload: TrackingEventPayload
+  ) {
+    return {
+      event,
+      payload,
+      occurredAt: new Date().toISOString()
+    };
+  }
+
+  createPublicTrackingLink(
+    bookingId: string,
+    customerId: string
+  ): TrackingLink {
     const trackingCode = crypto.randomBytes(5).toString('hex').toUpperCase();
+
     const createdAt = new Date();
-    const expiresAt = new Date(createdAt.getTime() + 1000 * 60 * 60 * 24 * 2);
+    const expiresAt = new Date(
+      createdAt.getTime() + 1000 * 60 * 60 * 24 * 2
+    );
 
     const link: TrackingLink = {
       bookingId,
@@ -28,34 +77,21 @@ export class TrackingService {
       expiresAt: expiresAt.toISOString()
     };
 
-    const payload: TrackingEventPayload = {
-      bookingId,
-      customerId,
-      driverId,
-      trackingCode,
-      trackingUrl: link.publicUrl,
-      timestamp: link.createdAt
-    };
-
     trackingLinks.set(trackingCode, link);
-    trackingEvents.set(trackingCode, payload);
 
     return link;
-  }
-
-  findByTrackingCode(trackingCode: string) {
-    return trackingEvents.get(trackingCode.toUpperCase()) ?? null;
   }
 
   lookupByCode(trackingCode: string) {
     const link = trackingLinks.get(trackingCode.toUpperCase());
-    if (!link) return null;
-    if (new Date(link.expiresAt).getTime() < Date.now()) return null;
-    return link;
-  }
 
-  publishEvent(event: TrackingEventName, payload: TrackingEventPayload) {
-    return { event, payload, occurredAt: new Date().toISOString() };
+    if (!link) return null;
+
+    if (new Date(link.expiresAt).getTime() < Date.now()) {
+      return null;
+    }
+
+    return link;
   }
 }
 

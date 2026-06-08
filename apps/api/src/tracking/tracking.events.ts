@@ -1,7 +1,6 @@
-export type TrackingEventName =
-  | 'tracking.created'
-  | 'tracking.lookup'
-  | 'tracking.expired';
+import { TRACKING_EVENTS } from '../constants/index.js';
+
+export type TrackingEventName = (typeof TRACKING_EVENTS)[keyof typeof TRACKING_EVENTS];
 
 export interface TrackingEventPayload {
   bookingId: string;
