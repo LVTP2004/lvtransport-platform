@@ -3,8 +3,8 @@ import { healthController, readinessController, startupValidationController } fr
 
 const router = Router();
 
-router.get('/health', healthController);
-router.get('/health/readiness', readinessController);
-router.get('/health/startup-validation', startupValidationController);
+router.get('/', healthController);
+router.get('/readiness', readinessController);
+router.get('/startup-validation', startupValidationController);
 
 export default router;

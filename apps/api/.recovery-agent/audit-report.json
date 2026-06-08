@@ -1,0 +1,122 @@
+{
+  "generatedAt": "2026-06-08T10:01:25.293Z",
+  "cwd": "/home/leonardo-vargas/LVTP/apps/api",
+  "typecheck": "pass",
+  "counts": {
+    "backupFiles": 202,
+    "currentFiles": 197,
+    "missing": 7
+  },
+  "priority": {
+    "safeToInspectFirst": [],
+    "doNotBlindRestore": [
+      {
+        "file": "bookings/booking.service.ts",
+        "class": "possible_duplicate_booking_service",
+        "imports": [
+          "node:crypto",
+          "@lvtransport/realtime",
+          "@lvtransport/realtime",
+          "./bookings.service.js",
+          "node:crypto",
+          "./booking.events.js",
+          "../notifications/notification.service.js",
+          "../tracking/tracking.service.js"
+        ]
+      },
+      {
+        "file": "modules/payments/payment.routes.ts",
+        "class": "risky_legacy_payment",
+        "imports": [
+          "express",
+          "./services/payment-architecture.service.js"
+        ]
+      },
+      {
+        "file": "modules/payments/README.md",
+        "class": "risky_legacy_payment",
+        "imports": []
+      },
+      {
+        "file": "routes/v1/bookings.routes.ts",
+        "class": "legacy_route",
+        "imports": [
+          "express",
+          "../../bookings/booking.service.js"
+        ]
+      },
+      {
+        "file": "routes/v1/notifications.routes.ts",
+        "class": "legacy_route",
+        "imports": [
+          "express",
+          "../../bookings/booking-notification-flow.service.js",
+          "../../notifications/notification.service.js"
+        ]
+      }
+    ],
+    "testsLater": []
+  },
+  "allMissing": [
+    {
+      "file": "bookings/booking.service.ts",
+      "class": "possible_duplicate_booking_service",
+      "imports": [
+        "node:crypto",
+        "@lvtransport/realtime",
+        "@lvtransport/realtime",
+        "./bookings.service.js",
+        "node:crypto",
+        "./booking.events.js",
+        "../notifications/notification.service.js",
+        "../tracking/tracking.service.js"
+      ]
+    },
+    {
+      "file": "modules/payments/payment.routes.ts",
+      "class": "risky_legacy_payment",
+      "imports": [
+        "express",
+        "./services/payment-architecture.service.js"
+      ]
+    },
+    {
+      "file": "modules/payments/README.md",
+      "class": "risky_legacy_payment",
+      "imports": []
+    },
+    {
+      "file": "notifications/notification.types.ts.bak",
+      "class": "backup_artifact",
+      "imports": [
+        "../constants/index.js"
+      ]
+    },
+    {
+      "file": "routes/v1/bookings.routes.ts",
+      "class": "legacy_route",
+      "imports": [
+        "express",
+        "../../bookings/booking.service.js"
+      ]
+    },
+    {
+      "file": "routes/v1/bookings.routes.ts.bak",
+      "class": "backup_artifact",
+      "imports": [
+        "express",
+        "../../bookings/booking.service.js",
+        "../../bookings/booking-engine.service.js"
+      ]
+    },
+    {
+      "file": "routes/v1/notifications.routes.ts",
+      "class": "legacy_route",
+      "imports": [
+        "express",
+        "../../bookings/booking-notification-flow.service.js",
+        "../../notifications/notification.service.js"
+      ]
+    }
+  ]
+}
