@@ -1,4 +1,6 @@
 
+atlas-pro/
+atlas-reports/
 *.bak
 .cache
 config/.env
