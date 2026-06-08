@@ -1,64 +1,51 @@
-import crypto from 'node:crypto';
-export type BookingStatus = 'pending' | 'accepted' | 'rejected';
-
-export interface Booking {
-  id: string;
+type BookingInput = {
   customerId: string;
   pickupAddress: string;
   dropoffAddress: string;
   distanceKm: number;
-  fare: number;
-  status: BookingStatus;
+};
+
+type BookingRecord = BookingInput & {
+  id: string;
   trackingCode: string;
-  assignedDriverId?: string;
+  status: 'pending' | 'accepted' | 'rejected';
   createdAt: string;
-  updatedAt: string;
-}
+};
 
-const BASE_FARE = 7;
-const PER_KM = 2.25;
+const bookings = new Map<string, BookingRecord>();
 
-class BookingEngineService {
-  private readonly bookings = new Map<string, Booking>();
-
-  createBooking(input: Omit<Booking, 'id' | 'status' | 'trackingCode' | 'createdAt' | 'updatedAt' | 'fare'> & { distanceKm: number }) {
-    const id = crypto.randomUUID();
-    const trackingCode = `LV-${id.slice(0, 8).toUpperCase()}`;
+export const bookingEngineService = {
+  createBooking(input: BookingInput) {
     const now = new Date().toISOString();
-    const fare = Number((BASE_FARE + input.distanceKm * PER_KM).toFixed(2));
-
-    const booking: Booking = {
+    const booking: BookingRecord = {
       ...input,
-      id,
-      fare,
+      id: `booking-${Date.now()}`,
+      trackingCode: `LVTP-${Date.now().toString(36).toUpperCase()}`,
       status: 'pending',
-      trackingCode,
       createdAt: now,
-      updatedAt: now,
     };
-
-    this.bookings.set(id, booking);
+    bookings.set(booking.id, booking);
     return booking;
-  }
+  },
 
   listBookings() {
-    return Array.from(this.bookings.values());
-  }
+    return [...bookings.values()];
+  },
 
   findByTrackingCode(code: string) {
-    return this.listBookings().find((booking) => booking.trackingCode === code);
-  }
+    return [...bookings.values()].find((booking) => booking.trackingCode === code) ?? null;
+  },
 
   respondToRide(bookingId: string, driverId: string, action: 'accept' | 'reject') {
-    const booking = this.bookings.get(bookingId);
-    if (!booking) return undefined;
+    const booking = bookings.get(bookingId);
+    if (!booking) return null;
 
-    booking.status = action === 'accept' ? 'accepted' : 'rejected';
-    booking.assignedDriverId = driverId;
-    booking.updatedAt = new Date().toISOString();
-    this.bookings.set(bookingId, booking);
-    return booking;
-  }
-}
+    const next: BookingRecord = {
+      ...booking,
+      status: action === 'accept' ? 'accepted' : 'rejected',
+    };
 
-export const bookingEngineService = new BookingEngineService();
+    bookings.set(bookingId, next);
+    return { booking: next, driverId, action };
+  },
+};
