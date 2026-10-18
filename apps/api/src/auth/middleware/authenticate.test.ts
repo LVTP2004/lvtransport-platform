@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { after, test } from 'node:test';
 import { signJwt } from '@lvtransport/auth';
+import type { RequestAuthContext } from '../models/request-auth-context.js';
 import { authenticate } from './authenticate.js';
 
 const secret = 'unit-test-secret-material-that-is-at-least-thirty-two-bytes';
@@ -22,7 +23,9 @@ const claims = {
 } as Parameters<typeof signJwt>[0];
 
 function authenticateToken(token: string) {
-  const request = { headers: { authorization: 'Bearer ' + token } };
+  const request: RequestAuthContext & { headers: { authorization: string } } = {
+    headers: { authorization: 'Bearer ' + token }
+  };
   authenticate(request);
   return request.auth;
 }
