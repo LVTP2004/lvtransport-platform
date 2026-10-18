@@ -2,22 +2,22 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const services = [
-  { label: 'TAXI ANTWERPEN', title: 'Taxi in Antwerpen', copy: 'Comfortabel vervoer in Antwerpen en de omliggende gemeenten.' },
-  { label: 'AIRPORT', title: 'Luchthavenvervoer', copy: 'Transfers naar Zaventem, Charleroi, Eindhoven, Schiphol en andere luchthavens.' },
-  { label: 'BUSINESS', title: 'Zakelijk vervoer', copy: 'Discreet vervoer voor bedrijven, vergaderingen, events en gasten.' },
-  { label: 'HAVEN', title: 'Havenvervoer', copy: 'Vervoer voor medewerkers en bezoekers van de haven van Antwerpen.' },
-  { label: 'LONG DISTANCE', title: 'Lange afstanden', copy: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.' },
+  { label: 'TAXI ANTWERPEN', title: 'Taxi Antwerpen', copy: 'Snel en comfortabel vervoer in Antwerpen en omgeving.', icon: '🚖' },
+  { label: 'LUCHTHAVEN', title: 'Luchthavenvervoer', copy: 'Transfers naar Zaventem, Charleroi, Eindhoven, Schiphol en andere luchthavens.', icon: '✈' },
+  { label: 'ZAKELIJK', title: 'Zakelijk vervoer', copy: 'Discreet vervoer voor bedrijven, vergaderingen, events en gasten.', icon: '▣' },
+  { label: 'HAVEN', title: 'Havenvervoer', copy: 'Vervoer voor medewerkers en bezoekers van de haven van Antwerpen.', icon: '⚓' },
+  { label: 'LANGE AFSTAND', title: 'Lange afstanden', copy: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.', icon: '➜' },
 ];
 
 const routePrices = [
   { destination: 'Zaventem', price: '€80' },
+  { destination: 'Brussel', price: '€80' },
+  { destination: 'Mechelen', price: '€45' },
+  { destination: 'Gent', price: '€100' },
+  { destination: 'Schiphol', price: '€200' },
   { destination: 'Eindhoven', price: '€130' },
   { destination: 'Charleroi', price: '€150' },
-  { destination: 'Schiphol', price: '€200' },
-  { destination: 'Mechelen', price: '€45' },
-  { destination: 'Brussel', price: '€80' },
   { destination: 'Breda', price: '€95' },
-  { destination: 'Gent', price: '€100' },
   { destination: 'Rotterdam', price: '€150' },
   { destination: 'Brugge', price: '€165' },
 ];
@@ -26,54 +26,13 @@ const whatsappUrl = 'https://wa.me/32466487936';
 const routeRequestUrl = (destination: string) =>
   `${whatsappUrl}?text=${encodeURIComponent('Hallo, ik wil graag een rit naar ' + destination + ' reserveren.')}`;
 
-function AntwerpNightIllustration() {
-  return (
-    <svg viewBox="0 0 720 420" role="img" aria-label="Illustratie van premium vervoer in Antwerpen bij avond" className="h-full w-full">
-      <defs>
-        <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#252a31" />
-          <stop offset="1" stopColor="#101318" />
-        </linearGradient>
-        <linearGradient id="road" x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#d8bd79" stopOpacity=".05" />
-          <stop offset=".5" stopColor="#d8bd79" stopOpacity=".28" />
-          <stop offset="1" stopColor="#d8bd79" stopOpacity=".03" />
-        </linearGradient>
-        <filter id="glow"><feGaussianBlur stdDeviation="8" /></filter>
-      </defs>
-      <rect width="720" height="420" rx="28" fill="url(#sky)" />
-      <circle cx="516" cy="92" r="92" fill="#cda95d" opacity=".09" filter="url(#glow)" />
-      <path d="M0 250h60v-67h28v67h25v-98h39v98h20v-52h33v52h28v-130h35v130h26v-85h29v85h28v-118h44v118h26v-72h28v72h30v-103h38v103h31v-60h24v60h38v-88h31v88h37v170H0z" fill="#20252c" />
-      <path d="M0 286h720M0 311h720M0 337h720" stroke="#c9a75e" strokeOpacity=".12" />
-      <path d="M0 320c153-44 332-46 720 0v100H0z" fill="url(#road)" />
-      <path d="M360 308c-116 6-223 31-327 74m327-74c116 6 223 31 327 74" fill="none" stroke="#d4af67" strokeOpacity=".32" strokeDasharray="3 10" />
-      <g transform="translate(94 160)">
-        <path d="M55 105c11-27 42-49 91-56l74-9c35-4 74-1 108 15l58 28 44 7c15 3 25 14 28 29l4 20h-24a35 35 0 0 0-68 0H170a35 35 0 0 0-68 0H67l-12-10z" fill="#171b20" stroke="#d8bd79" strokeWidth="2.4" />
-        <path d="m173 57-40 6c-27 5-48 17-61 35l121-2zM204 56l-3 40 180-2-50-25c-31-15-72-17-127-13z" fill="#b9c0c5" fillOpacity=".14" stroke="#d8bd79" strokeOpacity=".7" />
-        <path d="M113 113h248m-293 6h28m381 0h17" stroke="#f0cf78" strokeWidth="3" strokeLinecap="round" />
-        <circle cx="136" cy="138" r="24" fill="#111419" stroke="#8e7950" strokeWidth="4" />
-        <circle cx="136" cy="138" r="9" fill="#6f7378" />
-        <circle cx="410" cy="138" r="24" fill="#111419" stroke="#8e7950" strokeWidth="4" />
-        <circle cx="410" cy="138" r="9" fill="#6f7378" />
-        <text x="273" y="119" fill="#d8bd79" fontSize="9" fontFamily="Arial, sans-serif" letterSpacing="2" textAnchor="middle">LV TRANSPORT</text>
-      </g>
-      <rect x="24" y="24" width="672" height="372" rx="22" fill="none" stroke="#d4af67" strokeOpacity=".25" />
-      <g fill="#d4af67">
-        <circle cx="64" cy="64" r="3" /><circle cx="78" cy="64" r="3" opacity=".55" /><circle cx="92" cy="64" r="3" opacity=".28" />
-      </g>
-      <text x="54" y="364" fill="#e1cf9c" fontSize="11" fontFamily="Arial, sans-serif" letterSpacing="3">ANTWERPEN · BELGIË</text>
-    </svg>
-  );
-}
-
 export default function HeroSection() {
   const [menuOpen, setMenuOpen] = useState(false);
-
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <main className="min-h-screen text-white" style={{ background: "radial-gradient(ellipse at 73% 8%, rgba(212,175,55,.09), transparent 35%), linear-gradient(180deg, #151619 0%, #1b1d21 52%, #202329 100%)" }}>
-      <div className="relative z-10 mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
+    <main className="min-h-screen bg-[#0b0c0e] text-white">
+      <div className="mx-auto max-w-7xl px-3 pb-8 pt-3 sm:px-6 lg:px-8">
         <header className="glass-panel sticky top-3 z-40 rounded-2xl px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between gap-4">
             <a href="#home" aria-label="LV Transport, naar de startpagina" onClick={closeMenu} className="shrink-0">
@@ -82,48 +41,65 @@ export default function HeroSection() {
             <button type="button" className="hamburger md:hidden" aria-expanded={menuOpen} aria-controls="primary-navigation" onClick={() => setMenuOpen((open) => !open)}>
               {menuOpen ? 'Sluiten' : 'Menu'}
             </button>
-            <nav id="primary-navigation" aria-label="Hoofdnavigatie" className={`${menuOpen ? 'absolute left-3 right-3 top-[calc(100%+0.75rem)] grid gap-2 rounded-2xl border border-lv-gold/25 bg-[#171a20] p-4 shadow-gold-md' : 'hidden'} md:static md:flex md:items-center md:gap-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none`}>
-              <a href="#diensten" onClick={closeMenu} className="nav-btn nav-btn--secondary">Diensten</a>
-              <a href="#tarieven" onClick={closeMenu} className="nav-btn nav-btn--secondary">Tarieven</a>
-              <a href="#contact" onClick={closeMenu} className="nav-btn nav-btn--secondary">Contact</a>
-              <Link to="/booking" onClick={closeMenu} className="nav-btn nav-btn--primary">Reserveer uw rit</Link>
+            <nav id="primary-navigation" aria-label="Hoofdnavigatie" className={`${menuOpen ? 'absolute left-3 right-3 top-[calc(100%+0.75rem)] grid gap-2 rounded-2xl border border-lv-gold/25 bg-[#171a20] p-4 shadow-xl' : 'hidden'} md:static md:flex md:items-center md:gap-6 md:border-0 md:bg-transparent md:p-0 md:shadow-none`}>
+              <a href="#diensten" onClick={closeMenu} className="nav-link">Diensten</a>
+              <Link to="/booking" onClick={closeMenu} className="nav-link">Boeken</Link>
+              <a href="#prijzen" onClick={closeMenu} className="nav-link">Prijzen</a>
+              <a href="#contact" onClick={closeMenu} className="nav-link">Contact</a>
+              <a href="tel:+32466487936" className="btn-primary inline-flex min-h-10 items-center justify-center px-4">Bel nu</a>
             </nav>
           </div>
         </header>
 
-        <section id="home" className="grid items-center gap-8 pb-12 pt-10 sm:pb-16 sm:pt-16 lg:grid-cols-[1.02fr_.98fr] lg:gap-12 lg:pt-20">
-          <div>
-            <p className="inline-flex items-center gap-2 rounded-full border border-lv-gold/30 bg-lv-gold/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.2em] text-lv-champagne">
-              <span className="h-1.5 w-1.5 rounded-full bg-lv-gold" /> Antwerpen · België · 24/7 op reservatie
-            </p>
-            <h1 className="mt-6 max-w-2xl text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-6xl">
-              Betrouwbaar.<br />Comfortabel.<br /><span className="text-lv-champagne">Altijd op tijd.</span>
-            </h1>
-            <p className="mt-5 max-w-xl text-base leading-7 text-lv-mist sm:text-lg">
-              Premium vervoer in Antwerpen en heel België. Reserveer uw rit voor luchthaven, zakenvervoer of uw dagelijkse bestemming.
-            </p>
-            <div className="mt-7 flex flex-col gap-3 sm:flex-row">
-              <Link to="/booking" className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 px-5 text-base">
-                Reserveer uw rit <span aria-hidden="true">→</span>
-              </Link>
-              <a href="#tarieven" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-2 px-5 text-base">
-                Bekijk vaste tarieven <span aria-hidden="true">↗</span>
-              </a>
+        <section id="home" className="relative mt-3 min-h-[570px] overflow-hidden rounded-3xl border border-lv-gold/25 bg-[#111315] sm:min-h-[620px]">
+          <div
+            role="img"
+            aria-label="Premium wagen in Antwerpen bij avond"
+            className="absolute inset-0 bg-cover bg-center"
+            style={{ backgroundImage: "linear-gradient(90deg, rgba(5,6,8,.94) 0%, rgba(5,6,8,.70) 42%, rgba(5,6,8,.18) 100%), linear-gradient(0deg, rgba(5,6,8,.96) 0%, transparent 55%), url('https://lvtransport-web3.netlify.app/images/lv-transport-hero.png')" }}
+          />
+          <div className="relative z-10 flex min-h-[570px] flex-col justify-between p-5 sm:min-h-[620px] sm:p-9 lg:p-12">
+            <div className="max-w-xl pt-5 sm:pt-8">
+              <p className="inline-flex items-center gap-2 rounded-full border border-lv-gold/35 bg-black/40 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[.2em] text-lv-champagne">
+                <span className="h-1.5 w-1.5 rounded-full bg-lv-gold" /> Antwerpen · België · 24/7 beschikbaar
+              </p>
+              <h1 className="mt-5 text-4xl font-semibold leading-[1.06] tracking-tight sm:text-5xl lg:text-6xl">
+                Betrouwbaar.<br />Comfortabel.<br /><span className="text-lv-champagne">Altijd op tijd.</span>
+              </h1>
+              <p className="mt-4 max-w-lg text-sm leading-6 text-lv-mist sm:text-base">
+                Premium vervoer in Antwerpen en België. Discreet, comfortabel en op reservatie.
+              </p>
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Link to="/booking" className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 px-5">
+                  Reserveer uw rit <span aria-hidden="true">→</span>
+                </Link>
+                <a href="#prijzen" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-2 px-5">
+                  Bekijk tarieven <span aria-hidden="true">↘</span>
+                </a>
+              </div>
             </div>
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-5 text-sm text-lv-mist">
-              <span className="inline-flex items-center gap-2"><span className="text-lv-champagne">24/7</span> Beschikbaar op reservatie</span>
-              <span className="inline-flex items-center gap-2"><span className="text-lv-champagne">✓</span> Duidelijke afspraken</span>
-              <span className="inline-flex items-center gap-2"><span className="text-lv-champagne">◆</span> Comfortabele ritten</span>
-            </div>
-          </div>
-          <div className="relative mx-auto w-full max-w-2xl">
-            <div className="absolute -inset-5 rounded-[2rem] bg-lv-gold/10 blur-3xl" aria-hidden="true" />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-lv-gold/30 bg-[#171a20] p-2 shadow-gold-md sm:p-3">
-              <AntwerpNightIllustration />
-            </div>
-            <div className="glass-panel absolute -bottom-5 left-4 rounded-2xl px-4 py-3 sm:left-8 sm:px-5">
-              <p className="text-xs uppercase tracking-[.16em] text-lv-mist">LV Transport</p>
-              <p className="mt-1 text-sm font-semibold text-lv-champagne">Antwerpen & heel België</p>
+
+            <div className="glass-panel mt-8 rounded-2xl border border-lv-gold/35 bg-black/75 p-4 shadow-2xl backdrop-blur-md sm:p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <p className="text-[10px] font-semibold uppercase tracking-[.2em] text-lv-champagne">LV Transport</p>
+                  <h2 className="mt-1 text-xl font-semibold sm:text-2xl">Reserveer uw rit</h2>
+                </div>
+                <Link to="/booking" className="btn-primary inline-flex min-h-11 items-center justify-center gap-2 px-5">
+                  Start uw reservering <span aria-hidden="true">→</span>
+                </Link>
+              </div>
+              <div className="mt-4 grid grid-cols-2 gap-2 text-xs text-lv-mist sm:grid-cols-4">
+                <div className="rounded-xl border border-white/10 bg-white/[.04] px-3 py-3">⌖ Van / ophaaladres</div>
+                <div className="rounded-xl border border-white/10 bg-white/[.04] px-3 py-3">⌖ Naar / bestemming</div>
+                <div className="rounded-xl border border-white/10 bg-white/[.04] px-3 py-3">▦ Datum en tijd</div>
+                <div className="rounded-xl border border-white/10 bg-white/[.04] px-3 py-3">♙ Uw gegevens</div>
+              </div>
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-white/10 pt-3 text-xs text-lv-mist">
+                <span><strong className="text-lv-champagne">24/7</strong> beschikbaar</span>
+                <span><strong className="text-lv-champagne">✓</strong> Duidelijke afspraken</span>
+                <span><strong className="text-lv-champagne">◆</strong> Veilig en betrouwbaar</span>
+              </div>
             </div>
           </div>
         </section>
@@ -132,55 +108,52 @@ export default function HeroSection() {
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Onze diensten</p>
-              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Een comfortabele rit, van vertrek tot aankomst.</h2>
+              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Onze diensten</h2>
             </div>
             <Link to="/booking" className="text-sm font-semibold text-lv-champagne underline decoration-lv-gold/40 underline-offset-4 hover:decoration-lv-gold">Boek uw rit <span aria-hidden="true">→</span></Link>
           </div>
           <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
-            {services.map((service, index) => (
+            {services.map((service) => (
               <article key={service.label} className="glass-panel service-card rounded-2xl p-5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-semibold tracking-[.18em] text-lv-champagne">{service.label}</span>
-                  <span className="text-xs text-white/35">0{index + 1}</span>
-                </div>
-                <h3 className="mt-5 text-lg font-semibold">{service.title}</h3>
+                <div className="text-3xl text-lv-champagne" aria-hidden="true">{service.icon}</div>
+                <p className="mt-3 text-[10px] font-semibold tracking-[.18em] text-lv-champagne">{service.label}</p>
+                <h3 className="mt-2 text-lg font-semibold">{service.title}</h3>
                 <p className="mt-2 text-sm leading-6 text-lv-mist">{service.copy}</p>
               </article>
             ))}
           </div>
         </section>
 
-        <section id="tarieven" className="scroll-mt-28 py-10 sm:py-14">
+        <section id="prijzen" className="scroll-mt-28 py-8 sm:py-12">
           <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
             <div>
               <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Populaire bestemmingen</p>
-              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Vaste tarieven voor uw rit.</h2>
+              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Duidelijke tarieven</h2>
             </div>
-            <p className="max-w-md text-sm leading-6 text-lv-mist">Vraag uw rit aan via WhatsApp. We bevestigen de beschikbaarheid en de prijs voor uw reis.</p>
+            <p className="max-w-md text-sm leading-6 text-lv-mist">Vraag uw rit aan. We bevestigen de beschikbaarheid en de prijs voor uw reis.</p>
           </div>
-          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+          <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
             {routePrices.map((route) => (
-              <article key={route.destination} className="glass-panel rounded-2xl p-4">
+              <article key={route.destination} className="glass-panel rounded-2xl p-4 text-center">
                 <p className="text-sm font-medium text-lv-mist">{route.destination}</p>
-                <p className="mt-2 text-2xl font-semibold text-lv-champagne">{route.price}</p>
-                <a href={routeRequestUrl(route.destination)} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-xs font-semibold text-white underline decoration-lv-gold/50 underline-offset-4 hover:text-lv-champagne">
-                  Vraag deze rit aan <span aria-hidden="true" className="ml-1">↗</span>
+                <p className="mt-1 text-2xl font-semibold text-lv-champagne">{route.price}</p>
+                <a href={routeRequestUrl(route.destination)} target="_blank" rel="noreferrer" className="btn-primary mt-3 inline-flex min-h-9 w-full items-center justify-center px-3 text-xs">
+                  Reserveer <span aria-hidden="true" className="ml-1">↗</span>
                 </a>
               </article>
             ))}
           </div>
-          <p className="mt-4 text-xs text-lv-mist/70">Vaste prijs — geen verrassingen. De uiteindelijke prijs kan variëren afhankelijk van verkeer en tijdstip.</p>
+          <p className="mt-4 text-xs text-lv-mist/70">Vaste prijsindicaties. De definitieve prijs wordt bevestigd bij uw reservering.</p>
         </section>
 
-        <section className="glass-panel grid gap-6 rounded-3xl p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
+        <section className="glass-panel grid gap-5 rounded-3xl p-5 sm:grid-cols-2 sm:p-7">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Uw rit begint eenvoudig</p>
-            <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Vraag uw rit aan wanneer het u past.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-lv-mist">Kies uw bestemming en gewenste tijd. Bekijk de vaste tarieven of vraag ons rechtstreeks om een prijs op maat.</p>
+            <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Uw rit volgen</p>
+            <h2 className="mt-2 text-2xl font-semibold">Volg uw rit met uw reserveringscode</h2>
+            <p className="mt-3 text-sm leading-6 text-lv-mist">Bekijk de actuele ritstatus via het bestaande reserverings- en trackingsysteem.</p>
           </div>
-          <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
-            <Link to="/booking" className="btn-primary inline-flex min-h-11 items-center justify-center px-5">Reserveer uw rit</Link>
-            <a href="#tarieven" className="btn-secondary inline-flex min-h-11 items-center justify-center px-5">Bekijk de tarieven</a>
+          <div className="flex items-center sm:justify-end">
+            <Link to="/booking#tracking" className="btn-secondary inline-flex min-h-11 items-center justify-center px-5">Tracking openen <span aria-hidden="true" className="ml-2">→</span></Link>
           </div>
         </section>
 
