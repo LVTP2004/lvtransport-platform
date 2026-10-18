@@ -9,7 +9,22 @@ const services = [
   { label: 'LONG DISTANCE', title: 'Lange afstanden', copy: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.' },
 ];
 
+const routePrices = [
+  { destination: 'Zaventem', price: '€80' },
+  { destination: 'Eindhoven', price: '€130' },
+  { destination: 'Charleroi', price: '€150' },
+  { destination: 'Schiphol', price: '€200' },
+  { destination: 'Mechelen', price: '€45' },
+  { destination: 'Brussel', price: '€80' },
+  { destination: 'Breda', price: '€95' },
+  { destination: 'Gent', price: '€100' },
+  { destination: 'Rotterdam', price: '€150' },
+  { destination: 'Brugge', price: '€165' },
+];
+
 const whatsappUrl = 'https://wa.me/32466487936';
+const routeRequestUrl = (destination: string) =>
+  `${whatsappUrl}?text=${encodeURIComponent('Hallo, ik wil graag een rit naar ' + destination + ' reserveren.')}`;
 
 function AntwerpNightIllustration() {
   return (
@@ -69,7 +84,7 @@ export default function HeroSection() {
             </button>
             <nav id="primary-navigation" aria-label="Hoofdnavigatie" className={`${menuOpen ? 'absolute left-3 right-3 top-[calc(100%+0.75rem)] grid gap-2 rounded-2xl border border-lv-gold/25 bg-[#171a20] p-4 shadow-gold-md' : 'hidden'} md:static md:flex md:items-center md:gap-2 md:border-0 md:bg-transparent md:p-0 md:shadow-none`}>
               <a href="#diensten" onClick={closeMenu} className="nav-btn nav-btn--secondary">Diensten</a>
-              <Link to="/prijzen/" onClick={closeMenu} className="nav-btn nav-btn--secondary">Prijs berekenen</Link>
+              <a href="#tarieven" onClick={closeMenu} className="nav-btn nav-btn--secondary">Tarieven</a>
               <a href="#contact" onClick={closeMenu} className="nav-btn nav-btn--secondary">Contact</a>
               <Link to="/booking" onClick={closeMenu} className="nav-btn nav-btn--primary">Reserveer uw rit</Link>
             </nav>
@@ -91,9 +106,9 @@ export default function HeroSection() {
               <Link to="/booking" className="btn-primary inline-flex min-h-12 items-center justify-center gap-2 px-5 text-base">
                 Reserveer uw rit <span aria-hidden="true">→</span>
               </Link>
-              <Link to="/prijzen/" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-2 px-5 text-base">
-                Bereken uw prijs <span aria-hidden="true">↗</span>
-              </Link>
+              <a href="#tarieven" className="btn-secondary inline-flex min-h-12 items-center justify-center gap-2 px-5 text-base">
+                Bekijk vaste tarieven <span aria-hidden="true">↗</span>
+              </a>
             </div>
             <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 border-t border-white/10 pt-5 text-sm text-lv-mist">
               <span className="inline-flex items-center gap-2"><span className="text-lv-champagne">24/7</span> Beschikbaar op reservatie</span>
@@ -135,15 +150,37 @@ export default function HeroSection() {
           </div>
         </section>
 
+        <section id="tarieven" className="scroll-mt-28 py-10 sm:py-14">
+          <div className="flex flex-col justify-between gap-3 sm:flex-row sm:items-end">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Populaire bestemmingen</p>
+              <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Vaste tarieven voor uw rit.</h2>
+            </div>
+            <p className="max-w-md text-sm leading-6 text-lv-mist">Vraag uw rit aan via WhatsApp. We bevestigen de beschikbaarheid en de prijs voor uw reis.</p>
+          </div>
+          <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
+            {routePrices.map((route) => (
+              <article key={route.destination} className="glass-panel rounded-2xl p-4">
+                <p className="text-sm font-medium text-lv-mist">{route.destination}</p>
+                <p className="mt-2 text-2xl font-semibold text-lv-champagne">{route.price}</p>
+                <a href={routeRequestUrl(route.destination)} target="_blank" rel="noreferrer" className="mt-4 inline-flex text-xs font-semibold text-white underline decoration-lv-gold/50 underline-offset-4 hover:text-lv-champagne">
+                  Vraag deze rit aan <span aria-hidden="true" className="ml-1">↗</span>
+                </a>
+              </article>
+            ))}
+          </div>
+          <p className="mt-4 text-xs text-lv-mist/70">Vaste prijs — geen verrassingen. De uiteindelijke prijs kan variëren afhankelijk van verkeer en tijdstip.</p>
+        </section>
+
         <section className="glass-panel grid gap-6 rounded-3xl p-6 sm:p-8 lg:grid-cols-[1fr_auto] lg:items-center">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Uw rit begint eenvoudig</p>
             <h2 className="mt-2 text-2xl font-semibold sm:text-3xl">Vraag uw rit aan wanneer het u past.</h2>
-            <p className="mt-3 max-w-2xl text-sm leading-6 text-lv-mist">Kies uw bestemming en gewenste tijd. Voor een prijs op maat kunt u vooraf uw route berekenen of ons rechtstreeks contacteren.</p>
+            <p className="mt-3 max-w-2xl text-sm leading-6 text-lv-mist">Kies uw bestemming en gewenste tijd. Bekijk de vaste tarieven of vraag ons rechtstreeks om een prijs op maat.</p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
             <Link to="/booking" className="btn-primary inline-flex min-h-11 items-center justify-center px-5">Reserveer uw rit</Link>
-            <Link to="/prijzen/" className="btn-secondary inline-flex min-h-11 items-center justify-center px-5">Prijs berekenen</Link>
+            <a href="#tarieven" className="btn-secondary inline-flex min-h-11 items-center justify-center px-5">Bekijk de tarieven</a>
           </div>
         </section>
 
