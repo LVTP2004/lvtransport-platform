@@ -82,7 +82,7 @@ export default function HeroSection() {
   const closeMenu = () => setMenuOpen(false);
 
   return (
-    <main className="premium-shell min-h-screen text-white">
+    <main className="min-h-screen text-white" style={{ background: "radial-gradient(ellipse at 73% 8%, rgba(212,175,55,.09), transparent 35%), linear-gradient(180deg, #151619 0%, #1b1d21 52%, #202329 100%)" }}>
       <div className="relative z-10 mx-auto max-w-7xl px-4 pb-8 pt-4 sm:px-6 lg:px-8">
         <header className="glass-panel sticky top-3 z-40 rounded-2xl px-4 py-3 sm:px-6">
           <div className="flex items-center justify-between gap-4">
