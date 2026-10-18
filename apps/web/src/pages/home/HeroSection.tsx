@@ -1,12 +1,12 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 
 const services = [
-  { label: 'TAXI ANTWERPEN', title: 'Taxi in Antwerpen', detail: 'Comfortabel vervoer in Antwerpen en de omliggende gemeenten.' },
-  { label: 'AIRPORT', title: 'Luchthavenvervoer', detail: 'Transfers naar Zaventem, Charleroi, Eindhoven, Schiphol en andere luchthavens.' },
-  { label: 'BUSINESS', title: 'Zakelijk vervoer', detail: 'Discreet vervoer voor bedrijven, vergaderingen, events en gasten.' },
-  { label: 'HAVEN', title: 'Havenvervoer', detail: 'Vervoer voor medewerkers en bezoekers van de haven van Antwerpen.' },
-  { label: 'LONG DISTANCE', title: 'Lange afstanden', detail: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.' },
+  { label: 'TAXI ANTWERPEN', title: 'Taxi in Antwerpen', copy: 'Comfortabel vervoer in Antwerpen en de omliggende gemeenten.' },
+  { label: 'AIRPORT', title: 'Luchthavenvervoer', copy: 'Transfers naar Zaventem, Charleroi, Eindhoven, Schiphol en andere luchthavens.' },
+  { label: 'BUSINESS', title: 'Zakelijk vervoer', copy: 'Discreet vervoer voor bedrijven, vergaderingen, events en gasten.' },
+  { label: 'HAVEN', title: 'Havenvervoer', copy: 'Vervoer voor medewerkers en bezoekers van de haven van Antwerpen.' },
+  { label: 'LONG DISTANCE', title: 'Lange afstanden', copy: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.' },
 ];
 
 const whatsappUrl = 'https://wa.me/32466487936';
@@ -53,31 +53,6 @@ function AntwerpNightIllustration() {
 
 export default function HeroSection() {
   const [menuOpen, setMenuOpen] = useState(false);
-
-  useEffect(() => {
-    const previousTitle = document.title;
-    const previousLanguage = document.documentElement.lang;
-    const description = 'Premium taxi en luchthavenvervoer in Antwerpen en heel België. Reserveer uw rit bij LV Transport, 24/7 bereikbaar.';
-    let meta = document.querySelector<HTMLMetaElement>('meta[name="description"]');
-    const previousDescription = meta?.content;
-    const createdMeta = !meta;
-
-    if (!meta) {
-      meta = document.createElement('meta');
-      meta.name = 'description';
-      document.head.appendChild(meta);
-    }
-    meta.content = description;
-    document.title = 'LV Transport | Premium taxi in Antwerpen';
-    document.documentElement.lang = 'nl';
-
-    return () => {
-      document.title = previousTitle;
-      document.documentElement.lang = previousLanguage;
-      if (meta && createdMeta) meta.remove();
-      else if (meta && previousDescription !== undefined) meta.content = previousDescription;
-    };
-  }, []);
 
   const closeMenu = () => setMenuOpen(false);
 
@@ -154,7 +129,7 @@ export default function HeroSection() {
                   <span className="text-xs text-white/35">0{index + 1}</span>
                 </div>
                 <h3 className="mt-5 text-lg font-semibold">{service.title}</h3>
-                <p className="mt-2 text-sm leading-6 text-lv-mist">{service.detail}</p>
+                <p className="mt-2 text-sm leading-6 text-lv-mist">{service.copy}</p>
               </article>
             ))}
           </div>
