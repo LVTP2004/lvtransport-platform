@@ -4,11 +4,19 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: lvtransport-web-production
+  cancel-in-progress: false
 
 jobs:
-  deploy:
+  build:
+    name: Build public website
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -17,17 +25,68 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: pnpm
 
       - name: Setup PNPM
         uses: pnpm/action-setup@v3
         with:
-          version: 9
+          version: 9.15.0
 
       - name: Install
-        run: pnpm install --no-frozen-lockfile
+        run: pnpm install --frozen-lockfile
 
-      - name: Typecheck
+      - name: Build
         run: pnpm --filter @lvtransport/web build
 
-      - name: Deploy Trigger
-        run: echo "READY"
+      - name: Upload website build
+        uses: actions/upload-artifact@v4
+        with:
+          name: lvtransport-web-dist
+          path: apps/web/dist/
+          if-no-files-found: error
+          retention-days: 3
+
+  deploy:
+    name: Deploy website to VPS
+    needs: build
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download website build
+        uses: actions/download-artifact@v4
+        with:
+          name: lvtransport-web-dist
+          path: dist/
+
+      - name: Deploy static files over verified SSH
+        env:
+          VPS_HOST: ${{ secrets.LVTP_VPS_HOST }}
+          VPS_USER: ${{ secrets.LVTP_VPS_USER }}
+          VPS_SSH_KEY: ${{ secrets.LVTP_VPS_SSH_KEY }}
+          VPS_KNOWN_HOSTS: ${{ secrets.LVTP_VPS_KNOWN_HOSTS }}
+        run: |
+          set -euo pipefail
+
+          for name in VPS_HOST VPS_USER VPS_SSH_KEY VPS_KNOWN_HOSTS; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error::GitHub secret LVTP_${name#VPS_} is required for production deployment."
+              exit 1
+            fi
+          done
+
+          install -m 700 -d "$HOME/.ssh"
+          install -m 600 /dev/null "$HOME/.ssh/lvtp_deploy"
+          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/lvtp_deploy"
+          printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+          SSH="ssh -i $HOME/.ssh/lvtp_deploy -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes"
+          TARGET="$VPS_USER@$VPS_HOST"
+
+          $SSH "$TARGET" 'test -d /var/www/lvtransport-web && test -w /var/www/lvtransport-web'
+          rsync -rltz --delete --delay-updates \
+            -e "$SSH" \
+            dist/ "$TARGET:/var/www/lvtransport-web/"
+
+          $SSH "$TARGET" 'test -s /var/www/lvtransport-web/index.html'
+          curl --fail --silent --show-error --max-time 30 https://lvtransport.be/ -o /dev/null
