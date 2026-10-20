@@ -45,6 +45,10 @@ export interface LVMessage {
 
 export interface CreateBookingDto {
   customerId?: string;
+  customerName?: string;
+  customerPhone?: string;
+  customerEmail?: string;
+  notes?: string;
   pickup: string;
   destination: string;
   scheduleAt: string;

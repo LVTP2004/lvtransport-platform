@@ -4,6 +4,7 @@ import { bookingRepository } from './repository.js';
 import { TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
 import { validateLifecycleTransition } from './lifecycle-validation.js';
 import { DomainError } from '../../errors/domain-error.js';
+import { createBookingDuplicateFingerprint } from './fingerprint.js';
 
 const createReferenceCode = (): string => {
   const stamp = Date.now().toString(36).toUpperCase();
@@ -37,9 +38,11 @@ export const bookingFlowService = {
     const existing = await bookingRepository.findByIdempotencyKey(idempotencyKey);
     if (existing) return existing;
 
-    const duplicateFingerprint = `${input.pickup.trim().toLowerCase()}|${input.destination.trim().toLowerCase()}|${input.scheduleAt}|${input.serviceType}`;
-    const recentDuplicate = await bookingRepository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
-    if (recentDuplicate) return recentDuplicate;
+    const duplicateFingerprint = createBookingDuplicateFingerprint(input);
+    if (duplicateFingerprint) {
+      const recentDuplicate = await bookingRepository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
+      if (recentDuplicate) return recentDuplicate;
+    }
 
     const now = new Date().toISOString();
     const booking: BookingRecord = {

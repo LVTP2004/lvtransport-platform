@@ -15,14 +15,6 @@ const fieldStyle = {
   boxSizing: 'border-box' as const,
 }
 
-const bookingLifecycle = [
-  { key: 'request_received', label: 'Aanvraag ontvangen', source: 'backend-contract' },
-  { key: 'assignment_pending', label: 'Toewijzing in wachtrij', source: 'deterministic-adapter' },
-  { key: 'driver_assigned', label: 'Chauffeur toegewezen', source: 'backend-contract' },
-  { key: 'in_progress', label: 'Rit onderweg', source: 'backend-contract' },
-  { key: 'completed', label: 'Rit voltooid', source: 'backend-contract' },
-] as const
-
 export default function Booking() {
   const [form, setForm] = useState({
     name: '',
@@ -41,7 +33,6 @@ export default function Booking() {
   const [trackingCode, setTrackingCode] = useState('')
   const [trackingResult, setTrackingResult] = useState('Voer uw ritcode in om uw taxi te volgen.')
   const [trackingLoading, setTrackingLoading] = useState(false)
-  const [lifecycleState, setLifecycleState] = useState<(typeof bookingLifecycle)[number]['key']>('request_received')
 
   async function submitBooking(event: FormEvent) {
     event.preventDefault()
@@ -52,13 +43,17 @@ export default function Booking() {
       const scheduleAt = new Date(`${form.date}T${form.time}`).toISOString()
       const response = await fetch(`${API_V1_BASE}/bookings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
         body: JSON.stringify({
-          pickup: form.pickup,
-          destination: form.destination,
+          customerName: form.name.trim(),
+          customerPhone: form.phone.trim(),
+          customerEmail: form.email.trim(),
+          pickup: form.pickup.trim(),
+          destination: form.destination.trim(),
           scheduleAt,
           serviceType: form.serviceType === 'business' ? 'vip' : form.serviceType,
           customerTier: form.serviceType === 'business' ? 'business' : 'retail',
+          notes: form.notes.trim(),
         }),
       })
 
@@ -69,8 +64,7 @@ export default function Booking() {
 
       const code = result.booking.referenceCode
       setTrackingCode(code)
-      setLifecycleState(result.booking.status === 'confirmed' ? 'assignment_pending' : 'request_received')
-      setConfirmation(`Boeking bevestigd. Uw referentie: ${code}. Status: ${result.booking.status}.`)
+      setConfirmation(`Aanvraag ontvangen. Referentie: ${code}. Status: ${result.booking.status}. We bevestigen de rit na controle van beschikbaarheid en prijs.`)
     } catch (error) {
       setConfirmation(error instanceof Error ? error.message : 'Boeking mislukt.')
     } finally {
@@ -92,13 +86,7 @@ export default function Booking() {
       }
 
       const ride = result.booking
-      const normalized = String(ride.status ?? '').toLowerCase()
-      if (normalized.includes('assign')) setLifecycleState('driver_assigned')
-      else if (normalized.includes('progress') || normalized.includes('ongoing')) setLifecycleState('in_progress')
-      else if (normalized.includes('complete')) setLifecycleState('completed')
-      const driver = ride.assignedDriverName ? ` • Chauffeur: ${ride.assignedDriverName}` : ''
-      const when = ride.scheduleAt ? new Date(ride.scheduleAt).toLocaleString('nl-BE') : ''
-      setTrackingResult(`Rit ${ride.code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}${driver}`)
+      setTrackingResult(`Rit ${ride.referenceCode ?? ride.code ?? code}: ${ride.status}`)
     } catch (error) {
       setTrackingResult(error instanceof Error ? error.message : 'Tracking mislukt.')
     } finally {
@@ -111,7 +99,7 @@ export default function Booking() {
       <section style={{ maxWidth: 1180, margin: '0 auto', padding: '56px 22px' }}>
         <a href="/" style={{ color: gold, textDecoration: 'none', fontWeight: 800 }}>← LV Transport</a>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(310px, 1fr))', gap: 24, marginTop: 28 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 310px), 1fr))', gap: 24, marginTop: 28 }}>
           <form onSubmit={submitBooking} style={{ border: '1px solid rgba(212,175,55,.22)', borderRadius: 28, padding: 24, background: '#101010' }}>
             <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>BOOKING</p>
             <h1 style={{ fontSize: 42, margin: '8px 0 18px' }}>Reserveer uw rit</h1>
@@ -136,7 +124,7 @@ export default function Booking() {
 
               <textarea style={{ ...fieldStyle, minHeight: 96, resize: 'vertical' }} placeholder="Opmerking: vlucht, bagage, kinderstoel, voorkeurstaal..." value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
-              <button type="submit" style={{ border: 0, borderRadius: 16, padding: '15px 18px', background: gold, color: '#080808', fontWeight: 900, cursor: 'pointer' }}>
+              <button type="submit" disabled={submitting} style={{ border: 0, borderRadius: 16, padding: '15px 18px', background: gold, color: '#080808', fontWeight: 900, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? 'Verwerken...' : 'Maak ritaanvraag'}
               </button>
 
@@ -145,45 +133,24 @@ export default function Booking() {
           </form>
 
           <aside style={{ border: '1px solid rgba(255,255,255,.1)', borderRadius: 28, padding: 24, background: 'linear-gradient(145deg, rgba(17,17,17,.96), rgba(31,25,9,.72))' }}>
-            <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>PRIJSINDICATIE</p>
-            <h2 style={{ fontSize: 34, margin: '8px 0 16px' }}>Slimme calculator</h2>
+            <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>PRIJS EN BESCHIKBAARHEID</p>
+            <h2 style={{ fontSize: 34, margin: '8px 0 16px' }}>Bevestiging per rit</h2>
             <p style={{ color: '#d1d5db', lineHeight: 1.7 }}>
-              De prijs wordt berekend door de LV Transport API op basis van afstand, tijdstip, luchthaven en minimumtarief.
+              Na ontvangst controleren we de beschikbaarheid en route. U ontvangt daarna de definitieve prijs en bevestiging.
             </p>
-            <div style={{ display: 'grid', gap: 12, marginTop: 18 }}>
-              {['Minimumrit Antwerpen: vanaf €15', 'Airport transfer: geschatte tarieven', 'Nachttoeslag: automatisch via tijdstip', 'Business/VIP: prioriteit en facturatie'].map((item) => (
-                <div key={item} style={{ padding: 14, borderRadius: 16, border: '1px solid rgba(255,255,255,.1)', background: 'rgba(255,255,255,.04)' }}>{item}</div>
-              ))}
-            </div>
-
-            <div style={{ marginTop: 20 }}>
-              <p style={{ color: gold, letterSpacing: 2, fontWeight: 800 }}>BOOKING LIFECYCLE</p>
-              <ul style={{ margin: '10px 0 0', padding: 0, listStyle: 'none', display: 'grid', gap: 8 }}>
-                {bookingLifecycle.map((step) => {
-                  const active = step.key === lifecycleState
-                  return (
-                    <li key={step.key} style={{ border: '1px solid rgba(255,255,255,.1)', borderRadius: 12, padding: '10px 12px', background: active ? 'rgba(212,175,55,.14)' : 'rgba(255,255,255,.02)' }}>
-                      <strong style={{ fontSize: 13 }}>{step.label}</strong>
-                      <p style={{ margin: '4px 0 0', fontSize: 11, color: '#a1a1aa' }}>source: {step.source}</p>
-                    </li>
-                  )
-                })}
-              </ul>
-              <p style={{ color: '#a1a1aa', fontSize: 12, marginTop: 8 }}>Route estimation seam blijft gedeclareerd tot dispatch route engine contract actief is.</p>
-            </div>
           </aside>
         </div>
       </section>
 
       <section id="tracking" style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 22px 70px' }}>
         <div style={{ border: '1px solid rgba(212,175,55,.2)', borderRadius: 28, padding: 24, background: '#101010' }}>
-          <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>TRACKING</p>
-          <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Volg uw taxi met ritcode</h2>
+          <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>AANVRAAGSTATUS</p>
+          <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Controleer uw aanvraag</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(220px, 1fr) auto', gap: 12 }}>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12 }}>
             <input style={fieldStyle} placeholder="Bijvoorbeeld LV-MA37F9-F3A29D" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
             <button onClick={() => lookupTracking()} style={{ border: 0, borderRadius: 16, padding: '0 18px', background: gold, color: '#080808', fontWeight: 900 }}>
-              {trackingLoading ? 'Synchronisatie...' : 'Zoeken'}
+              {trackingLoading ? 'Controleren...' : 'Controleer status'}
             </button>
           </div>
 
