@@ -86,13 +86,8 @@ export default function Booking() {
       }
 
       const ride = result.booking
-      const normalized = String(ride.status ?? '').toLowerCase()
-      if (normalized.includes('assign')) setLifecycleState('driver_assigned')
-      else if (normalized.includes('progress') || normalized.includes('ongoing')) setLifecycleState('in_progress')
-      else if (normalized.includes('complete')) setLifecycleState('completed')
-      const driver = ride.assignedDriverName ? ` • Chauffeur: ${ride.assignedDriverName}` : ''
       const when = ride.scheduleAt ? new Date(ride.scheduleAt).toLocaleString('nl-BE') : ''
-      setTrackingResult(`Rit ${ride.referenceCode ?? ride.code ?? code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}${driver}`)
+      setTrackingResult(`Rit ${ride.referenceCode ?? ride.code ?? code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}`)
     } catch (error) {
       setTrackingResult(error instanceof Error ? error.message : 'Tracking mislukt.')
     } finally {
