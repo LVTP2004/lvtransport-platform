@@ -66,16 +66,21 @@ jobs:
           VPS_PORT: ${{ secrets.VPS_PORT }}
           VPS_PATH: ${{ secrets.VPS_PATH }}
           VPS_SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          VPS_PASSWORD: ${{ secrets.VPS_PASSWORD }}
           VPS_KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
         run: |
           set -euo pipefail
 
-          for name in VPS_HOST VPS_USER VPS_PATH VPS_SSH_KEY; do
+          for name in VPS_HOST VPS_USER VPS_PATH; do
             if [[ -z "${!name}" ]]; then
               echo "::error::Repository secret $name is missing or unavailable to this workflow."
               exit 1
             fi
           done
+          if [[ -z "$VPS_SSH_KEY" && -z "$VPS_PASSWORD" ]]; then
+            echo "::error::Set either VPS_SSH_KEY or VPS_PASSWORD in repository Actions secrets."
+            exit 1
+          fi
 
           VPS_PORT="${VPS_PORT:-22}"
           if [[ ! "$VPS_PORT" =~ ^[0-9]+$ ]] || (( VPS_PORT < 1 || VPS_PORT > 65535 )); then
@@ -89,10 +94,6 @@ jobs:
           fi
 
           install -m 700 -d "$HOME/.ssh"
-          install -m 600 /dev/null "$HOME/.ssh/lvtp_deploy"
-          printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/lvtp_deploy"
-          chmod 600 "$HOME/.ssh/lvtp_deploy"
-
           if [[ -n "$VPS_KNOWN_HOSTS" ]]; then
             printf '%s\n' "$VPS_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
           else
@@ -101,8 +102,35 @@ jobs:
           test -s "$HOME/.ssh/known_hosts"
           chmod 600 "$HOME/.ssh/known_hosts"
 
-          SSH="ssh -i $HOME/.ssh/lvtp_deploy -p $VPS_PORT -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes"
           TARGET="$VPS_USER@$VPS_HOST"
+          SSH=""
+          if [[ -n "$VPS_SSH_KEY" ]]; then
+            install -m 600 /dev/null "$HOME/.ssh/lvtp_deploy"
+            printf '%s\n' "$VPS_SSH_KEY" > "$HOME/.ssh/lvtp_deploy"
+            chmod 600 "$HOME/.ssh/lvtp_deploy"
+            KEY_SSH="ssh -i $HOME/.ssh/lvtp_deploy -p $VPS_PORT -o IdentitiesOnly=yes -o BatchMode=yes -o StrictHostKeyChecking=yes"
+            if $KEY_SSH "$TARGET" true 2>/dev/null; then
+              SSH="$KEY_SSH"
+              echo "SSH key authentication succeeded."
+            else
+              echo "SSH key authentication was rejected; trying the configured password secret."
+            fi
+          fi
+
+          if [[ -z "$SSH" ]]; then
+            if [[ -z "$VPS_PASSWORD" ]]; then
+              echo "::error::The SSH key was rejected and VPS_PASSWORD is not configured."
+              exit 1
+            fi
+            if ! command -v sshpass >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y sshpass
+            fi
+            export SSHPASS="$VPS_PASSWORD"
+            SSH="sshpass -e ssh -p $VPS_PORT -o PreferredAuthentications=password -o PubkeyAuthentication=no -o BatchMode=no -o StrictHostKeyChecking=yes"
+            $SSH "$TARGET" true
+            echo "SSH password authentication succeeded."
+          fi
 
           $SSH "$TARGET" "sudo -n test -s '$VPS_PATH/index.html'"
           rsync -rltz --delete --delay-updates \
