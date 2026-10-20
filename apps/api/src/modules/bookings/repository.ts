@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import type { BookingRecord } from './dto.js';
+import { createBookingDuplicateFingerprint } from './fingerprint.js';
 
 export interface BookingRepository {
   create(record: BookingRecord): Promise<BookingRecord>;
@@ -54,9 +55,11 @@ class FileBookingRepository implements BookingRepository {
 
     store.bookings.unshift(record);
     store.idempotencyIndex[idempotencyKey] = record.id;
-    const fingerprint = `${record.pickup.trim().toLowerCase()}|${record.destination.trim().toLowerCase()}|${record.scheduleAt}|${record.serviceType}`;
-    store.fingerprintIndex ??= {};
-    store.fingerprintIndex[fingerprint] = { bookingId: record.id, createdAt: record.createdAt };
+    const fingerprint = createBookingDuplicateFingerprint(record);
+    if (fingerprint) {
+      store.fingerprintIndex ??= {};
+      store.fingerprintIndex[fingerprint] = { bookingId: record.id, createdAt: record.createdAt };
+    }
     this.writeStore(store);
     return record;
   }
