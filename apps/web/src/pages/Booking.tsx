@@ -86,8 +86,7 @@ export default function Booking() {
       }
 
       const ride = result.booking
-      const when = ride.scheduleAt ? new Date(ride.scheduleAt).toLocaleString('nl-BE') : ''
-      setTrackingResult(`Rit ${ride.referenceCode ?? ride.code ?? code}: ${ride.status} • ${ride.pickup} → ${ride.destination} • ${when}`)
+      setTrackingResult(`Rit ${ride.referenceCode ?? ride.code ?? code}: ${ride.status}`)
     } catch (error) {
       setTrackingResult(error instanceof Error ? error.message : 'Tracking mislukt.')
     } finally {
@@ -145,13 +144,13 @@ export default function Booking() {
 
       <section id="tracking" style={{ maxWidth: 1180, margin: '0 auto', padding: '20px 22px 70px' }}>
         <div style={{ border: '1px solid rgba(212,175,55,.2)', borderRadius: 28, padding: 24, background: '#101010' }}>
-          <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>TRACKING</p>
-          <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Volg uw taxi met ritcode</h2>
+          <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>AANVRAAGSTATUS</p>
+          <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Controleer uw aanvraag</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12 }}>
             <input style={fieldStyle} placeholder="Bijvoorbeeld LV-MA37F9-F3A29D" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
             <button onClick={() => lookupTracking()} style={{ border: 0, borderRadius: 16, padding: '0 18px', background: gold, color: '#080808', fontWeight: 900 }}>
-              {trackingLoading ? 'Synchronisatie...' : 'Zoeken'}
+              {trackingLoading ? 'Controleren...' : 'Controleer status'}
             </button>
           </div>
 
