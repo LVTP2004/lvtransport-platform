@@ -1,6 +1,7 @@
-import type { CreateBookingDto, ServiceType } from './dto.js';
+import type { CreateBookingDto, CustomerAccountTier, ServiceType } from './dto.js';
 
 const SERVICE_TYPES: ServiceType[] = ['standard', 'airport', 'vip'];
+const CUSTOMER_TIERS: CustomerAccountTier[] = ['retail', 'business', 'vip'];
 
 const optionalText = (value: unknown, field: string, maxLength: number): string | undefined => {
   if (value === undefined || value === null) return undefined;
@@ -27,9 +28,11 @@ export const validateCreateBookingPayload = (payload: unknown): CreateBookingDto
   const customerPhone = optionalText(candidate.customerPhone, 'customerPhone', 40);
   const customerEmail = optionalText(candidate.customerEmail, 'customerEmail', 254);
   const notes = optionalText(candidate.notes, 'notes', 2000);
+  if (candidate.customerTier && !CUSTOMER_TIERS.includes(candidate.customerTier)) throw new Error('customerTier must be retail|business|vip');
+  const customerTier = candidate.customerTier;
 
-  if (customerEmail && !/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(customerEmail)) throw new Error('customerEmail must be a valid email address');
-  if (customerPhone && (!/^[+\\d() .-]+$/.test(customerPhone) || customerPhone.replace(/\\D/g, '').length < 6 || customerPhone.replace(/\\D/g, '').length > 20)) {
+  if (customerEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerEmail)) throw new Error('customerEmail must be a valid email address');
+  if (customerPhone && (!/^[+\d() .-]+$/.test(customerPhone) || customerPhone.replace(/\D/g, '').length < 6 || customerPhone.replace(/\D/g, '').length > 20)) {
     throw new Error('customerPhone must be a valid phone number');
   }
 
@@ -39,6 +42,7 @@ export const validateCreateBookingPayload = (payload: unknown): CreateBookingDto
     customerPhone,
     customerEmail,
     notes,
+    customerTier,
     pickup: candidate.pickup.trim(),
     destination: candidate.destination.trim(),
     scheduleAt,
