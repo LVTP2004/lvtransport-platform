@@ -15,6 +15,6 @@ export const createBookingDuplicateFingerprint = (booking: BookingFingerprintInp
     booking.destination.trim().toLowerCase(),
     booking.scheduleAt,
     booking.serviceType,
-  ].join('\\0');
+  ].join('\u0000');
   return createHash('sha256').update(canonical).digest('hex');
 };
