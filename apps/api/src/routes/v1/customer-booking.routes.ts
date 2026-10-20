@@ -20,7 +20,7 @@ router.post('/bookings', async (req, res) => {
   const idempotencyKey = String(req.header('Idempotency-Key') ?? '').trim() || randomUUID();
   try {
     const booking = await bookingFlowService.createBooking(payload, idempotencyKey);
-    res.status(201).json({ success: true, booking });
+    res.status(201).json({ success: true, booking: { referenceCode: booking.referenceCode, status: booking.status } });
   } catch {
     res.status(500).json({ success: false, message: 'De aanvraag kon niet veilig worden opgeslagen.' });
   }
@@ -46,9 +46,6 @@ router.get('/tracking/booking/:code', async (req, res) => {
       booking: {
         referenceCode: record.referenceCode,
         status: record.status,
-        pickup: record.pickup,
-        destination: record.destination,
-        scheduleAt: record.scheduleAt,
       },
     });
   } catch {
