@@ -146,16 +146,6 @@ export default function HeroSection() {
           <p className="mt-4 text-xs text-lv-mist/70">Vaste prijsindicaties. De definitieve prijs wordt bevestigd bij uw reservering.</p>
         </section>
 
-        <section className="glass-panel grid gap-5 rounded-3xl p-5 sm:grid-cols-2 sm:p-7">
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-[.22em] text-lv-champagne">Uw rit volgen</p>
-            <h2 className="mt-2 text-2xl font-semibold">Volg uw rit met uw reserveringscode</h2>
-            <p className="mt-3 text-sm leading-6 text-lv-mist">Bekijk de actuele ritstatus via het bestaande reserverings- en trackingsysteem.</p>
-          </div>
-          <div className="flex items-center sm:justify-end">
-            <Link to="/booking#tracking" className="btn-secondary inline-flex min-h-11 items-center justify-center px-5">Tracking openen <span aria-hidden="true" className="ml-2">→</span></Link>
-          </div>
-        </section>
 
         <footer id="contact" className="scroll-mt-28 mt-10 border-t border-lv-gold/20 py-8">
           <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_auto] lg:items-center">
