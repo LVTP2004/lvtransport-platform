@@ -5,7 +5,7 @@ import { adminAuthProvider, adminAuthService } from '../modules/auth/services/au
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
   const [email, setEmail] = useState('admin@lvtransport.dev');
-  const [password, setPassword] = useState('password123');
+  const [password, setPassword] = useState('');
   const [allowed, setAllowed] = useState(false);
 
   useEffect(() => {
