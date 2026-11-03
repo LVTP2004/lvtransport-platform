@@ -1,4 +1,59 @@
 import { useEffect, useMemo, useState } from 'react';
+import { type AuthState, UserRole } from '@lvtransport/auth';
+import { adminAuthProvider, adminAuthService } from '../modules/auth/services/auth-client.service';
+
+export function App() {
+  const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
+  const [email, setEmail] = useState('admin@lvtransport.dev');
+  const [password, setPassword] = useState('password123');
+  const [allowed, setAllowed] = useState(false);
+
+  useEffect(() => {
+    adminAuthService.getInitialState().then(setAuthState);
+  }, []);
+
+  const login = async () => {
+    const session = await adminAuthService.signIn({ email, password });
+    const profile = await adminAuthProvider.getUserProfile();
+    setAllowed(profile?.role === UserRole.ADMIN);
+    setAuthState(session);
+  };
+
+  const logout = async () => {
+    await adminAuthService.signOut();
+    setAuthState({ isAuthenticated: false, isLoading: false });
+    setAllowed(false);
+  };
+
+  if (authState.isLoading) {
+    return <main className="min-h-screen bg-zinc-900 p-8 text-white">Loading admin session…</main>;
+  }
+
+  if (!authState.isAuthenticated) {
+    return (
+      <main className="min-h-screen bg-zinc-900 p-8 text-white">
+        <h1 className="mb-4 text-3xl">Admin Login</h1>
+        <form className="flex max-w-md flex-col gap-3" onSubmit={(event) => { event.preventDefault(); void login(); }}>
+          <input className="rounded p-2 text-black" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input className="rounded p-2 text-black" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
+          <button className="rounded bg-amber-400 px-3 py-2 text-black" type="submit">Sign in</button>
+        </form>
+      </main>
+    );
+  }
+
+  if (!allowed) {
+    return (
+      <main className="min-h-screen bg-zinc-900 p-8 text-white">
+        <h1 className="mb-4 text-2xl">Access denied</h1>
+        <p>This account does not have the admin role.</p>
+        <button className="mt-4 rounded bg-zinc-700 px-3 py-2" onClick={() => void logout()}>Logout</button>
+      </main>
+    );
+  }
+
+  return <FounderDashboard onLogout={logout} />;
+}
 
 type RuntimeState = 'Healthy' | 'Warning' | 'Degraded' | 'Critical';
 type SyncState = 'live' | 'recovering' | 'degraded';
@@ -150,7 +205,7 @@ const buildDeterministicCopilotResponse = (input: {
   };
 };
 
-export function App() {
+function FounderDashboard({ onLogout }: { onLogout: () => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -230,6 +285,7 @@ export function App() {
             <div><p className="text-xs uppercase tracking-[0.2em] text-zinc-400">Founder Cockpit</p><h1 className="text-lg font-semibold text-amber-200 sm:text-xl">Realtime Operations</h1></div>
           </div>
           <span className={`rounded-full border px-3 py-1 text-xs uppercase tracking-[0.16em] ${stateTone[runtimeState]}`}>{runtimeState}</span>
+          <button className="rounded-full border border-white/15 px-3 py-1 text-xs text-zinc-200 hover:bg-white/10" onClick={onLogout}>Logout</button>
         </div>
       </header>
 
