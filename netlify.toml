@@ -1,0 +1,4 @@
+[build]
+  base = "."
+  command = "pnpm --filter @lvtransport/web build"
+  publish = "apps/web/dist"
