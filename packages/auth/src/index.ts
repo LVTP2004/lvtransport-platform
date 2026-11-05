@@ -13,3 +13,5 @@ export type {
 
 export { AuthService } from './services/auth-service.js';
 export { FirebaseAuthProvider } from './providers/firebase-auth.provider.js';
+export { signJwt, verifyJwt } from './security/jwt.service.js';
+export type { JwtClaims } from './security/jwt.service.js';

@@ -33,6 +33,9 @@ jobs:
       - name: Validate frontend build
         run: pnpm --filter @lvtransport/web build
 
+      - name: Validate API authentication
+        run: pnpm --filter @lvtransport/api test:auth
+
       - name: Build summary
         run: |
           echo 'LVTP frontend build validation completed.'
