@@ -1,0 +1,45 @@
+name: MONI V10 Aspire audit (read only)
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  audit:
+    runs-on: self-hosted
+    timeout-minutes: 10
+    steps:
+      - name: Collect non-sensitive status
+        shell: bash
+        run: |
+          set +e
+          mkdir -p "$RUNNER_TEMP/moni-audit"
+          OUT="$RUNNER_TEMP/moni-audit/report.txt"
+          {
+            echo "MONI V10 - read-only audit"
+            date -u '+UTC: %Y-%m-%d %H:%M:%S'
+            echo "Host: $(hostname)"
+            echo "Kernel: $(uname -sr)"
+            echo "Disk:"
+            df -h / | tail -n 1
+            echo "Memory:"
+            free -h | head -n 2
+            echo "Docker containers (names, status, ports):"
+            if command -v docker >/dev/null 2>&1; then
+              docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' 2>&1
+            else
+              echo "docker unavailable"
+            fi
+            echo "Ollama local process:"
+            pgrep -af '[o]llama serve' | sed -E 's@(/[^ ]+)+@<path>@g' || true
+            echo "Tailscale peers (names and status only):"
+            if command -v tailscale >/dev/null 2>&1; then
+              tailscale status 2>/dev/null | awk '{print $2, $5}' | head -n 30
+            fi
+          } > "$OUT" 2>&1
+          cat "$OUT"
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: moni-v10-aspire-audit
+          path: ${{ runner.temp }}/moni-audit/report.txt
+          retention-days: 3
