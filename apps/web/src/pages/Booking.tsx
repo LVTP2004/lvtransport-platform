@@ -157,9 +157,20 @@ export default function Booking() {
           <p style={{ color: gold, letterSpacing: 3, fontWeight: 900 }}>AANVRAAGSTATUS</p>
           <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Controleer uw aanvraag</h2>
 
-          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12 }}>
-            <input style={fieldStyle} placeholder="Bijvoorbeeld LV-MA37F9-F3A29D" value={trackingCode} onChange={(e) => setTrackingCode(e.target.value)} />
-            <button onClick={() => lookupTracking()} style={{ border: 0, borderRadius: 16, padding: '0 18px', background: gold, color: '#080808', fontWeight: 900 }}>
+          <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'stretch', gap: 12 }}>
+            <input
+              aria-label="Ritreferentie"
+              style={{ ...fieldStyle, flex: '1 1 320px', minWidth: 0 }}
+              placeholder="Bijvoorbeeld LV-MA37F9-F3A29D"
+              value={trackingCode}
+              onChange={(e) => setTrackingCode(e.target.value)}
+            />
+            <button
+              type="button"
+              disabled={trackingLoading}
+              onClick={() => lookupTracking()}
+              style={{ border: 0, borderRadius: 16, padding: '14px 18px', minHeight: 52, flex: '1 1 180px', background: gold, color: '#080808', fontWeight: 900 }}
+            >
               {trackingLoading ? 'Controleren...' : 'Controleer status'}
             </button>
           </div>
