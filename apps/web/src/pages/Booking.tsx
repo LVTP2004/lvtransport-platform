@@ -43,7 +43,17 @@ export default function Booking() {
       const scheduleAt = new Date(`${form.date}T${form.time}`).toISOString()
       const response = await fetch(`${API_V1_BASE}/bookings`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Idempotency-Key': crypto.randomUUID() },
+        // randomUUID requires a secure context in browsers. On a private
+        // HTTP development address, getRandomValues is the supported fallback.
+        // If neither API exists, the server generates the idempotency key.
+        headers: {
+          'Content-Type': 'application/json',
+          ...(typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function'
+            ? { 'Idempotency-Key': crypto.randomUUID() }
+            : typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function'
+              ? { 'Idempotency-Key': Array.from(crypto.getRandomValues(new Uint8Array(16)), (byte) => byte.toString(16).padStart(2, '0')).join('') }
+              : {}),
+        },
         body: JSON.stringify({
           customerName: form.name.trim(),
           customerPhone: form.phone.trim(),
