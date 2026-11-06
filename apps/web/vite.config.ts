@@ -11,6 +11,14 @@ export default defineConfig({
   },
   server: {
     host: '0.0.0.0',
-    allowedHosts: true
+    allowedHosts: true,
+    // Local development only: the browser calls /api on Vite,
+    // which forwards requests to the Minisforum API, not the VPS.
+    proxy: {
+      '/api': {
+        target: 'http://127.0.0.1:4010',
+        changeOrigin: false
+      }
+    }
   }
 });
