@@ -4,25 +4,64 @@ import { adminAuthProvider, adminAuthService } from '../modules/auth/services/au
 
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
-  const [email, setEmail] = useState('admin@lvtransport.dev');
+  const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [allowed, setAllowed] = useState(false);
+  const [authError, setAuthError] = useState('');
 
   useEffect(() => {
-    adminAuthService.getInitialState().then(setAuthState);
+    let active = true;
+
+    const restoreSession = async () => {
+      try {
+        const session = await adminAuthService.getInitialState();
+        const profile = session.isAuthenticated ? await adminAuthService.getUserProfile() : null;
+        if (!active) return;
+
+        setAllowed(session.isAuthenticated === true && hasAdminRole(profile));
+        setAuthState({ ...session, isLoading: false });
+      } catch {
+        if (!active) return;
+        setAllowed(false);
+        setAuthState({ isAuthenticated: false, isLoading: false });
+      }
+    };
+
+    void restoreSession();
+    return () => { active = false; };
   }, []);
 
   const login = async () => {
-    const session = await adminAuthService.signIn({ email, password });
-    const profile = await adminAuthProvider.getUserProfile();
-    setAllowed(profile?.role === UserRole.ADMIN);
-    setAuthState(session);
+    setAuthError('');
+    setAllowed(false);
+    setAuthState({ isAuthenticated: false, isLoading: true });
+
+    try {
+      const session = await adminAuthService.signIn({ email, password });
+      const profile = session.isAuthenticated ? await adminAuthService.getUserProfile() : null;
+      if (session.isAuthenticated !== true || !hasAdminRole(profile)) {
+        setAuthState({ ...session, isAuthenticated: false, isLoading: false });
+        setAuthError('Access denied. An active admin account is required.');
+        return;
+      }
+
+      setAllowed(true);
+      setAuthState({ ...session, isAuthenticated: true, isLoading: false });
+    } catch {
+      setAllowed(false);
+      setAuthState({ isAuthenticated: false, isLoading: false });
+      setAuthError('Sign in failed. Check your credentials and try again.');
+    }
   };
 
   const logout = async () => {
-    await adminAuthService.signOut();
-    setAuthState({ isAuthenticated: false, isLoading: false });
     setAllowed(false);
+    setAuthState({ isAuthenticated: false, isLoading: false });
+    try {
+      await adminAuthService.signOut();
+    } catch {
+      // Keep the UI locked even if remote sign-out fails.
+    }
   };
 
   if (authState.isLoading) {
@@ -33,10 +72,11 @@ export function App() {
     return (
       <main className="min-h-screen bg-zinc-900 p-8 text-white">
         <h1 className="mb-4 text-3xl">Admin Login</h1>
+        {authError ? <p role="alert" className="text-rose-300">{authError}</p> : null}
         <form className="flex max-w-md flex-col gap-3" onSubmit={(event) => { event.preventDefault(); void login(); }}>
-          <input className="rounded p-2 text-black" type="email" autoComplete="username" value={email} onChange={(event) => setEmail(event.target.value)} />
-          <input className="rounded p-2 text-black" type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} />
-          <button className="rounded bg-amber-400 px-3 py-2 text-black" type="submit">Sign in</button>
+          <input className="rounded p-2 text-black" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
+          <input className="rounded p-2 text-black" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
+          <button className="rounded bg-amber-400 px-3 py-2 text-black disabled:opacity-50" type="submit" disabled={authState.isLoading}>{authState.isLoading ? 'Signing in…' : 'Sign in'}</button>
         </form>
       </main>
     );
@@ -204,6 +244,10 @@ const buildDeterministicCopilotResponse = (input: {
     insufficientEvidence: false
   };
 };
+
+function hasAdminRole(profile: unknown): boolean {
+  return typeof profile === 'object' && profile !== null && 'role' in profile && profile.role === UserRole.ADMIN;
+}
 
 function FounderDashboard({ onLogout }: { onLogout: () => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
