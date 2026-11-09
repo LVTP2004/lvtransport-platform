@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { type AuthState, UserRole } from '@lvtransport/auth';
-import { adminAuthProvider, adminAuthService } from '../modules/auth/services/auth-client.service';
+import { adminAuthService } from '../modules/auth/services/auth-client.service';
 
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
