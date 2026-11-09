@@ -14,4 +14,4 @@ export type {
 export { AuthService } from './services/auth-service.js';
 export { FirebaseAuthProvider } from './providers/firebase-auth.provider.js';
 
-export { AccountStatus, AccountType, UserRole, Permission } from './enums/auth.enums.js';
+export { UserRole } from './enums/auth.enums.js';
