@@ -12,18 +12,21 @@ Improve MONI V10's reasoning experience, continuity and grounded agent routing, 
 
 ## Changes proposed
 - scripts/moni_v10_conversation_policy.py: pure functions for truthful capability manifests, gated proposed routing, bounded conversation history and grounded system prompt. NO tool calls, network, file writes or automatic installation.
-- scripts/moni_v10_runtime_audit.py: read-only inspection of names and syntax status of the four existing runtime files. No memory contents, credentials, code bodies or environmental variables printed.
+- scripts/moni_v10_runtime_audit.py: read-only inspection of names and syntax status of the four existing runtime files; optional --interfaces reports parameter names, known runtime call names and imports restricted to four modules. No code bodies, literal arguments, memory values, credentials or environment printed.
 - tests/test_moni_v10_conversation_policy.py: offline tests.
 
 ## Safe inventory on Minisforum
 After fetching and reviewing this branch locally, run:
 
 ~~~bash
-python3 scripts/moni_v10_runtime_audit.py
+python3 scripts/moni_v10_runtime_audit.py --interfaces
 python3 -m unittest discover -s tests -p 'test_moni_v10_conversation_policy.py' -v
 ~~~
 
-This audit prints only function/class names and syntax status. Do not overwrite ~/.local/bin/moni-chat or files in ~/MONI_V10_UNIFIED_RUNTIME before interface review.
+The optional --interfaces mode prints function/method and parameter names, references to a restricted list of known local calls and local runtime imports; it never executes the inspected source, prints source bodies or prints call argument values. Inspect the output for identifiers you prefer to keep private before sharing it. Do not overwrite ~/.local/bin/moni-chat or files in ~/MONI_V10_UNIFIED_RUNTIME before interface review.
+
+## Latest local observation
+A screenshot from Minisforum confirms that all four modules were found with valid Python syntax. The entrypoint defines classify, main, normalize, record, respond, router, self_test and status. Context builder defines build_context, keywords and read_pairs. Memory defines MemoryStore, answer_chronology, load_recent, memory_status and save_exchange. LLM router defines ask, available and opener. This establishes *presence*, not wiring or working agent execution. The new --interfaces inspection is the next read-only step.
 
 ## Acceptance checklist for actual integration
 1. Back up original runtime files, preserving permissions.
