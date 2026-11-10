@@ -55,3 +55,24 @@ The publish command runs the model again, so the exact report can differ from th
 
 ## Acceptance
 The bridge is operational only after Leonardo has locally verified: issue listing, model proposal, approved posting and the resulting GitHub comment read by ChatGPT. Until then it is a proposed integration, not an active agent.
+
+## Troubleshooting a failed plan
+
+The first real request for issue #397 failed without revealing its cause. The updated bridge now distinguishes HTTP errors, timeouts, connection failures and invalid JSON. It bypasses HTTP proxies for the local/Tailscale model endpoint, without restarting Ollama.
+
+Confirm connectivity first:
+
+    curl --noproxy '*' -sS --max-time 8 http://100.80.158.108:11434/api/tags
+
+Check model status and memory:
+
+    OLLAMA_HOST=http://100.80.158.108:11434 ollama ps
+    free -h
+
+Fetch the latest feature branch, run the local unit tests, then retry the plan. The request timeout is now 180s and any timeout is reported explicitly. Do not restart Ollama or increase its context as the first step.
+
+If an HTTP 500 or repeated timeout persists, inspect recent service logs:
+
+    sudo journalctl -u ollama -n 35 --no-pager
+
+Remove private values before sharing logs. Never paste API keys or tokens.
