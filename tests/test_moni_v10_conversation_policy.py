@@ -73,5 +73,33 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(result["files"][0]["syntax"], "SyntaxError")
 
 
+    def test_interface_map_shows_known_calls_and_no_literal_values(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/"moni_chat.py").write_text(
+                "from llm_router import ask\n"
+                "SECRET='do-not-disclose'\n"
+                "def respond(text, *, model=None):\n"
+                "    return ask('hidden-secret-prompt', text)\n"
+                "class Controller:\n"
+                "    def process(self, query):\n"
+                "        return respond(query)\n", encoding="utf-8")
+            result = audit.inspect_runtime(root, interfaces=True)
+        entry = result["files"][0]["interfaces"]
+        self.assertEqual(entry["local_module_imports"], ["llm_router"])
+        self.assertEqual(entry["functions"][0]["params"], ["text", "model"])
+        self.assertEqual(entry["functions"][0]["known_calls"], ["ask"])
+        self.assertNotIn("do-not-disclose", str(result))
+        self.assertNotIn("hidden-secret-prompt", str(result))
+
+    def test_default_does_not_disclose_interfaces(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root = Path(tmp)
+            (root/"moni_chat.py").write_text("def main(secret_key): pass", encoding="utf-8")
+            result = audit.inspect_runtime(root)
+        self.assertNotIn("interfaces", result["files"][0])
+
+
+
 if __name__ == "__main__":
     unittest.main()
