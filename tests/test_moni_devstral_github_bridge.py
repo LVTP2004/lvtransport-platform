@@ -83,6 +83,7 @@ class TestBridge(unittest.TestCase):
         self.assertEqual(response, "Safe read-only plan")
         payload = json.loads(request.data.decode())
         self.assertEqual(payload["model"], "devstral:latest")
+        self.assertEqual(payload["max_tokens"], 160)
         self.assertNotIn("tools", payload)
         self.assertEqual(request.full_url, "http://127.0.0.1:11434/v1/messages")
 
