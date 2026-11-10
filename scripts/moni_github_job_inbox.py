@@ -10,12 +10,14 @@ from datetime import datetime, timedelta, timezone
 import json
 from pathlib import Path
 import re
+import socket
 import subprocess
 import sys
 from typing import Any
 
 REPO = "LVTP2004/lvtransport-platform"
 AUTHOR = "leovargas-max"
+EXPECTED_HOST = "leonardo-AI-Series"
 PREFIX = "[MONI-JOB] "
 BODY_PREFIX = "MONI_JOB_V1\n"
 RESULT_PREFIX = "MONI_RESULT_V1"
@@ -142,8 +144,16 @@ def already_reported(issue: int, rid: str, api=gh_api) -> bool:
                marker in (x.get("body") or "") for x in data)
 
 
+def verify_local_host(hostname: str | None = None) -> None:
+    """Never report Aspire/VPS as if it were Minisforum."""
+    actual = socket.gethostname() if hostname is None else hostname
+    if actual.casefold() != EXPECTED_HOST.casefold():
+        raise TaskRejected("wrong local node; Minisforum required")
+
+
 def run_once(*, publish: bool = False, api=gh_api, root: Path = RUNTIME,
-             now: datetime | None = None) -> list[dict]:
+             now: datetime | None = None, hostname: str | None = None) -> list[dict]:
+    verify_local_host(hostname)
     if now is None:
         now = datetime.now(timezone.utc)
     issues = api(f"repos/{REPO}/issues?state=open&per_page=100")
