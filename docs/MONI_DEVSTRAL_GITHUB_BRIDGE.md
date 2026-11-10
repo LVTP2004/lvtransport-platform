@@ -76,3 +76,7 @@ If an HTTP 500 or repeated timeout persists, inspect recent service logs:
     sudo journalctl -u ollama -n 35 --no-pager
 
 Remove private values before sharing logs. Never paste API keys or tokens.
+
+## Slow generation diagnosed 2026-11-10
+
+Ollama 0.40.14 was reachable, loaded devstral:latest with 4096 context and generated about 410 tokens at 2.66 tokens/second. The 180-second request timeout cancelled the long response and Ollama logged HTTP 500. This is a generation-speed / response-budget limitation, not evidence of a lost model or GitHub connection failure. The relay now requests a short five-sentence plan with maximum 160 output tokens, leaving a margin for startup and prompt processing. Do not raise the context window or restart the existing server as a workaround. Verify the new code with offline tests, then repeat `plan 397` in dry-run mode.
