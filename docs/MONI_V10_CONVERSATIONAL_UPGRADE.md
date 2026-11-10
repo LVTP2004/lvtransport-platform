@@ -39,3 +39,18 @@ A screenshot from Minisforum confirms that all four modules were found with vali
 
 ## Constraints
 No modifications to production API, public website, booking/tracking, VPS, Nginx, PM2, Docker, systemd services, Ollama or Tailscale. Do not commit private logs or other credentials into the public repository.
+
+
+## 10 November: local chat routing diagnosis and guarded candidate
+
+On Minisforum, the AST-only routing audit reported that \`moni_chat.respond(message)\` returns only constants (lines 166, 229, 239, 276) and never invokes \`llm_router.ask(message)\`. The latter already uses context_builder and conversation_memory. The most conservative hypothesis is that an unrecognized request receives a hard-coded fallback instead of going to the local LLM.
+
+A guarded candidate patcher is now in \`scripts/moni_v10_stage_chat_fallback.py\`. It is **not** an installer: it refuses changes unless \`respond(message)\` ends with a simple, unconditional, top-level string return AND \`ask(message)\` exists with exactly one positional argument. It preserves earlier branches, inserts a best-effort LLM call before that final fallback, and keeps the original fallback when the LLM is unavailable. It never executes the inspected source. The generated candidate exists only in a private \`/tmp\` staging file; it does not edit the active MONI runtime or start/stop systemd services.
+
+**Operator command for reviewed staging only** (from Minisforum with this feature branch fetched):
+~~~bash
+git show origin/feature/moni-v10-conversation-policy-20261110:scripts/moni_v10_stage_chat_fallback.py > /tmp/moni_v10_stage_chat_fallback.py
+python3 /tmp/moni_v10_stage_chat_fallback.py
+~~~
+
+If the result is \`REFUSED\`, do not force a patch. It means the structure differs from the expected target and requires manual integration. If it is \`STAGED_FOR_REVIEW\`, perform static inspection and founder review before any copy back. This is only a **first-step LLM fallback**, not Atlas/Forge execution, multi-agent orchestration, or a claim of Claude-level capabilities. Tests: \`python3 -m unittest discover -s tests -p 'test_moni_v10_stage_chat_fallback.py' -v\`. Existing .github workflows untouched.
