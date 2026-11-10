@@ -73,15 +73,33 @@ class TestBridge(unittest.TestCase):
 
     def test_model_uses_text_only_no_tools(self):
         expected = {"content": [{"type": "text", "text": "Safe read-only plan"}]}
-        with patch.object(bridge, "urlopen") as open_url:
-            open_url.return_value.__enter__.return_value.read.return_value = json.dumps(expected).encode()
+        with patch.object(bridge, "build_opener") as opener_factory:
+            opener = opener_factory.return_value
+            opener.open.return_value.__enter__.return_value.read.return_value = json.dumps(expected).encode()
             response = bridge.ask_devstral("http://127.0.0.1:11434", ISSUE)
-            request = open_url.call_args.args[0]
+            request = opener.open.call_args.args[0]
+            self.assertEqual(opener.open.call_args.kwargs["timeout"], 180)
+            self.assertEqual(opener_factory.call_args.args[0].proxies, {})
         self.assertEqual(response, "Safe read-only plan")
         payload = json.loads(request.data.decode())
         self.assertEqual(payload["model"], "devstral:latest")
         self.assertNotIn("tools", payload)
         self.assertEqual(request.full_url, "http://127.0.0.1:11434/v1/messages")
+
+    def test_http_error_reports_status(self):
+        from urllib.error import HTTPError
+        with patch.object(bridge, "build_opener") as factory:
+            factory.return_value.open.side_effect = HTTPError(
+                "http://127.0.0.1:11434/v1/messages", 500, "model too large", {}, None
+            )
+            with self.assertRaisesRegex(bridge.BridgeError, "HTTP 500"):
+                bridge.ask_devstral("http://127.0.0.1:11434", ISSUE)
+
+    def test_timeout_reports_cause(self):
+        with patch.object(bridge, "build_opener") as factory:
+            factory.return_value.open.side_effect = TimeoutError("timed out")
+            with self.assertRaisesRegex(bridge.BridgeError, "timed out after 180s"):
+                bridge.ask_devstral("http://127.0.0.1:11434", ISSUE)
 
     def test_issue_list_only_prefixed(self):
         items = [
