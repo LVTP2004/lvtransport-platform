@@ -17,6 +17,7 @@ Allow ChatGPT (with its connected GitHub app) to create a narrowly-scoped GitHub
 - Issue body starts with MONI_JOB_V1 followed by JSON containing exactly schema=1, task, target=minisforum, a UUID request_id, and timezone-aware expires_at within 7 days.
 - Unknown jobs, wrong authors/targets, extra JSON keys, PRs and expired requests are ignored.
 - No issue-body code is executed or passed to a shell. No arbitrary Linux commands.
+- Fail-closed device identity check: the local hostname must equal leonardo-AI-Series (as observed in Minisforum screenshots); a job run on Aspire or the VPS is refused rather than being misreported as Minisforum.
 - Supported operations:
   - ping: verify local bridge logic is running. Does not test system health.
   - runtime_inventory: parse four known Python files with ast.parse and report only file presence, syntax check and number of top-level functions. No source, prompts, credentials, paths or environment contents are returned.
