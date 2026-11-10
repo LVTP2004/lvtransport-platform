@@ -83,9 +83,17 @@ class TestBridge(unittest.TestCase):
         self.assertEqual(response, "Safe read-only plan")
         payload = json.loads(request.data.decode())
         self.assertEqual(payload["model"], "devstral:latest")
-        self.assertEqual(payload["max_tokens"], 160)
+        self.assertEqual(payload["max_tokens"], 220)
         self.assertNotIn("tools", payload)
         self.assertEqual(request.full_url, "http://127.0.0.1:11434/v1/messages")
+
+    def test_truncated_reply_is_rejected_before_publish(self):
+        with patch.object(bridge, "build_opener") as factory:
+            response = {"content": [{"type": "text", "text": "Incomplete"}],
+                        "stop_reason": "max_tokens"}
+            factory.return_value.open.return_value.__enter__.return_value.read.return_value = json.dumps(response).encode()
+            with self.assertRaisesRegex(bridge.BridgeError, "truncated"):
+                bridge.ask_devstral("http://127.0.0.1:11434", ISSUE)
 
     def test_http_error_reports_status(self):
         from urllib.error import HTTPError
