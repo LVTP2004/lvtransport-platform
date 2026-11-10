@@ -1,0 +1,19 @@
+name: MONI Devstral bridge safety tests
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - scripts/moni_devstral_github_bridge.py
+      - tests/test_moni_devstral_github_bridge.py
+      - docs/MONI_DEVSTRAL_GITHUB_BRIDGE.md
+      - .github/workflows/moni-devstral-bridge-check.yml
+permissions:
+  contents: read
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - name: Python stdlib unit tests (no secrets, no network, no model)
+        run: python3 -m unittest discover -s tests -p 'test_moni_devstral_github_bridge.py' -v
