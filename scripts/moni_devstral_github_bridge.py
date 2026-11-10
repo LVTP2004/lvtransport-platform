@@ -8,7 +8,7 @@ import subprocess
 import sys
 from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
-from urllib.request import Request, urlopen
+from urllib.request import Request, ProxyHandler, build_opener
 
 REPO = "LVTP2004/lvtransport-platform"
 PREFIX = "[MONI-DEVSTRAL]"
@@ -83,11 +83,24 @@ def ask_devstral(endpoint, issue):
                  "anthropic-version": "2023-06-01"},
         method="POST",
     )
+    # Ollama is local/Tailscale. Never route these requests through HTTP proxies.
+    opener = build_opener(ProxyHandler({}))
     try:
-        with urlopen(request, timeout=120) as result:
+        with opener.open(request, timeout=180) as result:
             data = json.load(result)
-    except (HTTPError, URLError, TimeoutError, OSError, ValueError) as exc:
-        raise BridgeError("Devstral request failed; verify existing Ollama host and model.") from exc
+    except HTTPError as exc:
+        raise BridgeError(f"Devstral returned HTTP {exc.code} at /v1/messages. Check Ollama logs and context.") from exc
+    except TimeoutError as exc:
+        raise BridgeError("Devstral timed out after 180s. Check model loading, RAM and Ollama logs.") from exc
+    except URLError as exc:
+        reason = getattr(exc, "reason", None)
+        if isinstance(reason, TimeoutError):
+            raise BridgeError("Devstral timed out waiting for Ollama (180s).") from exc
+        raise BridgeError("Cannot reach the existing Ollama endpoint (connection/DNS).") from exc
+    except OSError as exc:
+        raise BridgeError(f"Local Ollama transport error ({type(exc).__name__}).") from exc
+    except ValueError as exc:
+        raise BridgeError("Devstral returned invalid JSON.") from exc
     response = "\n".join(
         block.get("text", "") for block in data.get("content", [])
         if isinstance(block, dict) and block.get("type") == "text"
