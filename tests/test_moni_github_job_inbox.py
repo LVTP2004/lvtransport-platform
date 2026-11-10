@@ -33,6 +33,13 @@ class JobTests(unittest.TestCase):
         self.assertEqual(job["task"], "ping")
         self.assertTrue(worker.execute_readonly(job["task"])["ready"])
 
+    def test_wrong_host_rejected_even_for_valid_job(self):
+        issue = make_issue()
+        def fake_api(path, method="GET", payload=None):
+            raise AssertionError("must reject before fetching GitHub")
+        with self.assertRaisesRegex(worker.TaskRejected, "wrong local node"):
+            worker.run_once(publish=False, api=fake_api, now=NOW, hostname="aspire")
+
     def test_untrusted_author_rejected(self):
         with self.assertRaisesRegex(worker.TaskRejected, "untrusted"):
             worker.decode_request(make_issue(login="internet-user"), NOW)
@@ -85,7 +92,7 @@ class JobTests(unittest.TestCase):
         def fake_api(path, method="GET", payload=None):
             calls.append((path, method, payload))
             return [issue]
-        result = worker.run_once(publish=False, api=fake_api, now=NOW)
+        result = worker.run_once(publish=False, api=fake_api, now=NOW, hostname="leonardo-AI-Series")
         self.assertEqual(len(result), 1)
         self.assertEqual(len(calls), 1)
         self.assertFalse(result[0]["published"])
@@ -100,7 +107,7 @@ class JobTests(unittest.TestCase):
             if path.endswith("comments?per_page=100"):
                 return []
             return {"id": 9}
-        result = worker.run_once(publish=True, api=fake_api, now=NOW)
+        result = worker.run_once(publish=True, api=fake_api, now=NOW, hostname="leonardo-AI-Series")
         self.assertTrue(result[0]["published"])
         self.assertEqual(calls[-1][1], "POST")
         self.assertNotIn("request_id", calls[-1][2]["body"])
@@ -116,7 +123,7 @@ class JobTests(unittest.TestCase):
                 return [{"user": {"login": worker.AUTHOR},
                          "body": worker.result_marker(123, request_id)}]
             raise AssertionError("unexpected posting or request")
-        result = worker.run_once(publish=True, api=fake_api, now=NOW)
+        result = worker.run_once(publish=True, api=fake_api, now=NOW, hostname="leonardo-AI-Series")
         self.assertTrue(result[0]["skipped_existing"])
         self.assertFalse(result[0]["published"])
 
