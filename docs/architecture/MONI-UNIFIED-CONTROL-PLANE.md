@@ -78,7 +78,7 @@ Use it for event delivery, request/reply, status and task routing between authen
 
 Critical events must survive disconnects. Approval requests, important task results and other state transitions should not depend on a subscriber being online at the instant of publication.
 
-Durable messaging is proposed; the existing FOSSiBOT test established live NATS delivery only.
+Durable messaging is proposed; the FOSSiBOT record reports NATS delivery of one event while the listener was connected. This documentation review did not repeat the test or authenticate its participants.
 
 ### GitHub
 

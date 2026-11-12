@@ -72,7 +72,7 @@ Additional rules:
 
 - Separate verified state from proposals; never present a planned capability as implemented.
 - Keep Aspire, Minisforum and Viviana Linux as separate node identities; do not infer one node's runtime state from another.
-- The verified FOSSiBOT NATS test proves live event delivery on `moni.events` only. It does not prove approvals, biometrics, JetStream, GitHub actions or remote execution.
+- The architecture record reports an Aspire -> FOSSiBOT event delivery on `moni.events`; this documentation review did not repeat or authenticate the test. It does not prove persistence, ATLAS identity/health, approvals, biometrics, JetStream, GitHub actions or remote execution.
 - A MONI Edge approval is not blanket permission to deploy, merge, run arbitrary shell commands or modify infrastructure. Scope each capability explicitly.
 - Biometric material remains local to the device; never transmit fingerprint templates or raw biometric data.
 - Prefer capability-scoped operations such as `github.read_pr`, `codex.approve_task` and `node.status` over unrestricted remote shell.
