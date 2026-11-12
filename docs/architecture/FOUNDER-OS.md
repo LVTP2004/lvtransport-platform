@@ -201,4 +201,3 @@ independent, authenticated and recent operational evidence exists for each node.
 - Review durable receipt/challenge storage, atomic consumption, idempotency, revocation, retention and access controls.
 - Add offline tests for anonymous/insufficient-role users, forged person fields, hash/target mismatch, expired/replayed challenges, restart and concurrent decisions, plus a synthetic accepted record.
 - Keep synthetic tests distinct from real authentication, human consent, durable anti-replay and operational execution evidence.
-
