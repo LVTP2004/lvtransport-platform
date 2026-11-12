@@ -1,12 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
-import { type AuthState, UserRole } from '@lvtransport/auth';
-import { adminAuthService } from '../modules/auth/services/auth-client.service';
+import { type AuthState } from '@lvtransport/auth';
+import { adminAuthenticationConfigured, adminAuthService } from '../modules/auth/services/auth-client.service';
+import { AdminAccessGate, authorizeAdminSession, type AdminAccess } from '../modules/auth/route-guards/admin-access';
 
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [allowed, setAllowed] = useState(false);
+  const [access, setAccess] = useState<AdminAccess | null>(null);
   const [authError, setAuthError] = useState('');
 
   useEffect(() => {
@@ -15,14 +16,17 @@ export function App() {
     const restoreSession = async () => {
       try {
         const session = await adminAuthService.getInitialState();
-        const profile = session.isAuthenticated ? await adminAuthService.getUserProfile() : null;
+        const token = session.tokens?.accessToken;
+        const [identity, profile] = session.isAuthenticated === true
+          ? await Promise.all([adminAuthService.getSession(token), adminAuthService.getUserProfile()])
+          : [null, null];
         if (!active) return;
 
-        setAllowed(session.isAuthenticated === true && hasAdminRole(profile));
+        setAccess(authorizeAdminSession(session, identity, profile, Date.now()));
         setAuthState({ ...session, isLoading: false });
       } catch {
         if (!active) return;
-        setAllowed(false);
+        setAccess(null);
         setAuthState({ isAuthenticated: false, isLoading: false });
       }
     };
@@ -31,31 +35,49 @@ export function App() {
     return () => { active = false; };
   }, []);
 
+  useEffect(() => {
+    if (!access) return;
+    const timer = window.setTimeout(() => {
+      setAccess(null);
+      setAuthState({ isAuthenticated: false, isLoading: false });
+    }, Math.max(0, Math.min(access.expiresAt - Date.now(), 2147483647)));
+    return () => window.clearTimeout(timer);
+  }, [access]);
+
   const login = async () => {
     setAuthError('');
-    setAllowed(false);
+    setAccess(null);
     setAuthState({ isAuthenticated: false, isLoading: true });
+
+    if (!adminAuthenticationConfigured) {
+      setAuthState({ isAuthenticated: false, isLoading: false });
+      setAuthError('Admin authentication is not configured. Access is disabled.');
+      return;
+    }
 
     try {
       const session = await adminAuthService.signIn({ email, password });
-      const profile = session.isAuthenticated ? await adminAuthService.getUserProfile() : null;
-      if (session.isAuthenticated !== true || !hasAdminRole(profile)) {
+      const [identity, profile] = await Promise.all([
+        adminAuthService.getSession(session.tokens?.accessToken), adminAuthService.getUserProfile()
+      ]);
+      const verifiedAccess = authorizeAdminSession(session, identity, profile, Date.now());
+      if (!verifiedAccess) {
         setAuthState({ ...session, isAuthenticated: false, isLoading: false });
         setAuthError('Access denied. An active admin account is required.');
         return;
       }
 
-      setAllowed(true);
+      setAccess(verifiedAccess);
       setAuthState({ ...session, isAuthenticated: true, isLoading: false });
     } catch {
-      setAllowed(false);
+      setAccess(null);
       setAuthState({ isAuthenticated: false, isLoading: false });
       setAuthError('Sign in failed. Check your credentials and try again.');
     }
   };
 
   const logout = async () => {
-    setAllowed(false);
+    setAccess(null);
     setAuthState({ isAuthenticated: false, isLoading: false });
     try {
       await adminAuthService.signOut();
@@ -72,27 +94,30 @@ export function App() {
     return (
       <main className="min-h-screen bg-zinc-900 p-8 text-white">
         <h1 className="mb-4 text-3xl">Admin Login</h1>
+        {!adminAuthenticationConfigured ? <p role="alert">Admin authentication is not configured. Access is disabled.</p> : null}
         {authError ? <p role="alert" className="text-rose-300">{authError}</p> : null}
         <form className="flex max-w-md flex-col gap-3" onSubmit={(event) => { event.preventDefault(); void login(); }}>
           <input className="rounded p-2 text-black" type="email" autoComplete="username" required value={email} onChange={(event) => setEmail(event.target.value)} />
           <input className="rounded p-2 text-black" type="password" autoComplete="current-password" required value={password} onChange={(event) => setPassword(event.target.value)} />
-          <button className="rounded bg-amber-400 px-3 py-2 text-black disabled:opacity-50" type="submit" disabled={authState.isLoading}>{authState.isLoading ? 'Signing in…' : 'Sign in'}</button>
+          <button className="rounded bg-amber-400 px-3 py-2 text-black disabled:opacity-50" type="submit" disabled={!adminAuthenticationConfigured || authState.isLoading}>{authState.isLoading ? 'Signing in…' : 'Sign in'}</button>
         </form>
       </main>
     );
   }
 
-  if (!allowed) {
+  if (!access) {
     return (
       <main className="min-h-screen bg-zinc-900 p-8 text-white">
         <h1 className="mb-4 text-2xl">Access denied</h1>
-        <p>This account does not have the admin role.</p>
+        <p>A verified admin or super_admin account is required.</p>
         <button className="mt-4 rounded bg-zinc-700 px-3 py-2" onClick={() => void logout()}>Logout</button>
       </main>
     );
   }
 
-  return <FounderDashboard onLogout={logout} />;
+  return <AdminAccessGate access={access}>{(verified) =>
+    <FounderDashboard key={verified.userId} access={verified} onLogout={logout} />
+  }</AdminAccessGate>;
 }
 
 type RuntimeState = 'Healthy' | 'Warning' | 'Degraded' | 'Critical';
@@ -155,7 +180,7 @@ type CopilotResponse = {
   insufficientEvidence: boolean;
 };
 
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be/api/v1';
+const API_BASE = import.meta.env?.VITE_API_BASE_URL ?? 'https://api.lvtransport.be/api/v1';
 const stateTone: Record<RuntimeState, string> = {
   Healthy: 'border-emerald-400/40 bg-emerald-500/10 text-emerald-100',
   Warning: 'border-amber-300/40 bg-amber-400/10 text-amber-100',
@@ -245,11 +270,7 @@ const buildDeterministicCopilotResponse = (input: {
   };
 };
 
-function hasAdminRole(profile: unknown): boolean {
-  return typeof profile === 'object' && profile !== null && 'role' in profile && profile.role === UserRole.ADMIN;
-}
-
-function FounderDashboard({ onLogout }: { onLogout: () => void }) {
+function FounderDashboard({ access, onLogout }: { access: AdminAccess; onLogout: () => void }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -257,29 +278,39 @@ function FounderDashboard({ onLogout }: { onLogout: () => void }) {
   const [copilotQuery, setCopilotQuery] = useState('');
 
   useEffect(() => {
+    const controller = new AbortController();
     const load = async () => {
+      if (Date.now() >= access.expiresAt) { onLogout(); return; }
       try {
+        const options = { headers: { Authorization: `Bearer ${access.accessToken}` }, signal: controller.signal };
         const [bookingRes, driverRes, incidentRes] = await Promise.all([
-          fetch(`${API_BASE}/admin/bookings`),
-          fetch(`${API_BASE}/drivers/live-states`),
-          fetch(`${API_BASE}/operations/incidents`)
+          fetch(`${API_BASE}/admin/bookings`, options),
+          fetch(`${API_BASE}/drivers/live-states`, options),
+          fetch(`${API_BASE}/operations/incidents`, options)
         ]);
+        if ([bookingRes, driverRes, incidentRes].some((response) => response.status === 401 || response.status === 403)) {
+          onLogout();
+          return;
+        }
+        if (![bookingRes, driverRes, incidentRes].every((response) => response.ok)) throw new Error('Operational access denied');
         const b = await bookingRes.json();
         const d = await driverRes.json();
         const i = await incidentRes.json();
+        if (controller.signal.aborted) return;
         setBookings(Array.isArray(b.bookings) ? b.bookings : []);
         setDrivers(Array.isArray(d.drivers) ? d.drivers : []);
         setIncidents(Array.isArray(i.incidents) ? i.incidents : []);
         setSync('live');
       } catch {
+        if (controller.signal.aborted) return;
         setSync('degraded');
       }
     };
 
     load();
     const poll = setInterval(load, 12000);
-    return () => clearInterval(poll);
-  }, []);
+    return () => { controller.abort(); clearInterval(poll); };
+  }, [access.accessToken, access.expiresAt]);
 
   const pendingRides = useMemo(() => bookings.filter((booking) => ['pending', 'searching_driver', 'quote_pending'].includes(booking.status)).length, [bookings]);
   const activeRides = useMemo(() => bookings.filter((booking) => ['assigned', 'accepted', 'en_route', 'arrived', 'in_progress'].includes(booking.status)).length, [bookings]);
