@@ -29,4 +29,9 @@ if git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx | grep
   fail "Form preventDefault detected. Confirm this is not replacing production booking."
 fi
 
+if [[ -f tests/test_moni_v10_stage_chat_fallback.py ]]; then
+  echo "Checking isolated fallback staging with offline fixtures only..."
+  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_moni_v10_stage_chat_fallback.py' -v
+fi
+
 echo "Spec guard passed."
