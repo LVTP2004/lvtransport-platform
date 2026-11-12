@@ -98,6 +98,73 @@ receipt. Capture only necessary identity references in a restricted audit store;
 public GitHub holds this design and review history, not real approval records,
 session identifiers, credentials or personal data.
 
+### Versioned decision record: v1-draft
+
+Contract identifier: `founder/approval-record/v1-draft`. This is a proposed data
+contract, not a new endpoint, receipt issuer, deployed validator or proof format.
+A future implementation must reject other versions until explicitly supported;
+no best-effort reinterpretation. This section adds the normative bindings to the
+receipt groups above. It does not publish a real person's approval record.
+
+| Field | Required value and meaning |
+|---|---|
+| `schema` | Exact contract identifier above. |
+| `approval_id`, `request_id` | Distinct bounded opaque IDs, 1–128 ASCII letters/digits or `_`, `-`, `.`, `:`; no email, session token or personal name. |
+| `proposal.id`, `proposal.revision` | Immutable proposal ID and full 40-character lowercase Git commit revision; a branch, PR number or moving tag is insufficient. |
+| `proposal.repository`, `proposal.path` | Owner/repository and relative file path of the exact frozen proposal manifest; reject absolute/traversal/ambiguous paths. Repository location is not a node identity. |
+| `proposal.hash_profile`, `proposal.file_sha256` | `EXACT_MANIFEST_BYTES_V1` and 64 lowercase hex characters: SHA-256 of the exact manifest file bytes at that repository, revision and path. `proposal_hash` in the receipt groups above means this same digest, not a second digest with a different scope. |
+| `scope` | Exact capability, target node, independently enrolled instance, environment and policy version copied from the frozen proposal; no wildcard, expansion or inheritance between Aspire and Viviana. |
+| `actor.issuer`, `actor.subject` | Stable opaque principal reference derived by a future trusted backend from authenticated session evidence, never accepted as verified merely because the browser supplies it. |
+| `actor.authenticated_at`, `actor.evidence_ref` | Authentication time and restricted reference to the verified session/role decision; no token, credentials, biometric material or raw proof in public GitHub. |
+| `decision` | Exactly `APPROVE` or `REJECT`, bound to the same proposal hash, actor and scope. A rejection never grants authority. |
+| `reason_code`, `reason` | Required bounded machine code (1–64 ASCII uppercase letters/digits/underscores) and human rationale (1–512 characters); reject control characters and exclude personal/secret data. A decision without a reason is incomplete. |
+| `received_at`, `issued_at`, `expires_at` | Explicit UTC timestamps from the future trusted server; the first two record receipt/issuance, the last bounds use. Device time is only a claim. |
+| `challenge_ref` | Restricted reference to a pending unpredictable challenge bound to actor/session, request, hash and target; the reference itself is not proof of single use. |
+| `integrity_ref`, `journal_ref` | Restricted integrity-proof and durable audit references bound to the complete record; their existence, issuer and verification require separately reviewed infrastructure. |
+| `approval_granted`, `can_dispatch` | Both `false` in this documentary contract; schema-valid content is never an execution permission. |
+
+Proposed format checks: bounded UTF-8 JSON object (maximum 16 KiB), exact known
+fields, no duplicate keys, invalid/non-finite JSON numbers, ambiguous encodings
+or unknown nested fields. A parser checks those rules before interpretation;
+format validity does not authenticate any field. A semantic check must also
+verify `authenticated_at <= received_at <= issued_at < expires_at`, proposal
+expiry, authentication/policy lifetimes, exact scope equality and the digest
+recomputed from the fixed artifact. Those checks alone still cannot prove the
+actor, permission, integrity, revocation state or challenge consumption.
+
+Acceptance requires the separately verified identity/role authority, permitted
+human actor, current proposal revision/policy, integrity proof and atomic durable
+challenge consumption described above. Until those dependencies exist, any
+locally formatted record remains an **unverified candidate**, not
+APPROVED_RECORDED. Never use a JSON flag or schema validation to bypass them.
+
+#### Historical evidence references and MONI consumption
+
+The frozen proposal may include `evidence_manifests` as an explicit list of at most 32 entries
+of repository, full commit, relative path, SHA-256 and schema identifier
+`atlas/historical-evidence-manifest/v1-draft`. These are references inside the
+proposal artifact, so changing any reference changes its bytes/hash and requires
+a new decision. Each evidence manifest separately locates files by repository,
+commit, path and `file_sha256`, dates the evidence and declares source type,
+side effects and limits. No recovered files or operational data are copied here.
+
+After Knowledge Bridge V3 is ready, MONI could ingest approved-format metadata
+as untrusted documentary sources, preserve the evidence dates/attributions, and
+resolve hashes against the referenced bytes through an independently authorized
+read path. This is a proposed adapter boundary, not implemented integration.
+MONI must keep format validation, artifact integrity, human authentication and
+operational evidence separate. Historical provenance does not establish current
+ATLAS status; a human decision cannot change that. Aspire and Viviana remain
+UNKNOWN independently, including when a valid historical source declares
+`canonicalProducer: aspire` from a Viviana recovery repository.
+
+Additional invalidation conditions are a changed artifact hash/revision, changed
+scope/target/policy, an expired session or approval, actor deauthorization,
+revocation/supersession, missing integrity/audit evidence or unprovable one-use
+state. A record must be rechecked at use time; no automatic renewal, transfer or
+fallback approval. Revocations and invalidations append reasoned, dated audit
+events instead of rewriting the original person's decision.
+
 ### Accept once, revoke explicitly and keep execution separate
 
 Before accepting, the backend must authenticate/authorize the person, recompute
@@ -134,3 +201,4 @@ independent, authenticated and recent operational evidence exists for each node.
 - Review durable receipt/challenge storage, atomic consumption, idempotency, revocation, retention and access controls.
 - Add offline tests for anonymous/insufficient-role users, forged person fields, hash/target mismatch, expired/replayed challenges, restart and concurrent decisions, plus a synthetic accepted record.
 - Keep synthetic tests distinct from real authentication, human consent, durable anti-replay and operational execution evidence.
+
