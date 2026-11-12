@@ -9,9 +9,9 @@ MONI Edge is the proposed mobile edge and secure control surface for LVTP CORE. 
 
 MONI Edge is not intended to become an unrestricted remote shell. It should expose authenticated, auditable, capability-scoped actions and approvals.
 
-## Verified state
+## Recorded event-delivery test
 
-The following has been directly tested:
+The architecture record reports the following test, recorded by 2026-11-12; this review did not repeat it:
 
 - MONI Edge prototype exists on the FOSSiBOT under `~/moni-edge`.
 - Node.js listener: `tools/nats-subscribe.js`.
@@ -20,11 +20,20 @@ The following has been directly tested:
 - Aspire successfully published a JSON test event to `moni.events`.
 - FOSSiBOT received and displayed that event while the listener was connected.
 
-Verified test path:
+Reported test path:
 
 `Aspire -> NATS -> Tailscale -> FOSSiBOT -> MONI Edge listener`
 
-This test proves live event delivery. It does NOT prove persistence, command execution, approval enforcement, biometric authorization, GitHub control, VS Code/Codex control, or bidirectional task execution.
+The reported test establishes delivery of that event while the listener was connected.
+It does NOT prove persistence, command execution, approval enforcement, biometric
+authorization, GitHub control, VS Code/Codex control, or bidirectional task execution.
+
+Provenance: [pre-review MONI Edge record](https://github.com/LVTP2004/lvtransport-platform/blob/4032fa95db24096a8a2def5caa35ba9070549279/docs/architecture/MONI-EDGE.md).
+That record does not provide a separate test timestamp, event ID, authenticated
+sender proof or pinned execution artifact. Preserve the reported success without
+turning this documentation review into a new live verification. Current listener,
+NATS availability, device identity and per-subject permissions remain unverified.
+Delivery is not evidence of an authenticated ATLAS instance on Aspire or Viviana.
 
 ## Proposed Pro capabilities
 
@@ -45,14 +54,14 @@ Future MONI Edge may provide:
 - Signed device identity and signed approval envelopes.
 - Watchdog/autostart behavior on Android.
 
-## Security model
+## Proposed security model
 
 - Biometric verification occurs locally on Android.
 - Raw fingerprints/templates never leave the device.
 - A biometric success may authorize a signed decision; it is not itself transmitted as biometric data.
 - Every privileged operation has an explicit capability, target, request ID, expiry and audit record.
 - Approval is scoped to one request/action unless policy explicitly states otherwise.
-- NATS transport connectivity alone is not authorization.
+- NATS transport connectivity alone is not authorization. Device, NATS publisher/subscriber, MONI runtime, GitHub integration and human identities require separate credentials/scopes; permissions do not transfer between them.
 - Avoid unrestricted remote shell as the normal control mechanism.
 
 ## Proposed protocol direction
