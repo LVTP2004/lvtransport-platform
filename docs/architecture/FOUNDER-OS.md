@@ -165,6 +165,39 @@ state. A record must be rechecked at use time; no automatic renewal, transfer or
 fallback approval. Revocations and invalidations append reasoned, dated audit
 events instead of rewriting the original person's decision.
 
+#### Machine-readable shape for an unverified candidate
+
+The [v1-draft JSON Schema](contracts/founder-approval-record.v1.schema.json)
+formalizes this same `founder/approval-record/v1-draft` identifier; it is not
+a second approval protocol or an implemented acceptance endpoint. Valid candidates
+are always `record_state=UNVERIFIED_CANDIDATE`, `authentication_verified=false`,
+`revocation_status=NOT_CHECKED`, `approval_granted=false`, `can_dispatch=false`
+and `operational_status=UNKNOWN`. Actor verification is UNVERIFIED; authenticated_at,
+evidence_ref, integrity_ref and journal_ref are null until a separately reviewed
+accepted-receipt format and trusted backend exist. Issuer/subject and scope values
+in this candidate are claims, not an enrolled person, instance or permission.
+
+The historical exchange locations proposed for review are Aspire's
+`continuity-map/ATLAS_HISTORICAL_EVIDENCE_MANIFEST_V1.json` and Viviana's
+`docs/continuity/ATLAS_HISTORICAL_EVIDENCE_MANIFEST_V1.json`, using
+`atlas/historical-evidence-manifest/v1-draft`. Their sources identify exact
+historical bytes through repository/commit/path/file_sha256. When reviewing a
+source file, its recomputed SHA-256 must equal that source entry's file_sha256.
+A digest for the complete historical manifest is independently computed over
+that manifest's exact pinned bytes. The outer proposal's file_sha256 is the
+digest of its own frozen proposal artifact, including those evidence references;
+these different hash scopes must never be substituted or regenerated to match.
+
+Schema validity cannot recompute any digest, read pinned artifacts, compare
+scope with frozen content, establish distinct IDs, enforce date ordering/freshness,
+check revocation or consume a challenge. A well-shaped stale/repeated record
+or a syntactically valid incorrect hash may still validate structurally; it
+remains an unusable unverified candidate. Reject duplicate JSON keys and enforce
+the 16 KiB limit before schema validation. Future semantic/trust checks must
+fail closed independently; the false constants must not be relaxed to bypass
+missing authentication, durable storage or anti-replay. No real approval records,
+personal identities, credentials or operational evidence are published here.
+
 ### Accept once, revoke explicitly and keep execution separate
 
 Before accepting, the backend must authenticate/authorize the person, recompute
