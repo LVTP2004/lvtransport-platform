@@ -2,6 +2,7 @@ import { jsx as _jsx, jsxs as _jsxs } from "react/jsx-runtime";
 import { useEffect, useMemo, useState } from 'react';
 import { adminAuthenticationConfigured, adminAuthService } from '../modules/auth/services/auth-client.service';
 import { AdminAccessGate, authorizeAdminSession } from '../modules/auth/route-guards/admin-access';
+import { AdminAuthorizationError, loadAuthorizedCockpit } from '../modules/auth/services/cockpit-access.service';
 export function App() {
     const [authState, setAuthState] = useState({ isAuthenticated: false, isLoading: true });
     const [email, setEmail] = useState('');
@@ -181,31 +182,21 @@ function FounderDashboard({ access, onLogout }) {
                 return;
             }
             try {
-                const options = { headers: { Authorization: `Bearer ${access.accessToken}` }, signal: controller.signal };
-                const [bookingRes, driverRes, incidentRes] = await Promise.all([
-                    fetch(`${API_BASE}/admin/bookings`, options),
-                    fetch(`${API_BASE}/drivers/live-states`, options),
-                    fetch(`${API_BASE}/operations/incidents`, options)
-                ]);
-                if ([bookingRes, driverRes, incidentRes].some((response) => response.status === 401 || response.status === 403)) {
+                const snapshot = await loadAuthorizedCockpit(adminAuthService, access, API_BASE, controller.signal);
+                if (controller.signal.aborted)
+                    return;
+                setBookings(snapshot.bookings);
+                setDrivers(snapshot.drivers);
+                setIncidents(snapshot.incidents);
+                setSync('live');
+            }
+            catch (error) {
+                if (controller.signal.aborted)
+                    return;
+                if (error instanceof AdminAuthorizationError) {
                     onLogout();
                     return;
                 }
-                if (![bookingRes, driverRes, incidentRes].every((response) => response.ok))
-                    throw new Error('Operational access denied');
-                const b = await bookingRes.json();
-                const d = await driverRes.json();
-                const i = await incidentRes.json();
-                if (controller.signal.aborted)
-                    return;
-                setBookings(Array.isArray(b.bookings) ? b.bookings : []);
-                setDrivers(Array.isArray(d.drivers) ? d.drivers : []);
-                setIncidents(Array.isArray(i.incidents) ? i.incidents : []);
-                setSync('live');
-            }
-            catch {
-                if (controller.signal.aborted)
-                    return;
                 setSync('degraded');
             }
         };

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { type AuthState } from '@lvtransport/auth';
 import { adminAuthenticationConfigured, adminAuthService } from '../modules/auth/services/auth-client.service';
 import { AdminAccessGate, authorizeAdminSession, type AdminAccess } from '../modules/auth/route-guards/admin-access';
+import { AdminAuthorizationError, loadAuthorizedCockpit } from '../modules/auth/services/cockpit-access.service';
 
 export function App() {
   const [authState, setAuthState] = useState<AuthState>({ isAuthenticated: false, isLoading: true });
@@ -282,27 +283,17 @@ function FounderDashboard({ access, onLogout }: { access: AdminAccess; onLogout:
     const load = async () => {
       if (Date.now() >= access.expiresAt) { onLogout(); return; }
       try {
-        const options = { headers: { Authorization: `Bearer ${access.accessToken}` }, signal: controller.signal };
-        const [bookingRes, driverRes, incidentRes] = await Promise.all([
-          fetch(`${API_BASE}/admin/bookings`, options),
-          fetch(`${API_BASE}/drivers/live-states`, options),
-          fetch(`${API_BASE}/operations/incidents`, options)
-        ]);
-        if ([bookingRes, driverRes, incidentRes].some((response) => response.status === 401 || response.status === 403)) {
-          onLogout();
-          return;
-        }
-        if (![bookingRes, driverRes, incidentRes].every((response) => response.ok)) throw new Error('Operational access denied');
-        const b = await bookingRes.json();
-        const d = await driverRes.json();
-        const i = await incidentRes.json();
+        const snapshot = await loadAuthorizedCockpit<Booking, Driver, Incident>(
+          adminAuthService, access, API_BASE, controller.signal,
+        );
         if (controller.signal.aborted) return;
-        setBookings(Array.isArray(b.bookings) ? b.bookings : []);
-        setDrivers(Array.isArray(d.drivers) ? d.drivers : []);
-        setIncidents(Array.isArray(i.incidents) ? i.incidents : []);
+        setBookings(snapshot.bookings);
+        setDrivers(snapshot.drivers);
+        setIncidents(snapshot.incidents);
         setSync('live');
-      } catch {
+      } catch (error) {
         if (controller.signal.aborted) return;
+        if (error instanceof AdminAuthorizationError) { onLogout(); return; }
         setSync('degraded');
       }
     };

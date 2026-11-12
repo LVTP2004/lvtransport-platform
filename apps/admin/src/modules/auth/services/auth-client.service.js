@@ -4,6 +4,11 @@ import { AuthService } from '@lvtransport/auth';
 // A real SDK/server-verified provider and authoritative roles must be wired and
 // reviewed separately. Setting a UI flag alone must never enable access.
 export const adminAuthenticationConfigured = false;
+// Concrete blocker: prepareAuth() in @lvtransport/realtime is mode=placeholder;
+// initializeFirebaseApp() only returns metadata. Neither creates Firebase Auth.
+// No real SDK/auth initialization is installed in the reviewed head. Public
+// Firebase config alone cannot turn that placeholder into verified identity.
+export const adminAuthenticationBlocker = 'VERIFIED_FIREBASE_PROVIDER_NOT_IMPLEMENTED';
 const unavailable = async () => {
     throw new Error('Admin authentication is not configured. Access is disabled.');
 };
