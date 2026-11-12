@@ -56,3 +56,23 @@ Before final response:
 2. Confirm no forbidden files were changed.
 3. Confirm no production API behavior was replaced by mock/demo/local behavior.
 4. Confirm build/typecheck result.
+
+
+## LVTP CORE / MONI architecture context
+
+Before changing MONI, Founder OS, MONI Edge, agent control, approvals, or node orchestration, read:
+
+- `docs/architecture/SYSTEM-MAP.md`
+- `docs/architecture/FOUNDER-OS.md`
+- `docs/architecture/MONI-EDGE.md`
+- `docs/architecture/LVTP-CORE.md`
+
+Additional rules:
+
+- Separate verified state from proposals; never present a planned capability as implemented.
+- Keep Aspire, Minisforum and Viviana Linux as separate node identities; do not infer one node's runtime state from another.
+- The verified FOSSiBOT NATS test proves live event delivery on `moni.events` only. It does not prove approvals, biometrics, JetStream, GitHub actions or remote execution.
+- A MONI Edge approval is not blanket permission to deploy, merge, run arbitrary shell commands or modify infrastructure. Scope each capability explicitly.
+- Biometric material remains local to the device; never transmit fingerprint templates or raw biometric data.
+- Prefer capability-scoped operations such as `github.read_pr`, `codex.approve_task` and `node.status` over unrestricted remote shell.
+- Documentation changes alone do not authorize deployment or publication.
