@@ -66,6 +66,7 @@ Before changing MONI, Founder OS, MONI Edge, agent control, approvals, or node o
 - `docs/architecture/FOUNDER-OS.md`
 - `docs/architecture/MONI-EDGE.md`
 - `docs/architecture/LVTP-CORE.md`
+- `docs/architecture/MONI-UNIFIED-CONTROL-PLANE.md`
 
 Additional rules:
 
