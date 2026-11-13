@@ -1,0 +1,238 @@
+{
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema",
+    "record_state",
+    "approval_id",
+    "request_id",
+    "proposal",
+    "scope",
+    "actor",
+    "decision",
+    "reason_code",
+    "reason",
+    "received_at",
+    "issued_at",
+    "expires_at",
+    "challenge_ref",
+    "integrity_ref",
+    "journal_ref",
+    "revocation_status",
+    "authentication_verified",
+    "approval_granted",
+    "can_dispatch",
+    "operational_status"
+  ],
+  "properties": {
+    "schema": {
+      "const": "founder/approval-record/v1-draft"
+    },
+    "record_state": {
+      "const": "UNVERIFIED_CANDIDATE"
+    },
+    "approval_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "request_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "proposal": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "revision",
+        "repository",
+        "path",
+        "hash_profile",
+        "file_sha256",
+        "expires_at"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "revision": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{40}$"
+        },
+        "repository": {
+          "type": "string",
+          "maxLength": 200,
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^[A-Za-z0-9_.-]+(?:/[A-Za-z0-9_.-]+)*$",
+          "not": {
+            "pattern": "(^|/)(\\.|\\.\\.|\\.git)(/|$)"
+          }
+        },
+        "hash_profile": {
+          "const": "EXACT_MANIFEST_BYTES_V1"
+        },
+        "file_sha256": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$",
+          "description": "Expiry declared by the exact frozen proposal manifest. This copied value is unverified until a trusted semantic verifier recomputes the proposal digest and confirms equality with the frozen manifest."
+        }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "capability",
+        "target_node",
+        "instance_id",
+        "environment",
+        "policy_version"
+      ],
+      "properties": {
+        "capability": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-z][a-z0-9_.:-]*$"
+        },
+        "target_node": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "instance_id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "environment": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        },
+        "policy_version": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[A-Za-z0-9_.:-]+$"
+        }
+      }
+    },
+    "actor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "issuer",
+        "subject",
+        "authenticated_at",
+        "evidence_ref",
+        "verification_status"
+      ],
+      "properties": {
+        "issuer": {
+          "type": "string",
+          "format": "uri",
+          "maxLength": 512
+        },
+        "subject": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128
+        },
+        "authenticated_at": {
+          "type": "null"
+        },
+        "evidence_ref": {
+          "type": "null"
+        },
+        "verification_status": {
+          "const": "UNVERIFIED"
+        }
+      }
+    },
+    "decision": {
+      "enum": [
+        "APPROVE",
+        "REJECT"
+      ]
+    },
+    "reason_code": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 64,
+      "pattern": "^[A-Z0-9_]+$"
+    },
+    "reason": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 512,
+      "pattern": "^[^\\u0000-\\u001f\\u007f]+$"
+    },
+    "received_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "issued_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "expires_at": {
+      "type": "string",
+      "format": "date-time",
+      "pattern": "Z$"
+    },
+    "challenge_ref": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9_.:-]+$"
+    },
+    "integrity_ref": {
+      "type": "null"
+    },
+    "journal_ref": {
+      "type": "null"
+    },
+    "revocation_status": {
+      "const": "NOT_CHECKED"
+    },
+    "authentication_verified": {
+      "const": false
+    },
+    "approval_granted": {
+      "const": false
+    },
+    "can_dispatch": {
+      "const": false
+    },
+    "operational_status": {
+      "const": "UNKNOWN"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:founder:approval-record:v1-draft",
+  "title": "Founder OS unverified approval candidate v1-draft",
+  "description": "Shape of an unverified proposal only; neither human authentication, consent, artifact hashes, temporal validity, revocation nor single-use consumption is established."
+}
