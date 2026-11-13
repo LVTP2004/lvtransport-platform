@@ -1,5 +1,6 @@
 export * from './types.js';
 export * from './engine.js';
+export * from './staging-candidate-audit.js';
 
 export const LEO_IA_AUDITORIA_BOUNDARY = {
   permissions: ['observe', 'analyze', 'correlate', 'classify', 'score', 'recommend'],
