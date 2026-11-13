@@ -1,6 +1,7 @@
 """Synthetic private-I/O doubles; no real approval, account, token or API call."""
 import base64
 import copy
+from dataclasses import replace
 from datetime import datetime, timezone
 import hashlib
 import importlib.util
@@ -25,6 +26,7 @@ class ProtectedReviewTests(unittest.TestCase):
                                         frozenset({2}), ("synthetic-project", "none", ("proposal.review",)))
         self.now = datetime(2026, 11, 13, 12, 1, tzinfo=timezone.utc)
         self.calls = []
+        self.bypass_proof = None  # No implicit proof when REST metadata is absent.
 
     def get(self, path):
         self.calls.append(path)
@@ -40,6 +42,7 @@ class ProtectedReviewTests(unittest.TestCase):
     def inspect(self, code=None, policy=True, token="synthetic_test_double_not_a_credential"):
         with patch.object(a.GitHubAPI, "get", side_effect=self.get), \
              patch.object(a.GitHubAPI, "review_gate", side_effect=lambda *_: copy.deepcopy(self.f["gate"])), \
+             patch.object(a.GitHubAPI, "protection_bypass", side_effect=lambda *_: copy.deepcopy(self.bypass_proof)), \
              patch.object(a, "_utcnow", return_value=self.now):
             result = a.register_founder_decision(json.dumps(self.record).encode(),
                                                policy=self.policy if policy else None, token=token)
@@ -207,6 +210,117 @@ class ProtectedReviewTests(unittest.TestCase):
         self.assertTrue(self.inspect()["review_verified"])
         self.f["reviews"] = [comment]
         self.inspect("REVIEW_NOT_FOUND")
+
+    def test_documented_administrator_profile_preserves_all_required_controls(self):
+        profile = json.loads((ROOT / 'docs/architecture/contracts/founder-main-protection.v1.json').read_bytes())
+        reviews = profile['required_pull_request_reviews']
+        self.assertIs(profile['enforce_admins'], True)
+        self.assertEqual(reviews['required_approving_review_count'], 1)
+        self.assertIs(reviews['dismiss_stale_reviews'], True)
+        self.assertIs(reviews['require_last_push_approval'], True)
+        self.assertEqual(reviews['bypass_pull_request_allowances'], {'users': [], 'teams': [], 'apps': []})
+        self.assertIs(profile['allow_force_pushes'], False)
+        self.assertIs(profile['allow_deletions'], False)
+        self.f['protection']['required_pull_request_reviews'] = reviews
+        self.assertTrue(self.inspect()['review_verified'])  # Private synthetic I/O only.
+
+    def test_no_enrolled_human_is_not_inferred_from_repository_permissions(self):
+        for ids in (frozenset(), frozenset({True})):
+            self.policy = replace(self.policy, human_ids=ids)
+            self.inspect('HUMAN_ENROLLMENT_NOT_CONFIGURED')
+        self.assertEqual(self.calls, [])
+
+    def test_account_not_enrolled_and_revocation_take_effect_on_next_call(self):
+        self.assertTrue(self.inspect()['review_verified'])
+        self.policy = replace(self.policy, human_ids=frozenset({999}))
+        self.inspect('ACTOR_NOT_ENROLLED_OR_SELF_APPROVAL')
+
+    def test_enrollment_tracks_stable_id_not_login_or_a_recycled_name(self):
+        self.f['reviews'][0]['user']['login'] = 'synthetic-renamed'
+        self.f['permission']['user']['login'] = 'synthetic-renamed'
+        self.assertTrue(self.inspect()['review_verified'])
+        self.record['actor_id'] = 999
+        self.f['reviews'][0]['user']['id'] = 999
+        self.f['permission']['user']['id'] = 999
+        self.inspect('ACTOR_NOT_ENROLLED_OR_SELF_APPROVAL')
+
+    def test_403_at_each_required_read_blocks_without_cached_authority(self):
+        original = self.get
+        for suffix in ('/protection', '/rules/branches/main', '/permission'):
+            with self.subTest(suffix=suffix):
+                def forbidden(path):
+                    if path.endswith(suffix): raise a.Blocked('GITHUB_HTTP_403')
+                    return original(path)
+                self.get = forbidden
+                self.inspect('GITHUB_HTTP_403')
+        self.get = original
+
+    def test_missing_control_and_multi_review_rules_cannot_be_assumed_supported(self):
+        for field in ('enforce_admins', 'required_pull_request_reviews'):
+            self.setUp()
+            del self.f['protection'][field]
+            self.inspect('GITHUB_OR_INPUT_UNVERIFIABLE')
+        self.setUp()
+        self.f['protection']['required_pull_request_reviews']['required_approving_review_count'] = 2
+        self.inspect('REVIEW_REQUIREMENTS_UNSUPPORTED')
+
+    def zero_bypass_proof(self):
+        return {'name': 'main', 'branchProtectionRule': {'id': 'SYNTHETIC_RULE', 'pattern': 'main',
+            'bypassPullRequestAllowances': {'totalCount': 0, 'pageInfo': {'hasNextPage': False}}}}
+
+    def test_missing_rest_bypass_needs_explicit_graphql_zero_count(self):
+        del self.f['protection']['required_pull_request_reviews']['bypass_pull_request_allowances']
+        self.inspect('REVIEW_BYPASS_NOT_ALLOWED')
+        self.bypass_proof = self.zero_bypass_proof()
+        self.assertTrue(self.inspect()['review_verified'])
+
+    def test_graphql_bypass_unknown_paginated_or_other_rule_cannot_mean_empty(self):
+        for changed in ('count', 'boolean_count', 'page', 'missing_page', 'branch', 'pattern', 'no_rule'):
+            self.setUp()
+            del self.f['protection']['required_pull_request_reviews']['bypass_pull_request_allowances']
+            proof = self.zero_bypass_proof(); rule = proof['branchProtectionRule']
+            if changed == 'count': rule['bypassPullRequestAllowances']['totalCount'] = 1
+            elif changed == 'boolean_count': rule['bypassPullRequestAllowances']['totalCount'] = False
+            elif changed == 'page': rule['bypassPullRequestAllowances']['pageInfo']['hasNextPage'] = True
+            elif changed == 'missing_page': del rule['bypassPullRequestAllowances']['pageInfo']
+            elif changed == 'branch': proof['name'] = 'other'
+            elif changed == 'pattern': rule['pattern'] = '*'
+            else: proof['branchProtectionRule'] = None
+            self.bypass_proof = proof
+            self.inspect('REVIEW_BYPASS_NOT_ALLOWED')
+
+    def test_graphql_cannot_override_present_nonempty_or_malformed_rest_bypass(self):
+        self.bypass_proof = self.zero_bypass_proof()
+        for bypass in (None, {}, {'users': [2], 'teams': [], 'apps': []}):
+            self.f['protection']['required_pull_request_reviews']['bypass_pull_request_allowances'] = bypass
+            self.inspect('REVIEW_BYPASS_NOT_ALLOWED')
+
+    def test_graphql_proof_uses_fixed_read_query_not_a_caller_boolean(self):
+        api = a.GitHubAPI('synthetic_test_token')
+        response = {'data': {'repository': {'ref': self.zero_bypass_proof()}}}
+        with patch.object(api, '_request', return_value=response) as request:
+            self.assertEqual(api.protection_bypass(self.policy.repository, 'main'), self.zero_bypass_proof())
+        method, path, body = request.call_args.args
+        self.assertEqual((method, path), ('POST', '/graphql'))
+        payload = json.loads(body)
+        self.assertTrue(payload['query'].startswith('query('))
+        self.assertNotIn('mutation', payload['query'])
+        self.assertEqual(payload['variables']['ref'], 'refs/heads/main')
+
+    def test_graphql_unavailable_and_proof_changed_between_reads_block(self):
+        del self.f['protection']['required_pull_request_reviews']['bypass_pull_request_allowances']
+        with patch.object(a.GitHubAPI, 'protection_bypass', side_effect=a.Blocked('GITHUB_HTTP_403')), \
+             patch.object(a.GitHubAPI, 'get', side_effect=self.get):
+            result = a.register_founder_decision(json.dumps(self.record).encode(), policy=self.policy, token='synthetic_token')
+        self.assertEqual(result['status'], 'BLOCKED'); self.assertEqual(result['reason_code'], 'GITHUB_HTTP_403')
+        proofs = [self.zero_bypass_proof(), self.zero_bypass_proof()]
+        proofs[1]['branchProtectionRule']['id'] = 'SYNTHETIC_OTHER_RULE'
+        with patch.object(a.GitHubAPI, 'protection_bypass', side_effect=proofs), \
+             patch.object(a.GitHubAPI, 'get', side_effect=self.get), \
+             patch.object(a.GitHubAPI, 'review_gate', return_value=self.f['gate']), \
+             patch.object(a, '_utcnow', return_value=self.now):
+            result = a.register_founder_decision(json.dumps(self.record).encode(), policy=self.policy, token='synthetic_token')
+        self.assertEqual(result['reason_code'], 'GITHUB_STATE_CHANGED_DURING_VERIFICATION')
 
 
 if __name__ == "__main__":

@@ -3,23 +3,56 @@
 Consolidación con la propuesta concurrente #405: se conserva este contrato por
 exigir intención explícita en la review y política de humanos enrolados. Se
 añaden controles de force-push/borrado y rechazo de metadata de bypass ausente;
-no se infiere una lista vacía de un campo que no pudo comprobarse. Un comentario
+no se infiere una lista vacía de un campo que no pudo comprobarse. Esta ampliación
+permite únicamente una prueba explícita GraphQL si REST omite el campo vacío. Un comentario
 posterior no crea ni revoca aprobación; las decisiones decisivas sí se reevalúan.
-La ampliación añade tres pruebas sintéticas (18 en total). No activa autoridad.
+La suite actual contiene 29 pruebas sintéticas. Ninguna prueba activa autoridad.
 
 Propuesta nueva, independiente de #403, #394 y del trabajo activo de MONI #98.
 Base LVTransport: `a7708afbdcba16dcef7e146c4501297daab3bdfd`.
-No modifica la API comercial, Firebase, servicios ni configuración GitHub.
+No modifica la API comercial, Firebase o servicios. La protección de main se
+configuró en esta ampliación mediante autorización administrativa expresa; la
+autoridad de aprobación sigue sin habilitarse.
 
 ## Resultado de la comprobación actual — 2026-11-13
 
-La API de GitHub devolvió `protected=false` para `main`. El único ruleset listado
-estaba `disabled`. Consultar `branches/main/protection` con la integración
-conectada devolvió **403 Resource not accessible by integration**. No se pudo
-acreditar una autoridad protegida con los permisos actuales. No se cambia esa
-configuración ni se obtiene un token nuevo: **el estado real sigue BLOCKED**.
-Los accesos informados por un repositorio no sustituyen el permiso del token
-para leer protección. No hay enrolamiento de personas configurado por defecto.
+Antes del cambio, main devolvió protected=false y el único ruleset estaba
+deshabilitado. El conector GitHub no pudo leer protección: HTTP 403. La sesión
+existente de `gh` sí acreditó permiso administrativo, lectura del estado sin
+protección (404 Branch not protected) y cero reglas efectivas. Se usó esa vía
+para configurar exclusivamente main, según el perfil
+[founder-main-protection.v1.json](contracts/founder-main-protection.v1.json).
+
+La respuesta de escritura y las lecturas REST/GraphQL posteriores confirmaron:
+
+| Control | Estado observado después de configurar |
+|---|---|
+| Rama main protegida / PR requerida | Activo |
+| Aprobaciones requeridas | Una revisión aprobatoria GitHub |
+| Descartar aprobaciones al cambiar commits | Activo |
+| Aprobación del último push | Activo; debe aprobar alguien distinto del autor del push |
+| Incluir administradores | Activo (enforce_admins=true) |
+| Actores de bypass PR | Cero, confirmado explícitamente por GraphQL |
+| Force-push y borrado | Deshabilitados |
+| Reglas efectivas de rulesets | Ninguna; el ruleset listado sigue disabled |
+
+GitHub omitió bypass_pull_request_allowances en el GET REST tras aceptar las
+listas vacías. Esa ausencia NO se consideró prueba: la consulta de la regla
+aplicada a refs/heads/main devolvió pattern=main, totalCount=0 y hasNextPage=false.
+El adaptador ahora puede usar esa prueba explícita, nunca un valor vacío supuesto.
+
+**Founder OS permanece BLOCKED.** El conector sigue recibiendo HTTP 403 para
+protección; no se ha trasladado ni mostrado su token ni el de la sesión
+administrativa. No se instaló política de personas/alcance o credencial de
+lectura para el módulo. Una aprobación requerida por GitHub no identifica por sí
+sola a un humano autorizado por Founder OS. El alta sigue pendiente.
+
+El perfil JSON no es un script ni se aplica al importar el módulo. Incluye
+required_status_checks=null porque no existía protección ni reglas efectivas
+previas; no se quitaron requisitos CI activos. **No reaplicar ese PUT si aparecen
+checks u otras reglas más fuertes:** preservarlas y dejar BLOCKED si el adaptador
+no puede verificarlas. No se modifica fusión automática (el repositorio la tenía
+deshabilitada y esta PR no tiene auto-merge). No se creó ni guardó ningún token.
 
 ## Qué implementa esta propuesta
 
@@ -37,6 +70,58 @@ campos enviados por el navegador ni cargados desde la propuesta revisada. No se
 instalan credenciales, certificados o infraestructura en esta entrega. Los
 fixtures usan transportes privados sustituidos por pruebas y datos falsos
 identificados como sintéticos; no se presentan como aprobación o conexión real.
+
+## Enrolamiento por ID estable: alta y revocación pendientes
+
+No se elige al usuario del CLI, propietario, autor de PR o persona que envía un
+JSON como aprobador por defecto. No se publica un ID supuesto. Hoy no hay un
+aprobador enrolado y la configuración predeterminada sigue ausente/BLOCKED.
+
+El custodio administrativo debe mantener fuera de propuestas y requests un
+registro protegido con: ID numérico estable GitHub, vínculo privado a la persona
+autorizada, repositorio/rama/ruta/scope exactos, alta/vigencia, estado activo o
+revocado, versión de política y referencia de auditoría del cambio. No contiene
+tokens; la referencia de evidencia y datos personales no se publican aquí.
+`AuthorityPolicy.human_ids` solo contiene IDs de las altas vigentes y revisadas,
+como frozenset de enteros positivos; una lista vacía bloquea antes de consultar.
+
+Alta:
+
+1. Designar custodio y persona autorizada mediante un proceso independiente de la
+   propuesta; comprobar control de cuenta y SSO/MFA según la política real. Un
+   objeto GitHub User no acredita por sí solo persona física o MFA por decisión.
+2. Resolver el ID desde la API GitHub para esa cuenta ya identificada y confirmar
+   su permiso actual write/maintain/admin en este repositorio. El login es una
+   etiqueta de consulta mutable, no la clave de enrolamiento. No usar roles del
+   navegador, Firebase placeholder o IDs de los fixtures.
+3. Registrar el alta y scope mediante cambio administrativo auditable. Instalar
+   una nueva política del host fuera del commit revisado; cada verificación debe
+   cargar una versión vigente, no construir su allowlist desde el localizador.
+4. Presentar bytes/hash/scope/caducidad y recoger una revisión protegida con la
+   intención explícita de la siguiente sección. La PR debe estar lista, no draft;
+   el revisor no puede ser su autor y GitHub exige aprobación tras el último push.
+   Revisar código con un LGTM ordinario no registra consentimiento operativo.
+
+Revocación:
+
+1. Retirar el ID de todas las políticas activas y registrar motivo, hora y nueva
+   versión, sin reescribir el historial. Si no puede asegurarse distribución
+   actual de la política, detener verificación y conservar BLOCKED.
+2. Invalidar decisiones pendientes y resultados cacheados; cada uso vuelve a
+   consultar estado/permisos/revisión y a usar la política vigente. El módulo no
+   mantiene un caché de permisos ni un almacén de enrolamiento automático.
+3. Ante compromiso o baja, el administrador debe retirar permisos/SSO y revocar
+   credenciales mediante sus canales seguros. No se hace por este cambio. Un
+   cambio de login conserva el ID; otra cuenta con el mismo login no hereda alta.
+
+La credencial administrativa usada para protección es independiente del lector
+de Founder OS. El administrador debe conceder al lector acceso de solo lectura
+a Contents, Pull requests, metadata de permisos y Administration para protección,
+y comprobar las consultas GraphQL autorizadas. La integración actual no supera
+esta última lectura. No se extrae el token del CLI para habilitarla ni se crean
+credenciales nuevas. Si cualquier permiso, persona o vigencia no es verificable,
+la salida es BLOCKED. Los requisitos de MFA/biometría por decisión no soportados
+no se sustituyen por booleanos: requieren una autoridad adicional revisada.
 
 ## Registro intercambiable y consentimiento explícito
 
@@ -98,6 +183,16 @@ acomodar el código**. Gate GraphQL debe informar APPROVED y CLEAN para el mismo
 head/base. Revisiones eliminadas, descartadas, sustituidas, de otro commit o con
 permisos revocados bloquean. Cien revisiones o paginación no resuelta bloquean.
 
+Si REST devuelve allowances, debe contener explícitamente users/teams/apps
+vacíos. Si omite el campo, se exige una consulta GraphQL estática autenticada de
+la regla aplicada a la referencia exacta: nombre de rama y pattern iguales a la
+base configurada, ID de regla presente, conteo entero cero de todos los actores y
+hasNextPage=false. Un error, campo ausente, patrón wildcard, otra rama, conteo
+positivo o prueba paginada bloquea. GraphQL no puede anular un bypass explícito
+o metadata REST parcial/inválida. La prueba y el ID de regla se incluyen en las
+dos capturas: un cambio durante la verificación también bloquea. Es una lectura,
+no mutación GraphQL, y no modifica requisitos para permitir el pase.
+
 Se consultan dos veces los estados relevantes y deben coincidir; la observación
 completa debe terminar en 30 segundos y antes de expirar. Eso detecta cambios
 durante la consulta, pero **no** crea una transacción atómica con GitHub. El
@@ -129,3 +224,19 @@ consumo único siguen pendientes; un futuro executor requerirá su propia revisi
 Pruebas: `PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_github_review_authority.py -v`.
 Solo fixtures sintéticos; sin llamadas reales del módulo ni credenciales nuevas.
 No cambia TypeScript o configuración de build; no se ejecutan workflows.
+
+## Comprobaciones de esta ampliación
+
+29 pruebas offline: configuración ausente, allowlist vacía o actor no enrolado,
+revocación y cambio de login/ID, 403 en cada lectura necesaria, controles ausentes,
+rulesets/CODEOWNERS/multi-review no soportados y las pruebas explícitas GraphQL de
+bypass. Se preservan las pruebas de intención, bytes, scope, caducidad y bloqueo
+de despacho. Los positivos usan sustituciones privadas de I/O y solo acreditan
+comportamiento de tests; no son aprobación real.
+
+El cliente de autoridad no cambia su firma pública ni añade callbacks de confianza.
+Los consumidores que fijen una copia anterior deben revisar su pin por separado;
+no se actualizan otros repositorios o PR en esta tarea. El perfil administrativo
+se comprobó en vivo por CLI; no se ejecuta el módulo con credenciales reales ni se
+emite una aprobación. Sintaxis Python y diff revisados; sin build/typecheck de
+aplicaciones, workflows, nodos, Forge, producción, fusión o despliegue.

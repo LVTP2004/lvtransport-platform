@@ -136,6 +136,15 @@ class GitHubAPI:
         require(type(result) is dict and not result.get("errors"), "GITHUB_GRAPHQL_UNVERIFIABLE")
         return result["data"]["repository"]["pullRequest"]
 
+    def protection_bypass(self, repository, branch):
+        """Explicit allowance proof when REST omits its empty bypass field."""
+        owner, name = repository.split("/")
+        query = "query($owner:String!,$name:String!,$ref:String!){repository(owner:$owner,name:$name){ref(qualifiedName:$ref){name branchProtectionRule{id pattern bypassPullRequestAllowances(first:100){totalCount pageInfo{hasNextPage}}}}}}"
+        result = self._request("POST", "/graphql", json.dumps({"query": query,
+            "variables": {"owner": owner, "name": name, "ref": "refs/heads/" + branch}}).encode())
+        require(type(result) is dict and not result.get("errors"), "GITHUB_GRAPHQL_UNVERIFIABLE")
+        return result["data"]["repository"]["ref"]
+
 
 def _policy(policy):
     require(type(policy) is AuthorityPolicy, "AUTHORITY_POLICY_NOT_CONFIGURED")
@@ -190,8 +199,23 @@ def _snapshot(api, record, policy, now):
     require(type(reviews_policy["required_approving_review_count"]) is int
             and reviews_policy["required_approving_review_count"] == 1
             and reviews_policy["require_code_owner_reviews"] is False, "REVIEW_REQUIREMENTS_UNSUPPORTED")
-    bypass = reviews_policy.get("bypass_pull_request_allowances")
-    require(type(bypass) is dict and all(bypass.get(k) == [] for k in ("users", "teams", "apps")), "REVIEW_BYPASS_NOT_ALLOWED")
+    if "bypass_pull_request_allowances" in reviews_policy:
+        bypass = reviews_policy["bypass_pull_request_allowances"]
+        require(type(bypass) is dict and all(bypass.get(k) == [] for k in ("users", "teams", "apps")), "REVIEW_BYPASS_NOT_ALLOWED")
+        bypass_proof = {"source": "rest", "allowances": bypass}
+    else:
+        # Absence alone proves nothing. Ask GitHub for the applied classic rule
+        # and an explicit, unpaginated zero count across ALL actor kinds.
+        proof = api.protection_bypass(policy.repository, policy.base_branch)
+        require(type(proof) is dict and proof.get("name") == policy.base_branch, "REVIEW_BYPASS_NOT_ALLOWED")
+        rule = proof.get("branchProtectionRule")
+        require(type(rule) is dict and type(rule.get("id")) is str and 0 < len(rule["id"]) <= 512
+                and rule.get("pattern") == policy.base_branch, "REVIEW_BYPASS_NOT_ALLOWED")
+        allowances = rule.get("bypassPullRequestAllowances")
+        require(type(allowances) is dict and type(allowances.get("totalCount")) is int
+                and allowances["totalCount"] == 0 and type(allowances.get("pageInfo")) is dict
+                and allowances["pageInfo"].get("hasNextPage") is False, "REVIEW_BYPASS_NOT_ALLOWED")
+        bypass_proof = {"source": "graphql", "applied_rule": proof}
     rules = api.get(prefix + "/rules/branches/" + quote(policy.base_branch, safe=""))
     require(rules == [], "ACTIVE_RULESET_REQUIRES_ADAPTER")
     gate = api.review_gate(policy.repository, record["pull_number"])
@@ -256,7 +280,7 @@ def _snapshot(api, record, policy, now):
             and _scope(data["scope"]) == policy.expected_scope
             and data["scope"] == record["scope"], "PROPOSAL_SCOPE_OR_EXPIRY_MISMATCH")
     # Compare security-relevant source state twice; no claim of an atomic GitHub transaction.
-    return {"head": pr["head"]["sha"], "base": pr["base"]["sha"], "protection": protection,
+    return {"head": pr["head"]["sha"], "base": pr["base"]["sha"], "protection": protection, "bypass_proof": bypass_proof,
             "gate": gate, "reviews": reviews, "permission": permission, "blob": content["sha"]}
 
 
