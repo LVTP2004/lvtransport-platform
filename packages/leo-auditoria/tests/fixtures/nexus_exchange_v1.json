@@ -1,0 +1,24 @@
+{
+  "schema": "atlas/staging-exchange-fixture/v1",
+  "synthetic": true,
+  "now": "2026-11-13T12:00:00Z",
+  "expected": {
+    "repository": "LVTP2004/moni-core-runtime",
+    "revision": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "path": "proposals/synthetic-review.json",
+    "project": "synthetic-project",
+    "target_node": "synthetic-local-staging"
+  },
+  "files": {
+    "proposal.json": "{\"data\":{\"claims\":[{\"claim_id\":\"SYNTHETIC-CLAIM-1\",\"text\":\"Synthetic review claim, not node state.\"}],\"created_at\":\"2026-11-13T11:59:59Z\",\"proposal_id\":\"SYNTHETIC-PROPOSAL-1\",\"scope\":{\"operations\":[\"forge.process_candidate\",\"nexus.stage_candidate\"],\"project\":\"synthetic-project\",\"target_node\":\"synthetic-local-staging\"},\"sources\":[{\"note\":\"Synthetic metadata only; no recovered source or credentials.\",\"path\":\"synthetic/source.txt\",\"source_id\":\"SYNTHETIC-SOURCE-1\"}]},\"kind\":\"proposal\",\"policy\":{\"approval_granted\":false,\"authorization_verified\":false,\"can_dispatch\":false,\"identity_verified\":false,\"operational_status\":\"UNKNOWN\",\"production_allowed\":false,\"trust\":\"UNVERIFIED\"},\"schema\":\"moni/atlas-vnext-data/v1-draft\"}",
+    "authorization.json": "{\"actor_id\":22,\"decision\":\"APPROVE\",\"expires_at\":\"2026-11-13T12:01:00Z\",\"head_sha\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"issued_at\":\"2026-11-13T11:59:59Z\",\"proposal_path\":\"proposals/synthetic-review.json\",\"proposal_sha256\":\"574afe4b139489080079295acc784006838fdcbc2ece7cdc8ed6cecaa4d503fe\",\"pull_number\":11,\"repository\":\"LVTP2004/moni-core-runtime\",\"review_id\":33,\"schema\":\"founder/github-protected-review/v1-draft\",\"scope\":{\"operations\":[\"forge.process_candidate\",\"nexus.stage_candidate\"],\"project\":\"synthetic-project\",\"target_node\":\"synthetic-local-staging\"}}",
+    "candidate.json": "{\"claims\":[{\"claim_id\":\"SYNTHETIC-CLAIM-1\",\"text\":\"Synthetic review claim, not node state.\"}],\"policy\":{\"approval_granted\":false,\"authorization_verified\":false,\"can_dispatch\":false,\"identity_verified\":false,\"operational_status\":\"UNKNOWN\",\"production_allowed\":false,\"trust\":\"UNVERIFIED\"},\"proposal_id\":\"SYNTHETIC-PROPOSAL-1\",\"proposal_sha256\":\"574afe4b139489080079295acc784006838fdcbc2ece7cdc8ed6cecaa4d503fe\",\"schema\":\"nexus/evidence-review-candidate/v1-draft\",\"scope\":{\"operations\":[\"forge.process_candidate\",\"nexus.stage_candidate\"],\"project\":\"synthetic-project\",\"target_node\":\"synthetic-local-staging\"},\"sources\":[{\"note\":\"Synthetic metadata only; no recovered source or credentials.\",\"path\":\"synthetic/source.txt\",\"source_id\":\"SYNTHETIC-SOURCE-1\"}]}",
+    "envelope.json": "{\"artifact\":{\"name\":\"candidate.json\",\"sha256\":\"e09f581884e1440d13b55e317c95b2c5361c8f08426da8ea42400632ba469838\"},\"authorization_sha256\":\"183eb8488c58c4e9b0bd084d7feba42b6d040c6081f3aa99ba6b3067daf56fd0\",\"policy\":{\"approval_granted\":false,\"authorization_verified\":false,\"can_dispatch\":false,\"identity_verified\":false,\"operational_status\":\"UNKNOWN\",\"production_allowed\":false,\"trust\":\"UNVERIFIED\"},\"proposal\":{\"path\":\"proposals/synthetic-review.json\",\"repository\":\"LVTP2004/moni-core-runtime\",\"revision\":\"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\",\"sha256\":\"574afe4b139489080079295acc784006838fdcbc2ece7cdc8ed6cecaa4d503fe\"},\"schema\":\"atlas/staging-candidate/v1-draft\",\"scope\":{\"operations\":[\"forge.process_candidate\",\"nexus.stage_candidate\"],\"project\":\"synthetic-project\",\"target_node\":\"synthetic-local-staging\"}}"
+  },
+  "sha256": {
+    "proposal.json": "574afe4b139489080079295acc784006838fdcbc2ece7cdc8ed6cecaa4d503fe",
+    "authorization.json": "183eb8488c58c4e9b0bd084d7feba42b6d040c6081f3aa99ba6b3067daf56fd0",
+    "candidate.json": "e09f581884e1440d13b55e317c95b2c5361c8f08426da8ea42400632ba469838",
+    "envelope.json": "b0bd01b0012a7bbb9f52e27bcf01a1e3bcf94c33ccb91bdab3dc2f025086d0ba"
+  }
+}
