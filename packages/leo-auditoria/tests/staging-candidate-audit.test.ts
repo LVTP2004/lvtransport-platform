@@ -35,6 +35,52 @@ function relink(value: Input): void {
     e.artifact.sha256 = hash(value.candidateBytes);
   });
 }
+// Synthetic projections of Aspire PR #3's unchanged exchange contract at
+// 5a71de59323b82f056b67ebe5a388f50fb13f66c. No Aspire imports or fixture writes.
+function fixtureJson(value: any): string {
+  if (Array.isArray(value)) return `[${value.map(fixtureJson).join(',')}]`;
+  if (value !== null && typeof value === 'object') return `{${Object.keys(value).sort()
+    .map(key => `${JSON.stringify(key)}:${fixtureJson(value[key])}`).join(',')}}`;
+  return JSON.stringify(value);
+}
+function nodeInput(node: 'aspire' | 'viviana'): Input {
+  const value = input();
+  const offset = node === 'aspire' ? 0 : 100;
+  value.expected = {
+    repository: `LVTP2004/${node === 'aspire' ? 'aspire-recovery' : 'viviana-linux-recovery'}`,
+    revision: (node === 'aspire' ? 'a' : 'b').repeat(40),
+    proposalPath: `proposals/synthetic-${node}.json`,
+    project: `synthetic-${node}`, targetNode: node
+  };
+  const scope = { project: value.expected.project, target_node: node,
+    operations: ['forge.process_candidate', 'nexus.stage_candidate'] };
+  const sources = [{ source_id: `SYNTHETIC-${node}-SOURCE`, path: `synthetic/${node}/source.txt`,
+    source_node: node, note: `SYNTHETIC ONLY: ${node} test data, no recovered evidence or identity.` }];
+  const claims = [{ claim_id: `SYNTHETIC-${node}-CLAIM`,
+    text: `SYNTHETIC ONLY: scoped test claim for ${node}, not observed node state.` }];
+  const proposal = JSON.parse(Buffer.from(value.proposalBytes).toString('utf8'));
+  const candidate = JSON.parse(Buffer.from(value.candidateBytes).toString('utf8'));
+  const authorization = JSON.parse(Buffer.from(value.authorizationBytes).toString('utf8'));
+  const envelope = JSON.parse(Buffer.from(value.envelopeBytes).toString('utf8'));
+  Object.assign(proposal.data, { proposal_id: `SYNTHETIC-${node}-PROPOSAL`, scope, sources, claims });
+  value.proposalBytes = Buffer.from(fixtureJson(proposal), 'utf8');
+  const proposalHash = hash(value.proposalBytes);
+  Object.assign(authorization, { repository: value.expected.repository, head_sha: value.expected.revision,
+    proposal_path: value.expected.proposalPath, proposal_sha256: proposalHash, scope,
+    pull_number: 11 + offset, actor_id: 22 + offset, review_id: 33 + offset });
+  value.authorizationBytes = Buffer.from(fixtureJson(authorization), 'utf8');
+  Object.assign(candidate, { proposal_id: proposal.data.proposal_id, proposal_sha256: proposalHash,
+    scope, sources, claims });
+  value.candidateBytes = Buffer.from(fixtureJson(candidate), 'utf8');
+  Object.assign(envelope, {
+    proposal: { repository: value.expected.repository, revision: value.expected.revision,
+      path: value.expected.proposalPath, sha256: proposalHash },
+    authorization_sha256: hash(value.authorizationBytes), scope,
+    artifact: { name: 'candidate.json', sha256: hash(value.candidateBytes) }
+  });
+  value.envelopeBytes = Buffer.from(fixtureJson(envelope), 'utf8');
+  return value;
+}
 function audit(value: Input, status: 'PASS' | 'FAIL' | 'BLOCKED', reason?: string,
   now = Date.parse(fixture.now)) {
   const previous = Date.now; Date.now = () => now;
@@ -229,4 +275,77 @@ test('trailing newline never bypasses full-field validation', () => {
 });
 test('a repeated structural PASS never becomes an approval or replay proof', () => {
   assert.deepEqual(audit(input(), 'PASS'), audit(input(), 'PASS'));
+});
+
+test('fixture keeps the exact v1 exchange shapes pinned to Aspire contract 5a71de59', () => {
+  const p = JSON.parse(fixture.files['proposal.json']);
+  const a = JSON.parse(fixture.files['authorization.json']);
+  const c = JSON.parse(fixture.files['candidate.json']);
+  const e = JSON.parse(fixture.files['envelope.json']);
+  assert.equal(p.schema, 'moni/atlas-vnext-data/v1-draft');
+  assert.equal(a.schema, 'founder/github-protected-review/v1-draft');
+  assert.equal(c.schema, 'nexus/evidence-review-candidate/v1-draft');
+  assert.equal(e.schema, 'atlas/staging-candidate/v1-draft');
+  assert.deepEqual(Object.keys(c).sort(), ['schema', 'proposal_id', 'proposal_sha256', 'scope', 'sources', 'claims', 'policy'].sort());
+  assert.deepEqual(Object.keys(e).sort(), ['schema', 'proposal', 'authorization_sha256', 'scope', 'artifact', 'policy'].sort());
+  for (const scope of [p.data.scope, a.scope, c.scope, e.scope]) {
+    assert.deepEqual(Object.keys(scope).sort(), ['project', 'target_node', 'operations'].sort());
+    assert.deepEqual(scope.operations, ['forge.process_candidate', 'nexus.stage_candidate']);
+  }
+});
+test('Aspire and Viviana each PASS only their own synthetic bytes and expected context', () => {
+  const aspire = nodeInput('aspire'); const viviana = nodeInput('viviana');
+  const first = audit(aspire, 'PASS'); const second = audit(viviana, 'PASS');
+  assert.notEqual(first.artifactSha256, second.artifactSha256);
+  assert.notEqual(first.proposalSha256, second.proposalSha256);
+  assert.notEqual(first.scopeSha256, second.scopeSha256);
+  assert.notEqual(aspire.expected.repository, viviana.expected.repository);
+  assert.notEqual(aspire.expected.revision, viviana.expected.revision);
+  const a = JSON.parse(Buffer.from(aspire.candidateBytes).toString());
+  const v = JSON.parse(Buffer.from(viviana.candidateBytes).toString());
+  assert.equal(a.sources[0].source_node, 'aspire');
+  assert.equal(v.sources[0].source_node, 'viviana');
+  assert.notDeepEqual(a.sources, v.sources); assert.notDeepEqual(a.claims, v.claims);
+  assert.equal(hash(raw), PIN); // The shared golden fixture is never regenerated.
+});
+test('a complete package cannot be reused with the other node expected context in either direction', () => {
+  for (const [own, other] of [['aspire', 'viviana'], ['viviana', 'aspire']] as const) {
+    const value = nodeInput(own); value.expected = nodeInput(other).expected;
+    audit(value, 'BLOCKED', 'SCOPE_MISMATCH');
+  }
+});
+test('foreign node sources or claims FAIL even after repairing candidate byte hash', () => {
+  for (const [own, other] of [['aspire', 'viviana'], ['viviana', 'aspire']] as const) {
+    const foreign = JSON.parse(Buffer.from(nodeInput(other).candidateBytes).toString());
+    for (const field of ['sources', 'claims']) {
+      const value = nodeInput(own);
+      value.candidateBytes = edit(value.candidateBytes, c => { c[field] = foreign[field]; });
+      value.envelopeBytes = edit(value.envelopeBytes, e => { e.artifact.sha256 = hash(value.candidateBytes); });
+      audit(value, 'FAIL', 'CANDIDATE_PROJECTION_MISMATCH');
+    }
+  }
+});
+test('swapping node candidate or authorization documents FAILs despite rehashed envelope', () => {
+  for (const [own, other] of [['aspire', 'viviana'], ['viviana', 'aspire']] as const) {
+    for (const field of ['candidateBytes', 'authorizationBytes'] as const) {
+      const value = nodeInput(own); const foreign = nodeInput(other);
+      value[field] = foreign[field];
+      value.envelopeBytes = edit(value.envelopeBytes, e => {
+        if (field === 'candidateBytes') e.artifact.sha256 = hash(value.candidateBytes);
+        else e.authorization_sha256 = hash(value.authorizationBytes);
+      });
+      audit(value, 'FAIL', 'PACKAGE_SCOPE_CONTRADICTION');
+    }
+  }
+});
+test('neither node can elevate policy or reuse an expired locator', () => {
+  for (const node of ['aspire', 'viviana'] as const) {
+    const elevated = nodeInput(node);
+    elevated.candidateBytes = edit(elevated.candidateBytes, c => { c.policy.identity_verified = true; });
+    elevated.envelopeBytes = edit(elevated.envelopeBytes, e => { e.artifact.sha256 = hash(elevated.candidateBytes); });
+    audit(elevated, 'FAIL', 'POLICY_ELEVATION_OR_MISMATCH');
+    const expired = nodeInput(node);
+    const expiresAt = JSON.parse(Buffer.from(expired.authorizationBytes).toString()).expires_at;
+    audit(expired, 'BLOCKED', 'AUTHORIZATION_LOCATOR_STALE', Date.parse(expiresAt));
+  }
 });

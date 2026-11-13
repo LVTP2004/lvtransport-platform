@@ -5,6 +5,11 @@ Este módulo añade una comprobación local de integridad para el intercambio
 GitHub, ATLAS, Aspire, Viviana ni ningún otro nodo; no accede al disco, red,
 procesos, servicios ni archivos recuperados.
 
+Referencia de formato: el [contrato v1 de Aspire #3 en
+5a71de59323b82f056b67ebe5a388f50fb13f66c](https://github.com/LVTP2004/aspire-recovery/blob/5a71de59323b82f056b67ebe5a388f50fb13f66c/contracts/atlas-staging-exchange.v1.schema.json).
+Es distinto del commit posterior que incorporó el fixture: las pruebas conservan
+el formato fijado y no importan ni ejecutan el constructor de otro repositorio.
+
 ## Uso
 
 `auditStagingCandidate` recibe los bytes exactos de `candidate.json`,
@@ -64,7 +69,7 @@ de comprobar sus hashes. Ninguna prueba importa, consulta o necesita un checkout
 de Aspire; no hay dependencia de ejecución entre repositorios. Los IDs, revisiones,
 fuentes y claims son falsos y están identificados como sintéticos.
 
-Las 24 pruebas de `tests/staging-candidate-audit.test.ts` fijan ese digest y los
+Las 30 pruebas de `tests/staging-candidate-audit.test.ts` fijan ese digest y los
 cuatro hashes internos. Cubren PASS de integridad solamente; FAIL para bytes o
 hashes alterados, campos duplicados/escapados, proyecciones y alcances internos
 contradictorios; BLOCKED para contexto esperado ausente/incorrecto y autorización
@@ -89,7 +94,35 @@ continúa bloqueado por autoridad/consumo atómico ausentes. Cambiar intencional
 el fixture requiere revisión y actualización coordinada de ambos pins, sin
 reescribirlo automáticamente para que una prueba pase.
 
-Comando focalizado desde la raíz: `node --import tsx packages/leo-auditoria/tests/staging-candidate-audit.test.ts`.
-Verificación TypeScript focalizada sin emisión, limitada al Auditor, su prueba y
-las exportaciones existentes; no se ejecutó build global ni de aplicaciones. Sin
-dependencias nuevas, cambios de configuración, API comercial, workflows o ejecución operativa.
+## Contextos independientes de Aspire y Viviana
+
+Seis regresiones adicionales preservan las 24 existentes. Usan el fixture local
+como base y construyen en memoria paquetes v1 canónicos para cada etiqueta de
+nodo: proyecto, repositorio, revisión, ruta de propuesta, IDs ficticios,
+localizador, fuentes y claims diferentes. Todos sus hashes se calculan sobre
+los bytes exactos. No se modifica ni regenera el fixture congelado.
+
+Cada paquete íntegro da PASS únicamente con su propio contexto esperado. Usar
+el contexto del otro nodo da BLOCKED en ambas direcciones. Trasplantar fuentes,
+claims, candidato o localizador entre paquetes da FAIL, incluso si se recalcula
+el hash del candidato/localizador en el envelope para ocultar la sustitución.
+Ambos nodos rechazan política elevada y localizadores vencidos. Todas esas
+revisiones comprueban las mismas banderas no operativas y UNKNOWN.
+
+Los nombres Aspire/Viviana, las referencias de repositorio y los IDs del test
+son etiquetas sintéticas, no identidad, enrolamiento, credenciales compartidas
+o evidencia histórica de esas máquinas. Un PASS no demuestra aprobación humana,
+conexión ATLAS ni autorización de staging. No existe dependencia de ejecución
+con Aspire; esta ampliación no modifica ningún otro repositorio o PR.
+
+Comandos de esta ampliación, desde la raíz de LVTransport:
+
+```sh
+node --import tsx packages/leo-auditoria/tests/staging-candidate-audit.test.ts
+git diff --check
+```
+
+Solo se ejecutaron esas pruebas offline y la comprobación del diff. No se
+ejecutó build/typecheck en esta ampliación. La implementación del Auditor y el
+fixture compartido permanecen intactos; sin dependencias nuevas, configuración,
+API comercial, workflows o ejecución operativa.
