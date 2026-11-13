@@ -29,4 +29,9 @@ if git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx | grep
   fail "Form preventDefault detected. Confirm this is not replacing production booking."
 fi
 
+if [[ -f tests/test_atlas_github_approval.py ]]; then
+  echo "Checking Founder OS GitHub references with offline fixtures only..."
+  PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p 'test_atlas_github_approval.py' -v
+fi
+
 echo "Spec guard passed."
