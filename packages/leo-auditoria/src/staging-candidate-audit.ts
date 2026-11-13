@@ -151,8 +151,7 @@ function parseStrictJson(bytes: Uint8Array, maxBytes: number, code: string): unk
     const match = /^-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?/.exec(text.slice(at));
     reject(match, code);
     at += match[0].length;
-    // Opaque Python source/claim dictionaries may contain exact wide integers.
-    // Preserve them rather than letting two different projections round equal.
+    // Preserve exact wide integers from the concurrent package regression.
     if (/^-?(?:0|[1-9][0-9]*)$/.test(match[0])) {
       const integer = BigInt(match[0]);
       if (integer < BigInt(Number.MIN_SAFE_INTEGER) || integer > BigInt(Number.MAX_SAFE_INTEGER)) return integer;
@@ -178,15 +177,22 @@ function sha256(bytes: Uint8Array): string {
   return createHash('sha256').update(bytes).digest('hex');
 }
 
-function isHash(value: unknown): value is string { return typeof value === 'string' && HASH.test(value); }
-function isCommit(value: unknown): value is string { return typeof value === 'string' && COMMIT.test(value); }
-function isIdentifier(value: unknown): value is string { return typeof value === 'string' && IDENTIFIER.test(value); }
+function matchesEntire(value: unknown, pattern: RegExp): value is string {
+  if (typeof value !== 'string') return false;
+  const match = pattern.exec(value);
+  // JavaScript $ also matches before a final newline; Nexus fullmatch does not.
+  return match !== null && match[0].length === value.length;
+}
+
+function isHash(value: unknown): value is string { return matchesEntire(value, HASH); }
+function isCommit(value: unknown): value is string { return matchesEntire(value, COMMIT); }
+function isIdentifier(value: unknown): value is string { return matchesEntire(value, IDENTIFIER); }
 
 function validateExpected(expected: ExpectedStagingCandidate): void {
   reject(expected !== null && typeof expected === 'object', 'EXPECTED_CONTEXT_REQUIRED', 'BLOCKED');
   reject(REPOSITORIES.has(expected.repository) && isCommit(expected.revision)
     && typeof expected.proposalPath === 'string' && expected.proposalPath.length <= 1024
-    && RELATIVE_PATH.test(expected.proposalPath)
+    && matchesEntire(expected.proposalPath, RELATIVE_PATH)
     && expected.proposalPath.split('/').every((part) => !['.', '..', '.git'].includes(part))
     && isIdentifier(expected.project) && isIdentifier(expected.targetNode), 'EXPECTED_CONTEXT_INVALID', 'BLOCKED');
 }
@@ -205,16 +211,17 @@ function scope(value: unknown, expected: ExpectedStagingCandidate): string {
   exactObject(value, ['project', 'target_node', 'operations'], 'SCOPE_FIELDS_INVALID');
   const s = value as JsonObject;
   const operations = s.operations;
-  reject(s.project === expected.project && s.target_node === expected.targetNode
+  reject(isIdentifier(s.project) && isIdentifier(s.target_node)
     && Array.isArray(operations) && operations.length === OPERATIONS.length
-    && OPERATIONS.every((operation, index) => operations[index] === operation), 'SCOPE_MISMATCH', 'BLOCKED');
+    && OPERATIONS.every((operation, index) => operations[index] === operation), 'PACKAGE_SCOPE_INVALID');
+  reject(s.project === expected.project && s.target_node === expected.targetNode, 'SCOPE_MISMATCH', 'BLOCKED');
   return stableJson({ project: expected.project, target_node: expected.targetNode, operations: OPERATIONS });
 }
 
 function time(value: unknown): bigint {
   reject(typeof value === 'string', 'INVALID_TIMESTAMP', 'BLOCKED');
   const match = /^(\d{4})-(\d\d)-(\d\d)T(\d\d):(\d\d):(\d\d)(?:\.(\d{1,6}))?Z$/.exec(value);
-  reject(match, 'INVALID_TIMESTAMP', 'BLOCKED');
+  reject(match && match[0].length === value.length, 'INVALID_TIMESTAMP', 'BLOCKED');
   const [year, month, day, hour, minute, second] = match.slice(1, 7).map(Number);
   const milliseconds = Date.UTC(year, month - 1, day, hour, minute, second);
   const date = new Date(milliseconds);
@@ -276,10 +283,18 @@ export function auditStagingCandidate(input: {
     exactObject(envelope, ['schema', 'proposal', 'authorization_sha256', 'scope', 'artifact', 'policy'], 'ENVELOPE_FIELDS_INVALID');
     const c = candidate as JsonObject;
     const e = envelope as JsonObject;
+    exactObject(proposal, ['schema', 'kind', 'data', 'policy'], 'PROPOSAL_FIELDS_INVALID');
+    const p = proposal as JsonObject;
+    exactObject(p.data, ['proposal_id', 'created_at', 'scope', 'sources', 'claims'], 'PROPOSAL_DATA_INVALID');
+    const pd = p.data as JsonObject;
+    exactObject(authorization, ['schema', 'repository', 'pull_number', 'head_sha', 'proposal_path',
+      'proposal_sha256', 'scope', 'actor_id', 'review_id', 'decision', 'issued_at', 'expires_at'], 'AUTHORIZATION_LOCATOR_INVALID');
+    const a = authorization as JsonObject;
     reject(c.schema === CANDIDATE_SCHEMA && isIdentifier(c.proposal_id) && isHash(c.proposal_sha256), 'CANDIDATE_HEADER_INVALID');
+    reject([e.scope, pd.scope, a.scope].every((value) => stableJson(value) === stableJson(c.scope)),
+      'PACKAGE_SCOPE_CONTRADICTION');
     const serializedScope = scope(c.scope, input.expected);
     scopeHash = sha256(new TextEncoder().encode(serializedScope));
-    reject(stableJson(e.scope) === stableJson(c.scope), 'ENVELOPE_SCOPE_MISMATCH');
     const envelopeScope = scope(e.scope, input.expected);
     reject(envelopeScope === serializedScope, 'ENVELOPE_SCOPE_MISMATCH', 'BLOCKED');
     policy(c.policy);
@@ -291,41 +306,39 @@ export function auditStagingCandidate(input: {
 
     exactObject(e.proposal, ['repository', 'revision', 'path', 'sha256'], 'PROPOSAL_LOCATOR_INVALID');
     const locator = e.proposal as JsonObject;
-    reject(e.schema === ENVELOPE_SCHEMA && locator.repository === input.expected.repository
+    reject(e.schema === ENVELOPE_SCHEMA, 'ENVELOPE_SCHEMA_INVALID');
+    reject(locator.repository === input.expected.repository
       && locator.revision === input.expected.revision && locator.path === input.expected.proposalPath,
     'PROPOSAL_PROVENANCE_MISMATCH', 'BLOCKED');
-    reject(locator.sha256 === proposalHash && c.proposal_sha256 === proposalHash, 'PROPOSAL_HASH_MISMATCH');
+    reject(isHash(locator.sha256) && locator.sha256 === proposalHash
+      && c.proposal_sha256 === proposalHash, 'PROPOSAL_HASH_MISMATCH');
     reject(isHash(e.authorization_sha256) && e.authorization_sha256 === authorizationHash, 'AUTHORIZATION_HASH_MISMATCH');
     exactObject(e.artifact, ['name', 'sha256'], 'ARTIFACT_LOCATOR_INVALID');
     const artifact = e.artifact as JsonObject;
     reject(artifact.name === 'candidate.json' && artifact.sha256 === candidateHash, 'ARTIFACT_HASH_MISMATCH');
 
-    exactObject(proposal, ['schema', 'kind', 'data', 'policy'], 'PROPOSAL_FIELDS_INVALID');
-    const p = proposal as JsonObject;
     reject(p.schema === 'moni/atlas-vnext-data/v1-draft' && p.kind === 'proposal', 'PROPOSAL_SCHEMA_UNSUPPORTED', 'BLOCKED');
     policy(p.policy);
-    exactObject(p.data, ['proposal_id', 'created_at', 'scope', 'sources', 'claims'], 'PROPOSAL_DATA_INVALID');
-    const pd = p.data as JsonObject;
-    reject(pd.proposal_id === c.proposal_id && stableJson(pd.scope) === stableJson(c.scope)
+    reject(stableJson(pd.scope) === stableJson(c.scope), 'CANDIDATE_PROJECTION_MISMATCH');
+    reject(pd.proposal_id === c.proposal_id && scope(pd.scope, input.expected) === serializedScope
       && stableJson(pd.sources) === stableJson(c.sources)
       && stableJson(pd.claims) === stableJson(c.claims), 'CANDIDATE_PROJECTION_MISMATCH');
     const proposalCreated = time(pd.created_at);
 
-    exactObject(authorization, ['schema', 'repository', 'pull_number', 'head_sha', 'proposal_path',
-      'proposal_sha256', 'scope', 'actor_id', 'review_id', 'decision', 'issued_at', 'expires_at'], 'AUTHORIZATION_LOCATOR_INVALID');
-    const a = authorization as JsonObject;
-    reject(stableJson(a.scope) === stableJson(c.scope), 'AUTHORIZATION_SCOPE_MISMATCH');
+    reject([a.pull_number, a.actor_id, a.review_id].every((id) => typeof id === 'number'
+      && Number.isInteger(id) && id > 0 && id < 2147483647), 'AUTHORIZATION_IDS_INVALID');
+    reject(stableJson(a.scope) === stableJson(c.scope), 'AUTHORIZATION_SCOPE_CONTRADICTION');
+    reject(isHash(a.proposal_sha256) && a.proposal_sha256 === proposalHash, 'AUTHORIZATION_PROPOSAL_HASH_MISMATCH');
     reject(a.schema === AUTHORIZATION_SCHEMA && a.repository === input.expected.repository
       && a.head_sha === input.expected.revision && a.proposal_path === input.expected.proposalPath
       && a.proposal_sha256 === proposalHash && scope(a.scope, input.expected) === serializedScope
-      && Number.isSafeInteger(a.pull_number) && Number.isSafeInteger(a.actor_id)
-      && Number.isSafeInteger(a.review_id) && a.decision === 'APPROVE', 'AUTHORIZATION_LOCATOR_MISMATCH', 'BLOCKED');
+      && a.decision === 'APPROVE', 'AUTHORIZATION_LOCATOR_MISMATCH', 'BLOCKED');
     const issued = time(a.issued_at);
     const expires = time(a.expires_at);
     const nowMilliseconds = Date.now();
     reject(Number.isSafeInteger(nowMilliseconds) && nowMilliseconds >= 0, 'CLOCK_UNVERIFIABLE', 'BLOCKED');
     const now = BigInt(nowMilliseconds) * 1000n;
-    reject(proposalCreated <= issued && issued <= now && now < expires && expires - issued <= 15n * 60n * 1000000n,
+    reject(proposalCreated <= issued && issued <= now && now < expires && expires - issued <= 900_000_000n,
       'AUTHORIZATION_LOCATOR_STALE', 'BLOCKED');
 
     // Structural result only. An APPROVE-shaped JSON record is still untrusted.

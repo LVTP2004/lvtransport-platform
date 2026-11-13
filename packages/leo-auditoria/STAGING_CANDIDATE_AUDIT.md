@@ -64,7 +64,7 @@ de comprobar sus hashes. Ninguna prueba importa, consulta o necesita un checkout
 de Aspire; no hay dependencia de ejecución entre repositorios. Los IDs, revisiones,
 fuentes y claims son falsos y están identificados como sintéticos.
 
-Las 17 pruebas de `tests/staging-candidate-audit.test.ts` fijan ese digest y los
+Las 24 pruebas de `tests/staging-candidate-audit.test.ts` fijan ese digest y los
 cuatro hashes internos. Cubren PASS de integridad solamente; FAIL para bytes o
 hashes alterados, campos duplicados/escapados, proyecciones y alcances internos
 contradictorios; BLOCKED para contexto esperado ausente/incorrecto y autorización
@@ -77,6 +77,9 @@ separar contexto incorrecto (BLOCKED) de contradicciones de hash/proyección (FA
 y calcular el hash de scope con claves ordenadas como el contrato Python. Los
 enteros anchos de los diccionarios opacos se conservan exactamente al comparar
 proyecciones para no redondear dos valores distintos como si fueran iguales.
+Se conserva esa protección concurrente para enteros anchos. Se añaden casos para IDs
+positivos de 31 bits, rechazo de saltos de línea finales, hashes del localizador
+y contradicción entre todos los alcances antes de comparar el contexto externo.
 La firma pública del Auditor y las exportaciones anteriores se conservan.
 
 Tiempo de pruebas fijado por una sustitución local de Date.now, restaurada después
@@ -87,5 +90,6 @@ el fixture requiere revisión y actualización coordinada de ambos pins, sin
 reescribirlo automáticamente para que una prueba pase.
 
 Comando focalizado desde la raíz: `node --import tsx packages/leo-auditoria/tests/staging-candidate-audit.test.ts`.
-Verificación TypeScript/build limitada a este paquete; sin dependencias, cambios
-de configuración, API comercial, workflows ni ejecución operativa.
+Verificación TypeScript focalizada sin emisión, limitada al Auditor, su prueba y
+las exportaciones existentes; no se ejecutó build global ni de aplicaciones. Sin
+dependencias nuevas, cambios de configuración, API comercial, workflows o ejecución operativa.

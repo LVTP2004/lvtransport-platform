@@ -171,10 +171,62 @@ test('Auditor does not fetch, mutate supplied bytes or regenerate fixture', () =
   try { audit(value, 'PASS'); } finally { globalThis.fetch = fetch; }
   for (const key of ['candidateBytes', 'envelopeBytes', 'proposalBytes', 'authorizationBytes'] as const)
     assert.deepEqual(Buffer.from(value[key]), Buffer.from(before[key]));
+  assert.deepEqual(value.expected, before.expected);
   assert.equal(hash(readFileSync(new URL('./fixtures/nexus_exchange_v1.json', import.meta.url))), PIN);
 });
 test('existing Auditor exports and boundaries remain unchanged', () => {
   assert.equal(buildOperationalPulse([]), 'stable');
   assert.ok(LEO_IA_AUDITORIA_BOUNDARY.denied.includes('bypass_founder_approval'));
   assert.ok(LEO_IA_AUDITORIA_BOUNDARY.denied.includes('deploy_changes'));
+});
+
+test('nested duplicate scope keys FAIL', () => {
+  const value = input();
+  value.candidateBytes = Buffer.from(Buffer.from(value.candidateBytes).toString('utf8')
+    .replace('"project":"synthetic-project"', '"project":"synthetic-project","project":"synthetic-project"'));
+  audit(value, 'FAIL', 'DUPLICATE_JSON_FIELD');
+});
+test('candidate and envelope cannot jointly override the proposal scope', () => {
+  const value = input();
+  value.candidateBytes = edit(value.candidateBytes, c => { c.scope.target_node = 'synthetic-other'; });
+  value.envelopeBytes = edit(value.envelopeBytes, e => {
+    e.scope.target_node = 'synthetic-other'; e.artifact.sha256 = hash(value.candidateBytes);
+  });
+  audit(value, 'FAIL', 'PACKAGE_SCOPE_CONTRADICTION');
+});
+test('authorization proposal hash corruption FAILS even if the locator byte hash is rebound', () => {
+  const value = input();
+  value.authorizationBytes = edit(value.authorizationBytes, a => { a.proposal_sha256 = '0'.repeat(64); });
+  value.envelopeBytes = edit(value.envelopeBytes, e => { e.authorization_sha256 = hash(value.authorizationBytes); });
+  audit(value, 'FAIL', 'AUTHORIZATION_PROPOSAL_HASH_MISMATCH');
+});
+test('authorization identifiers must match Nexus positive 31-bit integer range', () => {
+  for (const id of [0, -1, 0.5, true, 2147483647]) {
+    const value = input();
+    value.authorizationBytes = edit(value.authorizationBytes, a => { a.actor_id = id; });
+    value.envelopeBytes = edit(value.envelopeBytes, e => { e.authorization_sha256 = hash(value.authorizationBytes); });
+    audit(value, 'FAIL', 'AUTHORIZATION_IDS_INVALID');
+  }
+});
+test('microsecond expiry and issue boundaries are not rounded to milliseconds', () => {
+  const valid = input();
+  valid.authorizationBytes = edit(valid.authorizationBytes, a => { a.expires_at = '2026-11-13T12:00:00.000001Z'; });
+  valid.envelopeBytes = edit(valid.envelopeBytes, e => { e.authorization_sha256 = hash(valid.authorizationBytes); });
+  audit(valid, 'PASS');
+  const future = input();
+  future.authorizationBytes = edit(future.authorizationBytes, a => { a.issued_at = '2026-11-13T12:00:00.000001Z'; });
+  future.envelopeBytes = edit(future.envelopeBytes, e => { e.authorization_sha256 = hash(future.authorizationBytes); });
+  audit(future, 'BLOCKED', 'AUTHORIZATION_LOCATOR_STALE');
+});
+test('trailing newline never bypasses full-field validation', () => {
+  const value = input();
+  value.authorizationBytes = edit(value.authorizationBytes, a => { a.expires_at += '\n'; });
+  value.envelopeBytes = edit(value.envelopeBytes, e => { e.authorization_sha256 = hash(value.authorizationBytes); });
+  audit(value, 'BLOCKED', 'INVALID_TIMESTAMP');
+  for (const key of ['revision', 'project', 'proposalPath'] as const) {
+    const wrong = input(); wrong.expected[key] += '\n'; audit(wrong, 'BLOCKED', 'EXPECTED_CONTEXT_INVALID');
+  }
+});
+test('a repeated structural PASS never becomes an approval or replay proof', () => {
+  assert.deepEqual(audit(input(), 'PASS'), audit(input(), 'PASS'));
 });
