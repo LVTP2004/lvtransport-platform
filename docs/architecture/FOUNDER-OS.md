@@ -198,6 +198,90 @@ fail closed independently; the false constants must not be relaxed to bypass
 missing authentication, durable storage or anti-replay. No real approval records,
 personal identities, credentials or operational evidence are published here.
 
+### Offline binding checks and identity blocker (review 2026-11-13)
+
+Implemented for review: [pure offline checker](../../tools/founder_os/decision_record.py)
+and [15 synthetic regression tests](../../tests/test_founder_decision_record.py).
+This is a reference check of an **unverified candidate**, not a decision service,
+receipt issuer, durable record store, authentication adapter or executor. It is
+not imported by Founder UI, MONI or the commercial API. It reads no files,
+network, process state or clock; callers supply plain bytes and UTC time.
+No approval is accepted, persisted or made usable by this implementation.
+
+`inspect_record(record_bytes, proposal_bytes=..., expected_locator=..., now=...)`
+checks the existing candidate field groups and false constants; rejects duplicate
+keys, unknown candidate fields, malformed UTF-8 and oversized input; recomputes
+SHA-256 over **exact** supplied proposal bytes; compares repository/revision/path/
+ID with independently supplied expectations; and compares scope and expiry with
+the frozen content. Scope equality covers capability, node, instance, environment
+and policy version. Received/issued timestamps must be ordered and no later than
+the supplied time; candidate expiry must be strictly later and no later than the
+proposal expiry. An expiry boundary, changed bytes, location or scope fails.
+The same hash cannot be silently normalized/recomputed to preserve an approval.
+Even a newly matching digest only yields another unverified candidate.
+
+For this bounded reference check, the supplied frozen JSON must expose
+`proposal_id`, `scope` and `expires_at`. Other proposal fields remain opaque and
+hash-covered; this is **not** a full action/parameter manifest validator or a new
+execution protocol. Records are limited to 16 KiB and proposals to 1 MiB.
+All numeric JSON values and UTC forms other than `...Z` (maximum six fractional
+second digits, years 1970–9998) fail closed in this draft subset. The code does
+not implement a general JSON Schema engine. The schema remains the shape
+contract; tests also detect drift in the required candidate field sets.
+
+The location expectation and supplied time are validation inputs, not trusted
+identity/freshness evidence. No Git fetch proves where supplied bytes came from.
+An actor's issuer/subject remains a claim. A matching candidate returns
+`binding_checks_passed=true` and
+`reason_code=IDENTITY_AND_DURABLE_APPROVAL_NOT_CONFIGURED`, while retaining
+`UNVERIFIED_CANDIDATE`, `authentication_verified=false`, `approval_granted=false`,
+`can_dispatch=false`, revocation NOT_CHECKED and operational status UNKNOWN.
+Invalid inputs also remain non-authorizing; diagnostics contain fixed codes,
+not candidate bodies, actor identifiers or reasons. A repeated candidate is not
+accepted or declared replay-protected. No in-memory or localStorage approval
+journal substitutes for the missing trusted infrastructure.
+
+#### Reusable identity review, fixed to code rather than names
+
+Reviewed main `a7708afbdcba16dcef7e146c4501297daab3bdfd` and the architecture
+branch at `059b860c0e4132f8ab43f7643430513d1a5b94fc` (same product auth sources).
+No usable real Founder OS identity provider was established in this review:
+
+- [FirebaseAuthProvider](https://github.com/LVTP2004/lvtransport-platform/blob/059b860c0e4132f8ab43f7643430513d1a5b94fc/packages/auth/src/providers/firebase-auth.provider.ts)
+  returns fixed runtime session/token/profile values; its name is not a Firebase
+  SDK session verification implementation.
+- [Auth preparation](https://github.com/LVTP2004/lvtransport-platform/blob/059b860c0e4132f8ab43f7643430513d1a5b94fc/packages/realtime/src/auth/preparation.ts)
+  explicitly declares placeholder mode. The auth package has no real SDK dependency.
+- [Commercial middleware](https://github.com/LVTP2004/lvtransport-platform/blob/059b860c0e4132f8ab43f7643430513d1a5b94fc/apps/api/src/auth/middleware/authenticate.ts)
+  decodes caller-supplied base64 claims without verifying a token signature.
+  [The auth-package JWT helper](https://github.com/LVTP2004/lvtransport-platform/blob/059b860c0e4132f8ab43f7643430513d1a5b94fc/packages/auth/src/security/jwt.service.ts)
+  constructs a reversible encoding, not a cryptographic signature. Neither is
+  imported or treated as proof by this checker; this task does not fix that API.
+- [PR #394's separate blocker](https://github.com/LVTP2004/lvtransport-platform/blob/af2dd40b3cd4fc9ab73195764dca9f79926cd6ef/apps/admin/AUTHENTICATION_BLOCKER.md)
+  describes the disabled real-login dependency; its containment and local staged
+  auth work are not an operational provider for Founder OS.
+
+Required before accepting a human decision: an explicitly owned real identity
+integration that validates issuer/audience/signature, current session and expiry,
+revocation and authoritative human role/scope enrollment; reviewed integrity and
+storage authorities; and durable atomic challenge/decision/audit handling. The
+full proposal/action schema, trusted byte retrieval and trusted clock boundary
+also need review. Do not enable a flag, reuse synthetic tokens, infer identity
+from a browser role or relax the candidate's false constants to bypass these
+blockers. No credentials or deployment configuration are created here.
+
+Offline check command (from repository root):
+
+```sh
+PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests -p test_founder_decision_record.py -v
+```
+
+No build/typecheck or workflows are needed for this isolated Python reference;
+no TypeScript/JavaScript, package/dependency, CI or commercial API files change.
+The tests prove local rejection/binding properties, not a person's authentication,
+consent, persistence, live approval or current ATLAS status. Aspire and Viviana
+remain UNKNOWN, independently. MONI Atlas Maps/V3 is untouched.
+
 ### Accept once, revoke explicitly and keep execution separate
 
 Before accepting, the backend must authenticate/authorize the person, recompute
