@@ -45,6 +45,8 @@
     "protected": true
   },
   "protection": {
+    "allow_force_pushes": {"enabled": false},
+    "allow_deletions": {"enabled": false},
     "enforce_admins": {
       "enabled": true
     },

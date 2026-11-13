@@ -183,11 +183,14 @@ def _snapshot(api, record, policy, now):
     require(protection["enforce_admins"]["enabled"] is True
             and reviews_policy["dismiss_stale_reviews"] is True
             and reviews_policy["require_last_push_approval"] is True, "REVIEW_PROTECTION_INSUFFICIENT")
+    require(protection.get("allow_force_pushes", {}).get("enabled") is False
+            and protection.get("allow_deletions", {}).get("enabled") is False,
+            "PROTECTED_BRANCH_MUTABILITY_UNVERIFIABLE")
     # V1 deliberately blocks richer requirements; never advise weakening them.
     require(type(reviews_policy["required_approving_review_count"]) is int
             and reviews_policy["required_approving_review_count"] == 1
             and reviews_policy["require_code_owner_reviews"] is False, "REVIEW_REQUIREMENTS_UNSUPPORTED")
-    bypass = reviews_policy.get("bypass_pull_request_allowances", {"users": [], "teams": [], "apps": []})
+    bypass = reviews_policy.get("bypass_pull_request_allowances")
     require(type(bypass) is dict and all(bypass.get(k) == [] for k in ("users", "teams", "apps")), "REVIEW_BYPASS_NOT_ALLOWED")
     rules = api.get(prefix + "/rules/branches/" + quote(policy.base_branch, safe=""))
     require(rules == [], "ACTIVE_RULESET_REQUIRES_ADAPTER")
@@ -209,7 +212,8 @@ def _snapshot(api, record, policy, now):
     require(review["state"] == "APPROVED" and review["commit_id"] == record["head_sha"], "REVIEW_NOT_APPROVED_FOR_HEAD")
     submitted = _stamp(review["submitted_at"])
     require(review["submitted_at"] == record["issued_at"], "REVIEW_ISSUED_AT_MISMATCH")
-    actor_reviews = [r for r in reviews if r["user"]["id"] == user["id"] and r.get("submitted_at")]
+    actor_reviews = [r for r in reviews if r["user"]["id"] == user["id"] and r.get("submitted_at")
+                     and r.get("state") in {"APPROVED", "CHANGES_REQUESTED", "DISMISSED"}]
     require(max(actor_reviews, key=lambda r: (_stamp(r["submitted_at"]), r["id"]))["id"] == review["id"], "REVIEW_SUPERSEDED")
     permission = api.get(prefix + "/collaborators/" + quote(user["login"], safe="") + "/permission")
     require(permission["user"]["id"] == user["id"] and permission["user"]["login"] == user["login"]

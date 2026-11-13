@@ -1,5 +1,12 @@
 # Founder OS: autoridad de revisión protegida GitHub (v1-draft)
 
+Consolidación con la propuesta concurrente #405: se conserva este contrato por
+exigir intención explícita en la review y política de humanos enrolados. Se
+añaden controles de force-push/borrado y rechazo de metadata de bypass ausente;
+no se infiere una lista vacía de un campo que no pudo comprobarse. Un comentario
+posterior no crea ni revoca aprobación; las decisiones decisivas sí se reevalúan.
+La ampliación añade tres pruebas sintéticas (18 en total). No activa autoridad.
+
 Propuesta nueva, independiente de #403, #394 y del trabajo activo de MONI #98.
 Base LVTransport: `a7708afbdcba16dcef7e146c4501297daab3bdfd`.
 No modifica la API comercial, Firebase, servicios ni configuración GitHub.

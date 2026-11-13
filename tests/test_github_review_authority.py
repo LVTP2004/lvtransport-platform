@@ -188,5 +188,26 @@ class ProtectedReviewTests(unittest.TestCase):
         self.assertNotIn("PRIVATE_TOKEN", json.dumps(result))
 
 
+    def test_missing_bypass_metadata_cannot_mean_empty_allowances(self):
+        del self.f["protection"]["required_pull_request_reviews"]["bypass_pull_request_allowances"]
+        self.inspect("REVIEW_BYPASS_NOT_ALLOWED")
+
+    def test_mutable_or_unverifiable_protected_branch_blocks(self):
+        for field in ("allow_force_pushes", "allow_deletions"):
+            self.setUp()
+            self.f["protection"][field]["enabled"] = True
+            self.inspect("PROTECTED_BRANCH_MUTABILITY_UNVERIFIABLE")
+            del self.f["protection"][field]
+            self.inspect("PROTECTED_BRANCH_MUTABILITY_UNVERIFIABLE")
+
+    def test_later_comment_is_not_approval_and_does_not_revoke_explicit_approval(self):
+        comment = copy.deepcopy(self.f["reviews"][0])
+        comment.update(id=23, state="COMMENTED", submitted_at="2026-11-13T12:00:01Z", body="ordinary comment")
+        self.f["reviews"].append(comment)
+        self.assertTrue(self.inspect()["review_verified"])
+        self.f["reviews"] = [comment]
+        self.inspect("REVIEW_NOT_FOUND")
+
+
 if __name__ == "__main__":
     unittest.main()
