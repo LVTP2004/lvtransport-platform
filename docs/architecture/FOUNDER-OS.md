@@ -234,3 +234,9 @@ independent, authenticated and recent operational evidence exists for each node.
 - Review durable receipt/challenge storage, atomic consumption, idempotency, revocation, retention and access controls.
 - Add offline tests for anonymous/insufficient-role users, forged person fields, hash/target mismatch, expired/replayed challenges, restart and concurrent decisions, plus a synthetic accepted record.
 - Keep synthetic tests distinct from real authentication, human consent, durable anti-replay and operational execution evidence.
+
+#### Explicit proposal-expiry binding
+
+The candidate record must copy the frozen proposal manifest's own `expires_at` into `proposal.expires_at`, in addition to the receipt-level `expires_at`. These timestamps have different scopes: `proposal.expires_at` bounds the proposal revision itself, while the top-level `expires_at` bounds the candidate decision/receipt. A future trusted semantic verifier must recompute `proposal.file_sha256` from the exact pinned manifest bytes and verify that the copied scope and `proposal.expires_at` equal the values inside those same bytes. The effective usable lifetime can never extend beyond either expiry.
+
+This repository review found no reusable, implemented Founder OS identity provider. Existing identity material is descriptive, and MONI Edge/FOSSiBOT is an attention interface rather than a governance identity authority. Therefore this contract continues to require `record_state=UNVERIFIED_CANDIDATE`, `actor.verification_status=UNVERIFIED`, `authentication_verified=false`, `approval_granted=false` and `can_dispatch=false`. The concrete blocker is the absence of a reviewed provider/custodian plus authoritative human enrollment, session verification, role/scope verification and protected evidence reference. No commercial API authentication is promoted into Founder OS authority by this change.
