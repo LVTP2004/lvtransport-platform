@@ -52,7 +52,8 @@
         "repository",
         "path",
         "hash_profile",
-        "file_sha256"
+        "file_sha256",
+        "expires_at"
       ],
       "properties": {
         "id": {
@@ -85,6 +86,12 @@
         "file_sha256": {
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
+        },
+        "expires_at": {
+          "type": "string",
+          "format": "date-time",
+          "pattern": "Z$",
+          "description": "Expiry declared by the exact frozen proposal manifest. This copied value is unverified until a trusted semantic verifier recomputes the proposal digest and confirms equality with the frozen manifest."
         }
       }
     },
