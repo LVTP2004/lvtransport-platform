@@ -1,0 +1,104 @@
+{
+  "description": "SYNTHETIC OFFLINE ONLY: fake repo revision, account IDs and review; not a real approval",
+  "record": {
+    "schema": "founder/github-protected-review/v1-draft",
+    "repository": "LVTP2004/lvtransport-platform",
+    "pull_number": 42,
+    "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "proposal_path": "proposals/synthetic.json",
+    "proposal_sha256": "7b31fbd47011a6afc25fb887a3bdcf8f19d5b6958dfa82c2781cd7ef02bf9feb",
+    "scope": {
+      "project": "synthetic-project",
+      "target_node": "none",
+      "operations": [
+        "proposal.review"
+      ]
+    },
+    "actor_id": 2,
+    "review_id": 22,
+    "decision": "APPROVE",
+    "expires_at": "2026-11-13T12:10:00Z",
+    "issued_at": "2026-11-13T12:00:00Z"
+  },
+  "pr": {
+    "state": "open",
+    "merged": false,
+    "draft": false,
+    "base": {
+      "repo": {
+        "full_name": "LVTP2004/lvtransport-platform"
+      },
+      "ref": "main",
+      "sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    },
+    "head": {
+      "repo": {
+        "full_name": "LVTP2004/lvtransport-platform"
+      },
+      "sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    "user": {
+      "id": 1
+    }
+  },
+  "branch": {
+    "protected": true
+  },
+  "protection": {
+    "allow_force_pushes": {"enabled": false},
+    "allow_deletions": {"enabled": false},
+    "enforce_admins": {
+      "enabled": true
+    },
+    "required_pull_request_reviews": {
+      "dismiss_stale_reviews": true,
+      "require_last_push_approval": true,
+      "required_approving_review_count": 1,
+      "require_code_owner_reviews": false,
+      "bypass_pull_request_allowances": {
+        "users": [],
+        "teams": [],
+        "apps": []
+      }
+    }
+  },
+  "rules": [],
+  "reviews": [
+    {
+      "id": 22,
+      "user": {
+        "id": 2,
+        "type": "User",
+        "login": "synthetic-reviewer"
+      },
+      "state": "APPROVED",
+      "commit_id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+      "submitted_at": "2026-11-13T12:00:00Z",
+      "body": "{\"schema\": \"founder/github-review-intent/v1-draft\", \"head_sha\": \"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\", \"proposal_path\": \"proposals/synthetic.json\", \"proposal_sha256\": \"7b31fbd47011a6afc25fb887a3bdcf8f19d5b6958dfa82c2781cd7ef02bf9feb\", \"scope_sha256\": \"3d0663e9d6aff6cf65ff4c75207a521184baecb6a9ebcf74b7793bd242dc29fa\", \"decision\": \"APPROVE\", \"expires_at\": \"2026-11-13T12:10:00Z\"}"
+    }
+  ],
+  "permission": {
+    "user": {
+      "id": 2,
+      "login": "synthetic-reviewer"
+    },
+    "permission": "write",
+    "role_name": "write"
+  },
+  "content": {
+    "type": "file",
+    "path": "proposals/synthetic.json",
+    "encoding": "base64",
+    "size": 214,
+    "sha": "bdaca721daeb6d19743d573c1e9cc13a5f821d73",
+    "content": "eyJleHBpcmVzX2F0IjoiMjAyNi0xMS0xM1QxMjoxMDowMFoiLCJwcm9wb3NhbF9pZCI6InN5bnRoZXRpYy1wcm9wb3NhbCIsInNjaGVtYSI6ImZvdW5kZXIvYXV0aG9yaXplZC1wcm9wb3NhbC92MS1kcmFmdCIsInNjb3BlIjp7Im9wZXJhdGlvbnMiOlsicHJvcG9zYWwucmV2aWV3Il0sInByb2plY3QiOiJzeW50aGV0aWMtcHJvamVjdCIsInRhcmdldF9ub2RlIjoibm9uZSJ9fQ=="
+  },
+  "gate": {
+    "headRefOid": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "baseRefName": "main",
+    "reviewDecision": "APPROVED",
+    "mergeStateStatus": "CLEAN",
+    "isDraft": false,
+    "state": "OPEN"
+  }
+}
