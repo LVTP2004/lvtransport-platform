@@ -201,3 +201,45 @@ Artefactos de ejecución temporales: /tmp/lvtp-local-reviews-20261118/ y
 /tmp/lvtp-vps-review-20261118.txt (no persistentes ni necesarios para usar el arreglo).
 No hubo nuevos permisos de usuario, cambios de endpoints/lifecycle/dependencias,
 mock de API, merge o despliegue. Esta entrega no termina la plataforma completa.
+
+### Entrega publicada — validación de reservas (19-11-2026)
+
+Autorización posterior de Leonardo: desplegar entregas con pruebas positivas y
+registrar cada avance en GitHub; ver LVTRANSPORT_DECISIONS.md. Sin merge automático.
+
+MONI devolvió trabajos aislados de ingeniería completados de Codex y Devstral,
+ambos sobre validation.ts. Se revisó la propuesta de Devstral (tarea
+0f26cbb49d34c3c671fb4affb01c11cb), adaptando comprobaciones null para conservar los
+errores de campos ausentes. Cuatro guardas rechazan payload array y pickup,
+destination o fecha con tipos incorrectos antes de trim/Date. Se conserva el alias
+scheduledAt, la precedencia de scheduleAt, normalización y reglas existentes.
+
+Pruebas propias: antes, 3 de 4 regresiones fallaban; después pasan 4 de validación,
+8 de cliente operacional y 16 HTTP de reservas/operación (28 en total). Typecheck
+API, bundle esbuild y diff --check correctos. Qwen3:1.7b revisó cobertura desde la
+VPS, pero su respuesta confundía casos válidos: descartada como evidencia de
+aceptación. No se aplicaron sus sugerencias. Esto demuestra consumo de un parche
+acotado de MONI/Devstral, no autonomía general ni ejecución sin supervisión.
+
+Despliegue 2026-11-19 06:31:54 UTC: baseline reconstruida idéntica byte por byte a
+la API activa (SHA256 3db485aa…); candidate solo añade las cuatro comprobaciones
+(SHA256 ffd82bdb…). Backup: /home/ubuntu/lvtp-backups/booking-validation-20261119T063154Z.
+Sustitución atómica de server.cjs y reinicio de lvtransport-api con su configuración
+existente. /health volvió a 200; tres endpoints privados mantienen 401; dos
+solicitudes deliberadamente inválidas rechazadas con 400 antes de crear reservas.
+No se escribieron datos de reservas ni se cambiaron Nginx, DNS, SSL, puertos,
+variables, dependencias o permisos. La web permanece intacta.
+
+La corrección de sesiones del 18-11 sigue pendiente de despliegue web: los assets
+publicados difieren de la copia local y no se sobrescribieron cambios ajenos.
+Evidencia persistente y hashes: verification/LVTP_BOOKING_VALIDATION_20261119.json.
+
+Archivos de esta entrega y motivo:
+- apps/api/src/modules/bookings/validation.ts: cuatro comprobaciones de tipos.
+- tests/booking-validation.test.mjs: regresiones y compatibilidad del contrato.
+- docs/LVTRANSPORT_DECISIONS.md: autorización posterior de entregas a VPS/GitHub.
+- docs/architecture/LVTRANSPORT_IMPLEMENTATION_STATUS.md: resultado y pendientes.
+- verification/LVTP_BOOKING_VALIDATION_20261119.json: recibos, hashes y verificación.
+
+API autorizada por el alcance funcional; no se tocaron archivos prohibidos fuera
+del alcance. No se reemplazó API por mocks, demo ni almacenamiento del navegador.
