@@ -1,0 +1,79 @@
+{
+  "schema": "lvtransport/verified-delivery/v1",
+  "date": "2026-11-19",
+  "scope": "Booking payload type validation; preserve routes, lifecycle, persistence and deployment configuration",
+  "agent_input": {
+    "system": "MONI V6",
+    "agent": "devstral-engineering",
+    "task_id": "0f26cbb49d34c3c671fb4affb01c11cb",
+    "job_id": "33de717b8c1f4c3d89b79f67918dd49d",
+    "receipt_id": "d2c0c97870edb76f8f33fc233edd5366",
+    "proposed_patch_sha256": "92163e52679c99707f8c4c8e250e5f61812b83553b990461272fae61fa75501a",
+    "integration": "Codex reviewed and adapted null guards to retain existing missing-field errors; independently tested in source workspace"
+  },
+  "qwen_review": {
+    "model": "qwen3:1.7b",
+    "host": "VPS local Ollama",
+    "status": "REJECTED_AS_ACCEPTANCE_EVIDENCE",
+    "reason": "Response mislabeled valid strings as malformed and did not demonstrate legacy alias. No suggested behavior adopted."
+  },
+  "verification": {
+    "new_regression_before_fix": {
+      "passed": 1,
+      "failed": 3
+    },
+    "after_fix": {
+      "booking_validation": 4,
+      "operations_client": 8,
+      "booking_http_and_operational_http": 16,
+      "total": 28,
+      "failures": 0
+    },
+    "api_typecheck": "PASS",
+    "api_bundle": "PASS",
+    "diff_check": "PASS",
+    "baseline_bundle_equals_prior_production": "3db485aac6fbd034a140c91a361786103ea5b32e9382ba6c56e957087ff088c5",
+    "candidate_changes": "Only four runtime checks added in validation function"
+  },
+  "deployment": {
+    "status": "DEPLOYED",
+    "time": "20261119T063154Z",
+    "api_path": "/opt/lvtransport/releases/20261116-r1/api/server.cjs",
+    "before_sha256": "3db485aac6fbd034a140c91a361786103ea5b32e9382ba6c56e957087ff088c5",
+    "after_sha256": "ffd82bdb11c67c8e1a71d72da9bc3a1b1752d327d1c0649d4dc9c5ea9364933f",
+    "backup": "/home/ubuntu/lvtp-backups/booking-validation-20261119T063154Z",
+    "web_index_unchanged": true,
+    "checks": [
+      {
+        "route": "/api/v1/operations/bookings",
+        "status": 401
+      },
+      {
+        "route": "/api/v1/customer/bookings",
+        "status": 401
+      },
+      {
+        "route": "/api/v1/auth/session",
+        "status": 401
+      },
+      {
+        "route": "/api/v1/bookings",
+        "status": 400,
+        "message": "pickup must be a string"
+      },
+      {
+        "route": "/api/v1/bookings",
+        "status": 400,
+        "message": "scheduledAt must be a string"
+      }
+    ],
+    "pm2_action": "restart lvtransport-api; existing configuration preserved",
+    "data_files_written_by_deploy": false
+  },
+  "session_fix_web_deployment": "PENDING: published web differs from workspace; do not overwrite unrelated changes",
+  "merged": false,
+  "source_sha256": {
+    "apps/api/src/modules/bookings/validation.ts": "d4a7235f8017016980642f42372ed4d582721d9f3161bef73ebe3b5caf3ebd9a",
+    "tests/booking-validation.test.mjs": "15806907774f182eb398f6f220745c5d7af28871569052a891ead165980ba123"
+  }
+}

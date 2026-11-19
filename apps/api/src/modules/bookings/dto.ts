@@ -45,6 +45,8 @@ export interface LVMessage {
 
 export interface CreateBookingDto {
   customerId?: string;
+  /** Set only by an authenticated server route; public payload validation never copies this field. */
+  customerIdentityVerified?: boolean;
   customerName?: string;
   customerPhone?: string;
   customerEmail?: string;
@@ -66,6 +68,12 @@ export interface BookingRecord extends CreateBookingDto {
   referenceCode: string;
   status: CanonicalBookingLifecycleStatus;
   createdAt: string;
+  assignment?: {
+    driverId: string;
+    vehicleId: string;
+    assignedAt: string;
+    assignedBy: string;
+  };
   fareQuote: {
     fareTotal: number;
     pricingVersion: string;

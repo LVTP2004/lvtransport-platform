@@ -51,7 +51,8 @@
     "morgan": "^1.10.0",
     "ws": "^8.18.0",
     "@lvtransport/realtime": "workspace:*",
-    "@lvtransport/auth": "workspace:*"
+    "@lvtransport/auth": "workspace:*",
+    "firebase-admin": "^14.5.1"
   },
   "devDependencies": {
     "@types/cors": "^2.8.17",

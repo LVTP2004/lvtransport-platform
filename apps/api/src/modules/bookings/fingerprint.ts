@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { BookingRecord, CreateBookingDto } from './dto.js';
 
-type BookingFingerprintInput = Pick<CreateBookingDto, 'customerId' | 'customerEmail' | 'customerPhone' | 'pickup' | 'destination' | 'scheduleAt' | 'serviceType'>;
+type BookingFingerprintInput = Pick<CreateBookingDto, 'customerId' | 'customerIdentityVerified' | 'customerEmail' | 'customerPhone' | 'pickup' | 'destination' | 'scheduleAt' | 'serviceType'>;
 
 export const createBookingDuplicateFingerprint = (booking: BookingFingerprintInput | BookingRecord): string | null => {
   const identity = [booking.customerId, booking.customerEmail, booking.customerPhone]
@@ -10,6 +10,7 @@ export const createBookingDuplicateFingerprint = (booking: BookingFingerprintInp
   if (!identity) return null;
 
   const canonical = [
+    booking.customerIdentityVerified === true ? 'verified-customer' : 'public-contact',
     identity,
     booking.pickup.trim().toLowerCase(),
     booking.destination.trim().toLowerCase(),
