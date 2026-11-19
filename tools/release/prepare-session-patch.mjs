@@ -53,15 +53,36 @@ for (const name of reachable) {
   const original = scripts.get(name);
   const parsed = ts.createSourceFile(name, original, ts.ScriptTarget.Latest, true, ts.ScriptKind.JS);
   if (parsed.parseDiagnostics.length) throw new Error(`Cannot parse ${name}`);
-  const clients = parsed.statements.filter(n => ts.isClassDeclaration(n) && n.name
-    && n.getText(parsed).includes('Unsupported operation route') && n.getText(parsed).includes('INVALID_API_RESPONSE'));
+  const clients = [];
+  const isClient = node => ts.isClassDeclaration(node) && node.name
+    && node.getText(parsed).includes('Unsupported operation route') && node.getText(parsed).includes('INVALID_API_RESPONSE');
+  for (const statement of parsed.statements) {
+    if (isClient(statement)) {
+      clients.push({ statement, client: statement, binding: statement.name.text });
+    } else if (ts.isVariableStatement(statement) && statement.declarationList.declarations.length === 1) {
+      const [declaration] = statement.declarationList.declarations;
+      const call = declaration.initializer;
+      if (!ts.isIdentifier(declaration.name) || !call || !ts.isCallExpression(call)
+          || call.arguments.length || !ts.isParenthesizedExpression(call.expression)) continue;
+      const arrow = call.expression.expression;
+      if (!ts.isArrowFunction(arrow) || !ts.isBlock(arrow.body)) continue;
+      const client = arrow.body.statements.find(isClient);
+      const returned = arrow.body.statements.at(-1);
+      if (client && returned && ts.isReturnStatement(returned)
+          && returned.expression && ts.isIdentifier(returned.expression)
+          && returned.expression.text === client.name.text) {
+        clients.push({ statement, client, binding: declaration.name.text });
+      }
+    }
+  }
   if (clients.length > 1) throw new Error('Ambiguous client class');
   let updated = original;
   if (clients.length) {
-    const node = clients[0], old = node.getText(parsed);
-    const methods = node.members.filter(ts.isMethodDeclaration).map(n => n.name.getText(parsed));
+    const { statement, client, binding } = clients[0];
+    const old = statement.getText(parsed);
+    const methods = client.members.filter(ts.isMethodDeclaration).map(n => n.name.getText(parsed));
     if (methods.join(',') !== 'connect,request,disconnect') throw new Error('Unexpected deployed client interface');
-    updated = original.slice(0, node.getStart(parsed)) + `const ${node.name.text}=${expression};` + original.slice(node.end);
+    updated = original.slice(0, statement.getStart(parsed)) + `const ${binding}=${expression};` + original.slice(statement.end);
     replacements.push({ file: name, previous_class_sha256: sha(old), source_sha256: sha(source) });
   }
   updated = rename(updated);

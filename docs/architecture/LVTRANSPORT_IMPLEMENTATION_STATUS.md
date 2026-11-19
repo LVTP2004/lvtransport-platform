@@ -289,3 +289,47 @@ Archivos de esta entrega:
 
 No hubo cambios de producto fuera del alcance autorizado ni API sustituida por demo.
 La aceptación Google real y el viaje completo con recursos autorizados siguen pendientes.
+
+### Verificación tras el reinicio — 19-11-2026
+
+Las entregas de reservas y sesiones constan en el PR #410, abierto. Los ocho
+archivos de la corrección de sesiones servidos por HTTPS coinciden con los
+SHA-256 del manifiesto. La API en api.lvtransport.be responde 200 JSON en
+`/health` y 401 JSON a las lecturas anónimas de sesión, reservas operativas y
+reservas de cliente. La portada y las rutas de reserva, Admin, Driver y Founder
+responden 200 en el dominio público.
+
+En el workspace actual pasan 53 pruebas Node y 22 de simulación Python.
+También pasan el typecheck de las apps y los builds de web, admin, driver y
+business con salida temporal. Este seguimiento actualiza solo este registro.
+
+Para la aceptación en producción falta iniciar sesión en navegador con
+Google y confirmar un conductor activo y un vehículo autorizado para la
+prueba. El recorrido debe vincular una sola referencia desde la reserva del
+cliente y la asignación de Admin hasta la aceptación, inicio y finalización
+por el conductor, y comprobar los estados visibles en tracking. En esta
+verificación se hicieron únicamente lecturas públicas y anónimas de producción.
+
+### Corrección de acceso en Firefox — 19-11-2026
+
+Firefox reprodujo un TypeError al utilizar la instancia del cliente como receptor
+de fetch, antes de contactar a la API. Con fetch invocado como función, Firefox
+headless recibió y aceptó una sesión Admin de un servidor de prueba local.
+Las nueve pruebas del cliente pasan sobre la fuente y el artefacto compilado.
+El typecheck de las apps pasa.
+
+Publicado con respaldo en
+`/home/ubuntu/lvtp-backups/browser-fetch-20261119T161743Z`. Los ocho archivos
+verificados por HTTPS conservan el grafo de la web publicada. La API y Firebase
+mantienen sus permisos. Falta confirmar el inicio con Google con la cuenta real,
+seguido de una reserva y viaje usando un conductor y un vehículo autorizados.
+
+- `packages/auth/src/services/operations-client.ts` corrige la llamada nativa.
+- `tests/operations-client.test.mjs` comprueba el receptor y una sesión Admin.
+- `tools/release/prepare-session-patch.mjs` reconoce el cliente ya publicado.
+- Este registro documenta reproducción, verificación y respaldo.
+
+Los dos componentes `GoogleLoginBoundary.tsx` de Admin y Driver contienen
+diagnóstico adicional en el workspace local. Pasaron sus pruebas de entrada,
+typecheck y builds Web/Admin/Driver. El parche en producción incluye únicamente
+la corrección de fetch.

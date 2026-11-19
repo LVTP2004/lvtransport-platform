@@ -53,7 +53,9 @@ export class VerifiedOperationsClient {
     const base = this.apiBase.replace(/\/$/, '');
     const session = await this.provider.getSession();
     if (!session.authenticated || !session.token || this.closed) throw new OperationsRequestError('AUTHENTICATION_REQUIRED', 401);
-    const response = await this.fetcher(base + route, {
+    // Call native browser fetch without using the client instance as its receiver.
+    const fetchRequest = this.fetcher;
+    const response = await fetchRequest(base + route, {
       method: options.body === undefined ? 'GET' : 'POST', cache: 'no-store', signal: AbortSignal.timeout(10000),
       headers: { Authorization: `Bearer ${session.token}`,
         ...(options.body === undefined ? {} : { 'Content-Type': 'application/json' }),

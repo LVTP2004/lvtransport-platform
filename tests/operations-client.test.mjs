@@ -30,6 +30,16 @@ test('Google success alone does not open operations without verified server iden
   await assert.rejects(denied.connect());
 });
 
+test('browser fetch is called without the operations client as receiver', async () => {
+  const admin = { ...identity, role: 'admin' };
+  const client = new VerifiedOperationsClient(provider(), 'https://synthetic.invalid/api/v1', 'admin',
+    async function () {
+      assert.equal(this, undefined);
+      return response({ success: true, identity: admin });
+    });
+  assert.deepEqual(await client.connect(), admin);
+});
+
 test('verified requests use the current SDK bearer, no-store and stable operation key', async () => {
   const p = provider(); const calls = [];
   const client = new VerifiedOperationsClient(p, 'https://synthetic.invalid/api/v1', 'driver', async (url, options) => {
