@@ -333,3 +333,21 @@ Los dos componentes `GoogleLoginBoundary.tsx` de Admin y Driver contienen
 diagnóstico adicional en el workspace local. Pasaron sus pruebas de entrada,
 typecheck y builds Web/Admin/Driver. El parche en producción incluye únicamente
 la corrección de fetch.
+
+### Fuentes de GPS y seguimiento en la rama del PR #410
+
+Se consolidó la base que faltaba para compilar la API y la página pública de
+reservas desde una instalación limpia. Incluye persistencia y proyección de
+reservas, autorización Firebase, rutas de cliente y operaciones, las entradas
+verificadas de los paneles y sus componentes de reserva. La autorización del
+fundador cubre los manifiestos de API y auth y el lockfile para incorporar las
+versiones de Firebase ya usadas por la aplicación. Los archivos de la portada y
+Tailwind forman parte de la entrada web que comparte este build.
+
+Instalación con lockfile congelado, 34 pruebas Node, typecheck de las apps y
+builds de API, Web, Admin, Driver y Business correctos. Estos builds prueban la
+base desde GitHub. La publicación previa aplicó parches acotados a los
+artefactos activos de la VPS y tiene su recibo en el issue #411. Sigue pendiente
+la aceptación con Google y un viaje completo. El Spec Guard de GitHub bloquea
+cambios de API, Admin y lockfile por rutas, incluso con autorización, y requiere
+revisión antes de cualquier merge.

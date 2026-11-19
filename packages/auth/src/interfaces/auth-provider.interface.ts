@@ -16,6 +16,7 @@ export interface UserAccount {
 
 export interface AuthProviderAdapter {
   signIn(email: string, password: string): Promise<AuthState>;
+  signInWithGoogle?(): Promise<AuthState>;
   signOut(sessionId?: string): Promise<void>;
   refresh(token?: string): Promise<AuthTokens | undefined>;
   getUserProfile(): Promise<unknown>;

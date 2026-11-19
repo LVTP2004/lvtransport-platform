@@ -1,4 +1,5 @@
-import { existsSync, mkdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { dirname, resolve } from 'node:path';
 import type { BookingRecord } from './dto.js';
 import { createBookingDuplicateFingerprint } from './fingerprint.js';
@@ -11,14 +12,27 @@ export interface BookingRepository {
   list(): Promise<BookingRecord[]>;
 }
 
-type BookingStore = {
+export type OperationalVehicle = {
+  id: string; registration: string; name: string; fleetType: 'own' | 'external'; enabled: boolean;
+};
+export type OperationalDriver = {
+  id: string; name: string; vehicleId: string; availability: 'available' | 'unavailable';
+  lastSeenAt: string; lastChangeAt: string;
+};
+export type OperationReceipt = {
+  id: string; bookingId: string; version: number; state: string; appliedAt: string;
+};
+export type BookingStore = {
   bookings: BookingRecord[];
   idempotencyIndex: Record<string, string>;
   fingerprintIndex?: Record<string, { bookingId: string; createdAt: string }>;
+  vehicles?: Record<string, OperationalVehicle>;
+  drivers?: Record<string, OperationalDriver>;
+  operations?: Record<string, { digest: string; receipt: OperationReceipt }>;
 };
 
-class FileBookingRepository implements BookingRepository {
-  private readonly storageFile = resolve(process.cwd(), '.data', 'bookings.json');
+export class FileBookingRepository implements BookingRepository {
+  constructor(private readonly storageFile = resolve(process.cwd(), '.data', 'bookings.json')) {}
 
   private ensureFile(): void {
     const folder = dirname(this.storageFile);
@@ -32,25 +46,57 @@ class FileBookingRepository implements BookingRepository {
     this.ensureFile();
     const raw = readFileSync(this.storageFile, 'utf-8');
     const parsed = JSON.parse(raw) as Partial<BookingStore>;
+    if (!parsed || !Array.isArray(parsed.bookings)) throw new Error('Invalid booking storage');
     return {
-      bookings: Array.isArray(parsed.bookings) ? parsed.bookings : [],
+      ...parsed,
+      bookings: parsed.bookings,
       idempotencyIndex: parsed.idempotencyIndex ?? {},
       fingerprintIndex: parsed.fingerprintIndex ?? {},
     };
   }
 
   private writeStore(store: BookingStore): void {
-    const temp = `${this.storageFile}.tmp`;
-    writeFileSync(temp, JSON.stringify(store, null, 2), 'utf-8');
-    renameSync(temp, this.storageFile);
+    const temp = `${this.storageFile}.${randomUUID()}.tmp`;
+    const encoded = JSON.stringify(store, null, 2);
+    try {
+      const fd = openSync(temp, 'wx', 0o600);
+      try {
+        writeFileSync(fd, encoded, 'utf-8');
+        fsyncSync(fd);
+      } finally { closeSync(fd); }
+      renameSync(temp, this.storageFile);
+      const directory = openSync(dirname(this.storageFile), 'r');
+      try { fsyncSync(directory); } finally { closeSync(directory); }
+      if (readFileSync(this.storageFile, 'utf-8') !== encoded) throw new Error('Booking persistence verification failed');
+    } finally {
+      if (existsSync(temp)) unlinkSync(temp);
+    }
   }
+
+  /** Synchronous read/validate/write: atomic between requests in this API process.
+   * The file repository requires one writer process, as before; not a distributed transaction.
+   */
+  transact<T>(change: (store: BookingStore) => T): T {
+    const store = this.readStore();
+    const result = change(store);
+    this.writeStore(store);
+    return result;
+  }
+
+  snapshot(): BookingStore { return this.readStore(); }
 
   async create(record: BookingRecord): Promise<BookingRecord> {
     const store = this.readStore();
     const idempotencyKey = record.lifecycle.initIdempotencyKey;
     if (store.idempotencyIndex[idempotencyKey]) {
       const existing = store.bookings.find((b) => b.id === store.idempotencyIndex[idempotencyKey]);
-      if (existing) return existing;
+      if (existing) {
+        if ((existing.customerIdentityVerified === true) !== (record.customerIdentityVerified === true)
+            || (record.customerIdentityVerified === true && existing.customerId !== record.customerId)) {
+          throw new Error('Booking identity scope conflict');
+        }
+        return existing;
+      }
     }
 
     store.bookings.unshift(record);
@@ -95,4 +141,5 @@ class FileBookingRepository implements BookingRepository {
   }
 }
 
-export const bookingRepository: BookingRepository = new FileBookingRepository();
+export const fileBookingRepository = new FileBookingRepository();
+export const bookingRepository: BookingRepository = fileBookingRepository;
