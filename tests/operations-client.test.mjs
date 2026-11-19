@@ -2,13 +2,15 @@ import assert from 'node:assert/strict';
 import { createRequire } from 'node:module';
 import path from 'node:path';
 import test from 'node:test';
+import { readFileSync } from 'node:fs';
 
 const require = createRequire(path.join(process.cwd(), 'apps/admin/package.json'));
 const { build } = createRequire(require.resolve('vite'))('esbuild');
 const result = await build({ entryPoints: [path.join(process.cwd(), 'packages/auth/src/services/operations-client.ts')],
   bundle: true, write: false, platform: 'node', format: 'cjs' });
 const module = { exports: {} };
-new Function('require', 'module', 'exports', result.outputFiles[0].text)(require, module, module.exports);
+const artifact = process.argv.find(arg => arg.startsWith('--artifact='))?.slice('--artifact='.length);
+new Function('require', 'module', 'exports', artifact ? readFileSync(artifact, 'utf8') : result.outputFiles[0].text)(require, module, module.exports);
 const { VerifiedOperationsClient } = module.exports;
 const identity = { userId: 'synthetic-driver', role: 'driver', status: 'active', permissions: ['driver:update_status'] };
 function provider() {

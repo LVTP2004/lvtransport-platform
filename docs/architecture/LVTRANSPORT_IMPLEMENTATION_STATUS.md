@@ -243,3 +243,49 @@ Archivos de esta entrega y motivo:
 
 API autorizada por el alcance funcional; no se tocaron archivos prohibidos fuera
 del alcance. No se reemplazó API por mocks, demo ni almacenamiento del navegador.
+
+### Sesiones publicadas conservando la web — 19-11-2026
+
+La corrección 401 del 18-11 ya está desplegada. La web activa no correspondía al
+build del workspace; para preservar sus cambios se preparó un paquete acotado:
+compilación de operations-client.ts, sustitución de su clase mediante AST en el
+módulo publicado y nuevos nombres/referencias para los cuatro JS alcanzables.
+Las cuatro entradas HTML solo cambian la referencia del script. CSS, textos,
+rutas, componentes de presentación y assets anteriores permanecen intactos.
+No se editaron mirrors generados del repositorio ni se publicó el build local completo.
+
+Herramienta reproducible de preparación (solo escribe un directorio nuevo /tmp):
+`node tools/release/prepare-session-patch.mjs SNAPSHOT_PUBLICO /tmp/SALIDA_NUEVA`
+Requiere snapshot completo de la web; rechaza enlaces simbólicos, una salida
+existente y una clase de cliente con una interfaz inesperada. El manifiesto
+registra hashes anteriores/nuevos y fuente. No realiza red, despliegue ni reinicios.
+Para comprobar la clase compilada:
+`node tests/operations-client.test.mjs --artifact=/tmp/SALIDA_NUEVA/deployed-client.cjs`
+El fichero de prueba aislado no se publica en la web.
+
+Verificación: 8 pruebas sobre fuente y las mismas 8 sobre cliente compilado,
+parse de los cuatro módulos nuevos y typecheck web/admin/driver correctos.
+Firefox headless comparó el texto de /, /booking/, /admin/, /driver/ y /founder
+con el snapshot publicado; coincidió antes y después del despliegue. El navegador
+importó además el módulo servido por HTTPS y comprobó un 401 HTML con fetch
+sintético local al test: callback y signOut una vez, petición posterior bloqueada.
+Esto no creó reservas ni verificó Google Login con una cuenta real.
+Una primera prueba navegaba antes de acabar los imports diferidos y cancelaba una
+descarga; se corrigió la espera del harness, y la repetición pasó sin errores JS.
+
+Publicado 2026-11-19 07:07:15 UTC con comprobación previa de hashes, assets antes que
+HTML, reemplazos atómicos, respaldo completo y rollback de entradas disponible.
+Backup: /home/ubuntu/lvtp-backups/session-web-20261119T070715Z.
+Ocho archivos comprobados byte a byte por HTTPS; cinco rutas y www correctos;
+health API 200 y endpoints privados 401. CSS y API sin modificaciones, sin cambio
+Nginx/PM2/DNS/SSL/puertos/variables/dependencias ni datos operacionales.
+Evidencia: verification/LVTP_SESSION_RELEASE_20261119.json.
+
+Archivos de esta entrega:
+- tools/release/prepare-session-patch.mjs: preparar paquete mínimo desde fuente y snapshot.
+- tests/operations-client.test.mjs: ejecutar las mismas regresiones contra el artefacto compilado.
+- verification/LVTP_SESSION_RELEASE_20261119.json: manifiesto y recibos de pruebas/publicación.
+- docs/architecture/LVTRANSPORT_IMPLEMENTATION_STATUS.md: registrar resultado y aceptación pendiente.
+
+No hubo cambios de producto fuera del alcance autorizado ni API sustituida por demo.
+La aceptación Google real y el viaje completo con recursos autorizados siguen pendientes.

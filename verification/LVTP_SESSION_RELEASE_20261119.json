@@ -1,0 +1,209 @@
+{
+  "schema": "lvtransport/session-delivery/v1",
+  "date": "2026-11-19",
+  "scope": "Deploy verified operations client while preserving published UI",
+  "method": "Compile existing TypeScript operations client, replace its supported top-level class using TypeScript AST in the deployed module snapshot, rename reachable JS imports/preload references and update HTML entry references. No full workspace web replacement.",
+  "build_manifest": {
+    "schema": "lvtransport/session-patch/v1",
+    "source": "packages/auth/src/services/operations-client.ts",
+    "source_sha256": "570f5bf1a076b3ab526f72d09b184ca72827bfa46587885dfa9065bce0951e38",
+    "tag": "session-570f5bf1a076",
+    "files": {
+      "assets/index-DYy4ygNM-session-570f5bf1a076.js": {
+        "before_path": "assets/index-DYy4ygNM.js",
+        "before_sha256": "000744ed3d8b2cf5a9515819d69d0f045b0cee2a4c4985cde1113ea47bfab59a",
+        "after_sha256": "ebd713fb51497898511ff9d0e95302c11eb9de190c41373a65dc51be628252c5"
+      },
+      "assets/CustomerAccount-DNirFvJz-session-570f5bf1a076.js": {
+        "before_path": "assets/CustomerAccount-DNirFvJz.js",
+        "before_sha256": "07ab0d9232fedcc1d90296136fe571efc2cf486def05f1b84365430255951a7d",
+        "after_sha256": "fadc68d09aeb17118ec4b490b5ac0d7329f861f34240e667a3e763504a090031"
+      },
+      "assets/GoogleLoginBoundary-BXjDpqgg-session-570f5bf1a076.js": {
+        "before_path": "assets/GoogleLoginBoundary-BXjDpqgg.js",
+        "before_sha256": "e758da71e28c2a500b4280feb65b996da0209a956d3fa05670e95f0d35e18ad6",
+        "after_sha256": "3dd28183641a0fe10b65de38cd61ee0d2acba9f63cd71c7241b57ca121528c65"
+      },
+      "assets/OperationsAccess-DNuUGob1-session-570f5bf1a076.js": {
+        "before_path": "assets/OperationsAccess-DNuUGob1.js",
+        "before_sha256": "8b301fe3b5026436da02882acf7e5069e3e94e22b101db1055a84c356cb53a73",
+        "after_sha256": "81d9f7597c784d8f3beceae90610b550e064202295f2427da701b40fa440885a"
+      },
+      "admin/index.html": {
+        "before_path": "admin/index.html",
+        "before_sha256": "6cc76166c43e53eb12bce1c5079a834cbb4e167d0c62ab25a2724e8604b29535",
+        "after_sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      "booking/index.html": {
+        "before_path": "booking/index.html",
+        "before_sha256": "6cc76166c43e53eb12bce1c5079a834cbb4e167d0c62ab25a2724e8604b29535",
+        "after_sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      "driver/index.html": {
+        "before_path": "driver/index.html",
+        "before_sha256": "6cc76166c43e53eb12bce1c5079a834cbb4e167d0c62ab25a2724e8604b29535",
+        "after_sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      "index.html": {
+        "before_path": "index.html",
+        "before_sha256": "6cc76166c43e53eb12bce1c5079a834cbb4e167d0c62ab25a2724e8604b29535",
+        "after_sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      }
+    },
+    "replacements": [
+      {
+        "file": "GoogleLoginBoundary-BXjDpqgg.js",
+        "previous_class_sha256": "100480829aaedfae70d5fa42b0af42a5d61c694c6376a495463c843262cbe8bc",
+        "source_sha256": "570f5bf1a076b3ab526f72d09b184ca72827bfa46587885dfa9065bce0951e38"
+      }
+    ],
+    "css_changed": false,
+    "public_copy_changed": false
+  },
+  "checks": {
+    "source_client_tests": 8,
+    "compiled_client_tests": 8,
+    "web_admin_driver_typecheck": "PASS",
+    "javascript_graph_parse": "PASS",
+    "diff_check": "PASS"
+  },
+  "browser_before_deploy": {
+    "status": "PASS",
+    "routes": [
+      {
+        "route": "/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/booking/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/admin/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/driver/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/founder",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      }
+    ],
+    "actual_browser_module_401": {
+      "closed": 1,
+      "signedOut": 1,
+      "calls": 1,
+      "blocked": true
+    },
+    "javascript_errors": [],
+    "google_login_real": "NOT_TESTED: no user account interaction"
+  },
+  "browser_after_deploy": {
+    "status": "PASS",
+    "production_browser": true,
+    "routes": [
+      {
+        "route": "/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/booking/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/admin/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/driver/",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      },
+      {
+        "route": "/founder",
+        "rendered": true,
+        "text_matches_published_baseline": true
+      }
+    ],
+    "actual_browser_module_401": {
+      "closed": 1,
+      "signedOut": 1,
+      "calls": 1,
+      "blocked": true
+    },
+    "javascript_errors": [],
+    "google_login_real": "NOT_TESTED: no user account interaction"
+  },
+  "deployment": {
+    "status": "DEPLOYED",
+    "time": "20261119T070715Z",
+    "source_sha256": "570f5bf1a076b3ab526f72d09b184ca72827bfa46587885dfa9065bce0951e38",
+    "backup": "/home/ubuntu/lvtp-backups/session-web-20261119T070715Z",
+    "files": [
+      {
+        "path": "assets/index-DYy4ygNM-session-570f5bf1a076.js",
+        "status": 200,
+        "sha256": "ebd713fb51497898511ff9d0e95302c11eb9de190c41373a65dc51be628252c5"
+      },
+      {
+        "path": "assets/CustomerAccount-DNirFvJz-session-570f5bf1a076.js",
+        "status": 200,
+        "sha256": "fadc68d09aeb17118ec4b490b5ac0d7329f861f34240e667a3e763504a090031"
+      },
+      {
+        "path": "assets/GoogleLoginBoundary-BXjDpqgg-session-570f5bf1a076.js",
+        "status": 200,
+        "sha256": "3dd28183641a0fe10b65de38cd61ee0d2acba9f63cd71c7241b57ca121528c65"
+      },
+      {
+        "path": "assets/OperationsAccess-DNuUGob1-session-570f5bf1a076.js",
+        "status": 200,
+        "sha256": "81d9f7597c784d8f3beceae90610b550e064202295f2427da701b40fa440885a"
+      },
+      {
+        "path": "admin/index.html",
+        "status": 200,
+        "sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      {
+        "path": "booking/index.html",
+        "status": 200,
+        "sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      {
+        "path": "driver/index.html",
+        "status": 200,
+        "sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      },
+      {
+        "path": "index.html",
+        "status": 200,
+        "sha256": "ad053943cc759177df80ff2c48d555c7f97bce9a9f6bd7661e9e29ef4140d81e"
+      }
+    ],
+    "css_unchanged": true,
+    "api_unchanged": true,
+    "api_health": 200,
+    "private_endpoints": 401,
+    "www_verified": true,
+    "old_assets_preserved": true,
+    "google_login_real": "NOT_TESTED"
+  },
+  "test_harness_correction": "Initial live smoke navigated away before lazy imports completed, canceling an import. Awaited all reachable modules before navigation; rerun passed. No application fix required.",
+  "remaining_acceptance": [
+    "Google Login with authorized real accounts",
+    "Full trip acceptance using real authorized driver and vehicle"
+  ],
+  "merge_performed": false,
+  "release_tool_sha256": "79c8603289f995afcdfaa6947025160cc0563cb943ae2c7433ec74e5b722dc49"
+}
