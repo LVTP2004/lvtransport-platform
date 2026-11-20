@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="es">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LVTransport — prueba privada LiveKit</title>
+<style>
+:root{font:16px system-ui,sans-serif;color:#f5f3ed;background:#141414}
+body{max-width:980px;margin:2rem auto;padding:1rem}h1{font-size:1.7rem;color:#d7b86b}
+p{color:#bbb}button,select{padding:.7rem 1rem;border-radius:.5rem;border:1px solid #9f864c;background:#28251e;color:#fff;margin:.25rem}
+button:disabled{opacity:.5}button:focus-visible,select:focus-visible{outline:2px solid #e7cc81}
+video{background:#060606;width:100%;aspect-ratio:16/9;object-fit:contain;border-radius:.6rem}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:1rem}
+.panel{border:1px solid #534834;padding:1rem;border-radius:.7rem}#remoteMedia video,#remoteMedia audio{width:100%}
+#state{font-weight:bold;color:#e7cc81}small{color:#aaa}
+</style></head>
+<body>
+<main>
+<h1>LVTransport · Videollamada privada (laboratorio)</h1>
+<p>Prueba local sin reservas, usuarios reales, seguimiento ni grabación. Abrir en dos pestañas: una como pasajero y otra como conductor.</p>
+<label for="role">Participante:</label><select id="role"><option value="passenger">Pasajero de prueba</option><option value="driver">Conductor de prueba</option></select>
+<button id="join">Conectar</button><button id="leave" disabled>Salir</button>
+<button id="mic" disabled>Activar micrófono</button><button id="cam" disabled>Activar cámara</button>
+<p role="status" aria-live="polite" id="state">Sin conectar</p>
+<div class="grid"><section class="panel"><h2>Mi cámara</h2><div id="localMedia"></div></section>
+<section class="panel"><h2>Participantes remotos</h2><div id="remoteMedia"></div></section></div>
+<p><small>El servidor de tokens escucha únicamente en 127.0.0.1. La clave de LiveKit nunca llega al navegador. Los tokens de esta demostración no acreditan una identidad real.</small></p>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/livekit-client@2.23.0/dist/livekit-client.umd.min.js"></script>
+<script type="module" src="/client.js"></script>
+</body></html>
