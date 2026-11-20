@@ -1,0 +1,141 @@
+{
+  "schema_version": "1.0",
+  "repository": "LVTP2004/lvtransport-platform",
+  "historical_snapshot_at_utc": "2026-11-20T18:10:38.464797+00:00",
+  "historical_snapshot_at_brussels": "2026-11-20T19:10:38.464797+01:00",
+  "packaged_at_utc": "2026-11-20T18:42:04.294821+00:00",
+  "operational_context_captured_at_utc": "2026-11-20T18:39:20.612Z",
+  "pinned_main_sha": "a7708afbdcba16dcef7e146c4501297daab3bdfd",
+  "counts": {
+    "pull_requests": 373,
+    "merged": 358,
+    "open": 12,
+    "closed_without_merge": 3,
+    "open_drafts": 8,
+    "merged_target_main": 315,
+    "merged_target_fix_production_build": 43,
+    "distinct_commit_shas": 1876,
+    "commits_reachable_from_pinned_main": 750,
+    "branch_heads": 418,
+    "tags": 1,
+    "pr_head_references": 373,
+    "references": 792
+  },
+  "coverage": {
+    "pr_descriptions": "All available bodies, preserving empty/null originals in JSON.",
+    "commit_messages": "All 1,876 complete messages and metadata in the captured reachable graph.",
+    "pr_file_inventories": "373 reconstructed base...head inventories; not every full patch.",
+    "selected_context": "Issues #409/#411/#414/#415, PR #410/#417, selected owner and staging comments; capture time is separate.",
+    "supplementary_analysis": "Delegated historical-batch notes; the report includes the overall synthesis.",
+    "not_included": [
+      "all issue/PR discussions",
+      "all reviews",
+      "all full patches",
+      "all CI logs",
+      "Git object database",
+      "runtime artifacts"
+    ],
+    "historical_checks": "Reported historical evidence; product tests were not rerun while preserving this archive.",
+    "snapshot_policy": "Immutable historical snapshot. Later commits/PR state changes are not retroactively counted."
+  },
+  "method": {
+    "pull_requests": "GitHub REST /pulls?state=all&sort=created&direction=asc&per_page=100, pages 1–4.",
+    "commits": "Reachable Git graph after fetching all branch heads, tags and refs/pull/*/head; unique by full SHA.",
+    "main": "git rev-list --count a7708afbdcba16dcef7e146c4501297daab3bdfd",
+    "file_inventories": "git diff --name-status base...head at the captured PR references.",
+    "preservation": "Original member bytes are archived without text conversion. SHA-256 is recorded per member."
+  },
+  "archive": {
+    "path": "lvtransport-history-2026-11-20.zip",
+    "bytes": 1355349,
+    "sha256": "d71b086a5527fb67fc3da7145080143a9ea1983ac6675f7855d2908598669ac3",
+    "member_count": 17
+  },
+  "members": [
+    {
+      "path": "analysis/analysis-commits-part-1.md",
+      "bytes": 15402,
+      "sha256": "51dc12b8181fca8141f5fddef53b3a24dc16a8554a5954a68afe2bc51cbcb632"
+    },
+    {
+      "path": "analysis/analysis-commits-part-2.md",
+      "bytes": 199928,
+      "sha256": "72dd946bdc8b539b3c54588587bb9ae4d7d12af1028489bd8ab7a6cb917e6f2e"
+    },
+    {
+      "path": "analysis/analysis-commits-part-3.md",
+      "bytes": 119852,
+      "sha256": "662595b9dd78ddf417d7bfa07cbed15ce083d00846ff2ac62e6c4d6170423180"
+    },
+    {
+      "path": "analysis/analysis-pr-001-100.md",
+      "bytes": 36806,
+      "sha256": "18e483363bbda2b9edb6aa3858099a2f5a3c4312cc6e256bd459543902acbc37"
+    },
+    {
+      "path": "analysis/analysis-pr-101-200.md",
+      "bytes": 44583,
+      "sha256": "c006890afea133187afbeb8e26a71374bfa3bbb63e6e2aebbaed92310878a88a"
+    },
+    {
+      "path": "analysis/analysis-pr-201-331.md",
+      "bytes": 38876,
+      "sha256": "b1db601d15a0f7f4c9b59ebde6e3517cbdfe2a6f5dea27508d0b1f9b59155da6"
+    },
+    {
+      "path": "data/commits-all.json",
+      "bytes": 1319338,
+      "sha256": "e2de4b20e31080d607e7e60e683aac9c5a67fe35cd93a02f6d33cedf227acd6d"
+    },
+    {
+      "path": "data/current-context.json",
+      "bytes": 50596,
+      "sha256": "1fdf1c03b987a75352c7a46825a13dbbcc4d891c7ea798c00f18b328b73390bf"
+    },
+    {
+      "path": "data/pr-diff-inventory.json",
+      "bytes": 236589,
+      "sha256": "476407d4fade27c4f3f6c2310e0748004019257ae88397f903474be73d82e875"
+    },
+    {
+      "path": "data/prs-all.json",
+      "bytes": 1008259,
+      "sha256": "d354e3825fddf9eb6bcd7e685cc14a4e28eb3a19551e337f0072bf2bcc779ff1"
+    },
+    {
+      "path": "data/refs.json",
+      "bytes": 93555,
+      "sha256": "4b5d2061408de48607598540583a48a3253fb779e3848e3b3e5910fded91bea3"
+    },
+    {
+      "path": "data/summary.json",
+      "bytes": 2818,
+      "sha256": "97bb0cda4b38d5ffc00d4f52ba57a6c8a1836ad49fa0739ef5cba55766fe3f99"
+    },
+    {
+      "path": "raw/pr-page-1.json",
+      "bytes": 267470,
+      "sha256": "3428b2c402ad5cb04aaf57021dc42b65f99ccb5abb24583d9f33e18d9ce9c6f5"
+    },
+    {
+      "path": "raw/pr-page-2.json",
+      "bytes": 263222,
+      "sha256": "d952a4df93f03abfd73cb18aa3f9b7c0e04d3c9b72b76c0ab76dcb2c7ce704f3"
+    },
+    {
+      "path": "raw/pr-page-3.json",
+      "bytes": 247641,
+      "sha256": "e178e7e7d12381f390a28c0304667758dd8dcb37cb62a18079a3da32bb49fc0a"
+    },
+    {
+      "path": "raw/pr-page-4.json",
+      "bytes": 229936,
+      "sha256": "3d101f17f481e5af08f411fea7c5a0bb0234cd3730c5fcc5dc6e31fb1fccbeab"
+    },
+    {
+      "path": "report/LVTransport_historial_PR_y_commits_2026-11-20.html",
+      "bytes": 3737246,
+      "sha256": "e7a6fb0e7c312d884c4587e8ac78c12c123805992f72239c6b9345a4e8f93df5"
+    }
+  ]
+}

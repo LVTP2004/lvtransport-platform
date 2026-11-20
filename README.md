@@ -5,62 +5,63 @@ It is functionally inspired by large multi-service transport platforms, while ma
 
 > **Important:** This repository must not copy Uber branding, design assets, text, or source code.
 
-## Empieza aquí — estado revisado el 20 de noviembre de 2026 (UTC)
+## Start here — status reviewed on 20 November 2026 (UTC)
 
-Ya existen implementación y entregas incrementales documentadas. Las secciones originales de planificación que se conservan más abajo orientan el producto; no afirman que todos los módulos estén terminados.
+Implementation and incremental releases are already documented. The original planning sections retained below guide the product; they do not claim that all modules are complete.
 
-| Pregunta | Fuente y función |
+| Question | Source and purpose |
 | --- | --- |
-| ¿Cuál es el plan del producto? | El [Plan Maestro](docs/PROJECT-MASTERPLAN.md) conserva las fases oficiales y [Founder Vision](docs/FOUNDER_VISION_STATEMENT.md) registra la visión. El [plan de ejecución #415](https://github.com/LVTP2004/lvtransport-platform/issues/415) fija el orden vigente, los entregables y la aceptación de las cuatro páginas aprobadas, únicamente en staging aislado. |
-| ¿Qué reglas rigen los cambios? | [Contrato de agentes](AGENTS.md) y [especificación bloqueada](docs/LVTRANSPORT_SPEC_LOCK.md). Leerlos junto con las decisiones posteriores del propietario y su alcance. |
-| ¿Qué ha decidido el propietario? | El [registro en #410](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/LVTRANSPORT_DECISIONS.md) conserva requisitos y autorizaciones anteriores. [#409](https://github.com/LVTP2004/lvtransport-platform/issues/409) y su [aclaración de superficies](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7043875155) se complementan con las [decisiones de producto, accesos y aceptación #414](https://github.com/LVTP2004/lvtransport-platform/issues/414). El plan #415 limita su ejecución a staging; una decisión no certifica su implementación. |
-| ¿Dónde están las fuentes operativas consolidadas? | El [PR #410, en borrador](https://github.com/LVTP2004/lvtransport-platform/pull/410), revisado en [`c510828`](https://github.com/LVTP2004/lvtransport-platform/commit/c51082883254bdb8603b43723699f50affcedcd5), contiene fuentes de reservas, autenticación, portales, GPS y seguimiento. Su [estado de implementación](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/architecture/LVTRANSPORT_IMPLEMENTATION_STATUS.md) distingue comprobaciones registradas, publicaciones y pendientes. Estos cambios no están integrados en `main`. |
-| ¿Dónde está la referencia visual aprobada? | El [PR #416](https://github.com/LVTP2004/lvtransport-platform/pull/416) añade [un PNG conceptual](https://github.com/LVTP2004/lvtransport-platform/blob/588a151206e41b82a3ee3bb6cce4599f29949eee/docs/design/lvtransport-four-pages-reference.png). Registra cuatro bloques de producto; Cliente reúne las superficies pública y privada. El PR no implementa esas pantallas. |
-| ¿Qué se publicó? | Los recibos fechados de [validación de reservas](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/verification/LVTP_BOOKING_VALIDATION_20261119.json), [sesiones web](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/verification/LVTP_SESSION_RELEASE_20261119.json) y [GPS/seguimiento](https://github.com/LVTP2004/lvtransport-platform/issues/411#issuecomment-7020861061) describen entregas concretas en la VPS. Son registros de publicación; no son una nueva comprobación en vivo ni prueban que se desplegara toda la rama. |
-| ¿Qué falta aceptar? | [#411](https://github.com/LVTP2004/lvtransport-platform/issues/411) mantiene abierta la aceptación conjunta: permisos y recorrido completo de una misma reserva con cliente, conductor y vehículo autorizados. [#414](https://github.com/LVTP2004/lvtransport-platform/issues/414) ya registra Google/enlace por correo publicados y verificados en Firefox; esa comprobación de acceso no cierra el viaje completo. |
+| What is the product plan? | The [Project Masterplan](docs/PROJECT-MASTERPLAN.md) preserves the official phases, and [Founder Vision](docs/FOUNDER_VISION_STATEMENT.md) records the vision. The [execution plan #415](https://github.com/LVTP2004/lvtransport-platform/issues/415) defines the current sequence, deliverables, and acceptance criteria for the four approved pages, exclusively in isolated staging. |
+| What rules govern changes? | The [agent contract](AGENTS.md) and [locked specification](docs/LVTRANSPORT_SPEC_LOCK.md). Read them together with the owner's subsequent decisions and their scope. |
+| What has the owner decided? | The [record in #410](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/LVTRANSPORT_DECISIONS.md) preserves earlier requirements and authorizations. [#409](https://github.com/LVTP2004/lvtransport-platform/issues/409) and its [surface clarification](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7043875155) are complemented by the [product, access, and acceptance decisions in #414](https://github.com/LVTP2004/lvtransport-platform/issues/414). Plan #415 limits execution to staging; a decision does not certify its implementation. |
+| Where are the consolidated operational sources? | [Draft PR #410](https://github.com/LVTP2004/lvtransport-platform/pull/410), reviewed at [`c510828`](https://github.com/LVTP2004/lvtransport-platform/commit/c51082883254bdb8603b43723699f50affcedcd5), contains sources for bookings, authentication, portals, GPS, and tracking. Its [implementation status](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/architecture/LVTRANSPORT_IMPLEMENTATION_STATUS.md) distinguishes recorded checks, releases, and pending work. These changes have not been merged into `main`. |
+| Where is the approved visual reference? | [PR #416](https://github.com/LVTP2004/lvtransport-platform/pull/416) adds [a conceptual PNG](https://github.com/LVTP2004/lvtransport-platform/blob/588a151206e41b82a3ee3bb6cce4599f29949eee/docs/design/lvtransport-four-pages-reference.png). It records four product blocks; Client combines the public and private surfaces. The PR does not implement those screens. |
+| What was released? | The dated receipts for [booking validation](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/verification/LVTP_BOOKING_VALIDATION_20261119.json), [web sessions](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/verification/LVTP_SESSION_RELEASE_20261119.json), and [GPS/tracking](https://github.com/LVTP2004/lvtransport-platform/issues/411#issuecomment-7020861061) describe specific releases on the VPS. They are release records; they are not new live checks and do not prove that the entire branch was deployed. |
+| What still needs acceptance? | [#411](https://github.com/LVTP2004/lvtransport-platform/issues/411) keeps joint acceptance open: permissions and the complete journey of the same booking with an authorized customer, driver, and vehicle. [#414](https://github.com/LVTP2004/lvtransport-platform/issues/414) already records Google/email-link access as released and verified in Firefox; that access check does not complete acceptance of the full trip. |
+| Where is the preserved project history? | The [frozen historical report](docs/history/2026-11-20/README.md) records 373 PRs, 1,876 distinct commit SHAs, and 750 commits in `main` as of **20 November 2026 at 19:10:38 Brussels time**. The [Codex continuity handoff](docs/history/2026-11-20/CODEX_HANDOFF.md) connects that history to the next work. These counts describe the frozen snapshot. |
 
-### Cómo leer el estado de las fuentes, las entregas y la aceptación
+### Reading source, release, and acceptance status
 
-Esta revisión tiene fecha. Al realizarla, `main` estaba en [`a7708af`, del 5 de noviembre de 2026](https://github.com/LVTP2004/lvtransport-platform/commit/a7708afbdcba16dcef7e146c4501297daab3bdfd); #410 era un borrador en `c510828` y #416 estaba abierto en [`588a151`](https://github.com/LVTP2004/lvtransport-platform/commit/588a151206e41b82a3ee3bb6cce4599f29949eee). Ninguno estaba integrado mediante merge. Consultar su estado actual en GitHub antes de iniciar trabajo nuevo.
+This review is dated. At the time, `main` was at [`a7708af`, dated 5 November 2026](https://github.com/LVTP2004/lvtransport-platform/commit/a7708afbdcba16dcef7e146c4501297daab3bdfd); #410 was a draft at `c510828`, and #416 was open at [`588a151`](https://github.com/LVTP2004/lvtransport-platform/commit/588a151206e41b82a3ee3bb6cce4599f29949eee). Neither PR had been merged. Check their current status on GitHub before starting new work.
 
-Las fuentes de GPS y seguimiento se consolidaron en #410 el **19 de noviembre a las 20:19 UTC**, después del recibo de publicación correspondiente. La indicación anterior de que faltaba consolidarlas es histórica. La verificación desde instalación limpia registrada para esa consolidación no significa que producción se sustituyera por un build completo de la rama: las publicaciones aplicaron parches acotados a los artefactos existentes.
+The GPS and tracking sources were consolidated in #410 on **19 November at 20:19 UTC**, after the corresponding release receipt. The earlier statement that consolidation was pending is historical. The clean-install verification recorded for that consolidation does not mean production was replaced with a full build of the branch: the releases applied scoped patches to existing artifacts.
 
-Conviene distinguir estos estados:
+Distinguish these states:
 
-- **Plan o decisión del propietario:** comportamiento y autoridad previstos.
-- **Fuente en un PR:** código disponible para revisión, identificado por commit.
-- **Entrega publicada:** artefactos concretos y comprobaciones de un recibo fechado.
-- **Comportamiento aceptado:** recorrido con cuentas reales y resultados registrados en #411.
+- **Plan or owner decision:** intended behavior and authority.
+- **Source in a PR:** code available for review, identified by commit.
+- **Published release:** specific artifacts and checks in a dated receipt.
+- **Accepted behavior:** a journey with real accounts and results recorded in #411.
 
-#410 mantiene pendiente la revisión del bloqueo de Spec Guard. Un build web o una preview correctos no completan esa revisión ni la aceptación con cuentas reales.
+#410 still requires review of the Spec Guard blocker. A successful web build or preview does not complete that review or acceptance with real accounts.
 
-### Modelo actual de superficies
+### Current surface model
 
-La [aclaración del propietario](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7043875155) y su [confirmación de acceso](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7044335739) conservan la portada pública actual y distinguen **una superficie pública y cuatro accesos autenticados** dentro de los cuatro bloques visuales.
+The [owner's clarification](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7043875155) and [access confirmation](https://github.com/LVTP2004/lvtransport-platform/issues/409#issuecomment-7044335739) preserve the current public homepage and distinguish **one public surface and four authenticated entry points** within the four visual blocks.
 
-| Superficie | Acceso y función acordados |
+| Surface | Agreed access and purpose |
 | --- | --- |
-| Web pública | Consultar servicios, solicitar un viaje y comprobar su estado por referencia sin iniciar sesión. |
-| User Login · Ride | Viajes propios del cliente, historial de rutas, pagos reales y recibos disponibles. |
-| Driver Login · MONI Drive | Viajes asignados, navegación y actualización del lifecycle; acceso de conductor autorizado por el servidor. |
-| Admin Login · Control Tower | Reservas, asignaciones, conductores y flota; acceso operacional autorizado por el servidor. |
-| Founder OS Login · MONI Core | Superficie ejecutiva y de gobernanza de LVTransport, con permisos propios. |
+| Public web | Browse services, request a ride, and check its status by reference without signing in. |
+| User Login · Ride | The customer's own trips, route history, real payments, and available receipts. |
+| Driver Login · MONI Drive | Assigned trips, navigation, and lifecycle updates; driver access authorized by the server. |
+| Admin Login · Control Tower | Bookings, assignments, drivers, and fleet; operational access authorized by the server. |
+| Founder OS Login · MONI Core | LVTransport's executive and governance surface, with its own permissions. |
 
-Registrarse como cliente no concede acceso Driver, Admin o Founder. Historial, pagos, recibos y sugerencias de rutas frecuentes son alcance acordado sujeto a implementación y verificación; esta tabla no certifica que estén terminados. La referencia visual no concede autoridad en backend.
+Registering as a customer does not grant Driver, Admin, or Founder access. History, payments, receipts, and frequent-route suggestions are agreed scope subject to implementation and verification; this table does not certify their completion. The visual reference does not grant backend authority.
 
-El [registro de decisiones](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/LVTRANSPORT_DECISIONS.md) también exige que LVTransport pueda venderse y funcionar independientemente de LVTP Core. Founder OS pertenece aquí al producto LVTransport; los servicios compartidos conservan las fronteras de proyecto, finanzas y permisos.
+The [decision record](https://github.com/LVTP2004/lvtransport-platform/blob/c51082883254bdb8603b43723699f50affcedcd5/docs/LVTRANSPORT_DECISIONS.md) also requires LVTransport to be sellable and able to operate independently of LVTP Core. Founder OS belongs here to the LVTransport product; shared services retain project, financial, and permission boundaries.
 
-### Evidencia de staging — 20 de noviembre de 2026
+### Staging evidence — 20 November 2026
 
-El [plan #415](https://github.com/LVTP2004/lvtransport-platform/issues/415) mantiene fuera del trabajo el portal desplegado, la API viva y sus datos. Los siguientes resultados están registrados en GitHub; describen pruebas y artefactos aislados, no una aceptación de las cuatro páginas en producción.
+[Plan #415](https://github.com/LVTP2004/lvtransport-platform/issues/415) keeps the deployed portal, live API, and its data outside the work's scope. The following results are recorded in GitHub; they describe isolated tests and artifacts, not acceptance of the four pages in production.
 
-- **Interrupción del worker durante una misión:** el [recibo del piloto](https://github.com/LVTP2004/lvtransport-platform/issues/415#issuecomment-7045367174) documenta un ensayo distinto de recuperar el seguimiento del cliente. MONI registró la interrupción ambigua y un único reintento vinculado; Codex tuvo que solicitarlo y corregir una regresión del parche de Devstral. El parche revisado pasó 12 pruebas y typecheck antes y después de promoverlo. Se verificaron 20 archivos tras transferirlos a un directorio privado de la VPS. Esa entrega no habilitó un sitio de pruebas.
-- **Acceso por código (OTP):** el [recibo posterior](https://github.com/LVTP2004/lvtransport-platform/issues/415#issuecomment-7046587020) registra 4 pruebas HTTP y 3 del emisor, typecheck de cuatro paquetes y builds con la opción activada/desactivada. Firefox completó Ride, Driver, Control Tower y Founder contra el emulador oficial de Firebase, con cuentas sintéticas y buzón local, incluida recuperación de sesión y cierre. El artefacto privado se comprobó tras transferirlo a la VPS; no se inició un sitio ni servicio web.
-- **Pendientes de OTP:** los retos son volátiles en un único proceso. Faltan un remitente y un proyecto separados para probar correos reales en staging, y completar la persistencia de retos antes de cualquier activación en producción. Esta fase la coordinó Codex; el perfil actual de Core/MONI sigue limitado a validación de reservas. La disponibilidad de las fuentes OTP en un commit o PR revisable queda por confirmar.
+- **Worker interruption during a mission:** the [pilot receipt](https://github.com/LVTP2004/lvtransport-platform/issues/415#issuecomment-7045367174) documents a test distinct from recovering customer tracking. MONI recorded the ambiguous interruption and a single linked retry; Codex had to request it and correct a regression in Devstral's patch. The revised patch passed 12 tests and typechecking before and after promotion. Twenty files were verified after transfer to a private VPS directory. That delivery did not enable a test site.
+- **Code-based access (OTP):** the [subsequent receipt](https://github.com/LVTP2004/lvtransport-platform/issues/415#issuecomment-7046587020) records 4 HTTP tests and 3 sender tests, typechecking of four packages, and builds with the option enabled/disabled. Firefox completed Ride, Driver, Control Tower, and Founder against the official Firebase emulator, using synthetic accounts and a local mailbox, including session recovery and logout. The private artifact was checked after transfer to the VPS; no website or web service was started.
+- **Pending OTP work:** challenges are volatile within a single process. A separate sender and project are still needed to test real emails in staging, and challenge persistence must be completed before any production activation. Codex coordinated this phase; the current Core/MONI profile remains limited to booking validation. Availability of the OTP sources in a reviewable commit or PR remains to be confirmed.
 
 ## Repository Purpose
 
-Se conserva a continuación el propósito original del repositorio. Es una descripción del alcance del producto, no del grado de implementación.
+The original repository purpose is preserved below. It describes product scope, not implementation progress.
 
 This repository is the central workspace for planning and implementing:
 
@@ -73,25 +74,25 @@ This repository is the central workspace for planning and implementing:
 - Unified backend services and APIs
 - Deployment and infrastructure configuration
 
-## Estructura del repositorio
+## Repository Structure
 
-Se conserva la estructura de módulos original y se añade la entrada de fuentes web que identifica el [contrato de agentes](AGENTS.md). La presencia de una carpeta describe organización; no certifica que el módulo esté terminado ni identifica por sí sola el artefacto desplegado. La API es un servicio separado de la web estática.
+The original module structure is preserved, with the web source entry identified by the [agent contract](AGENTS.md) added. The presence of a directory describes organization; it does not certify that a module is complete or, by itself, identify the deployed artifact. The API is a separate service from the static web app.
 
-- [current-site/](current-site/) — respaldo/base del sitio `lvtransport.be`
-- [apps/web](apps/web/) — fuentes de la web pública; la consolidación actual se revisa en #410
-- [apps/main-web](apps/main-web/) — módulo original de web pública y marketing
-- [apps/ride](apps/ride/) — **LV Ride**, taxi y transporte premium de pasajeros
-- [apps/driver](apps/driver/) — **LV Driver**, panel de conductores y repartidores
-- [apps/admin](apps/admin/) — **LV Admin**, torre de control y panel operacional
-- [apps/business](apps/business/) — **LV Business**, portal VIP/corporativo y suscripciones
-- [apps/eats](apps/eats/) — **LV Eats**, pedidos de comida y entregas locales
-- [apps/api](apps/api/) — **LV API**, backend central
-- [docs/](docs/) — documentación de arquitectura, seguridad, planificación y operación
-- [deploy/](deploy/) — material de despliegue e infraestructura; consultar el contrato antes de cualquier cambio operacional
+- [current-site/](current-site/) — backup/baseline of the `lvtransport.be` site
+- [apps/web](apps/web/) — public web sources; the current consolidation is under review in #410
+- [apps/main-web](apps/main-web/) — original public web and marketing module
+- [apps/ride](apps/ride/) — **LV Ride**, taxi and premium passenger transport
+- [apps/driver](apps/driver/) — **LV Driver**, driver and courier dashboard
+- [apps/admin](apps/admin/) — **LV Admin**, control tower and operational dashboard
+- [apps/business](apps/business/) — **LV Business**, VIP/corporate portal and subscriptions
+- [apps/eats](apps/eats/) — **LV Eats**, food ordering and local deliveries
+- [apps/api](apps/api/) — **LV API**, central backend
+- [docs/](docs/) — architecture, security, planning, and operations documentation
+- [deploy/](deploy/) — deployment and infrastructure material; consult the contract before any operational change
 
 ## Core Modules
 
-Se conservan las responsabilidades de producto del resumen original; no constituyen un inventario de funciones aceptadas.
+The product responsibilities from the original summary are preserved; they are not an inventory of accepted features.
 
 1. **LV Ride**
    - Passenger booking and premium ride management.
@@ -108,7 +109,7 @@ Se conservan las responsabilidades de producto del resumen original; no constitu
 
 ## Development Priorities (Official Phasing)
 
-El [Plan Maestro](docs/PROJECT-MASTERPLAN.md) sigue siendo la base de planificación del producto. Se conservan sus prioridades oficiales; esta lista no declara fases completadas.
+The [Project Masterplan](docs/PROJECT-MASTERPLAN.md) remains the basis for product planning. Its official priorities are preserved; this list does not declare phases complete.
 
 - **Phase 1:** LV Ride + LV Admin + LV Driver + LV API
 - **Phase 2:** login, roles, bookings, tracking, emails
@@ -116,26 +117,26 @@ El [Plan Maestro](docs/PROJECT-MASTERPLAN.md) sigue siendo la base de planificac
 - **Phase 4:** LV Eats basic structure
 - **Phase 5:** marketplace expansion
 
-## Visión y referencias de planificación
+## Vision and Planning References
 
-| Documento | Función |
+| Document | Purpose |
 | --- | --- |
-| [Founder Vision Statement](docs/FOUNDER_VISION_STATEMENT.md) | Visión del producto. |
-| [Project Masterplan](docs/PROJECT-MASTERPLAN.md) | Alcance y prioridades oficiales por fases. |
-| [Architecture](docs/ARCHITECTURE.md) | Planificación fundacional de arquitectura; leer junto con el contrato actual y la evidencia de implementación fechada. |
-| [Security](docs/SECURITY.md) | Planificación y principios de seguridad. |
-| [Roadmap](docs/ROADMAP.md) | Registro de planificación; no es la lista actual de aceptación en producción. |
-| [Modules](docs/MODULES.md) | Responsabilidades previstas de los módulos. |
-| [Functional Reference](docs/UBER-FUNCTIONAL-REFERENCE.md) | Investigación funcional, sujeta a identidad propia de LV Transport y a la prohibición de copiar. |
+| [Founder Vision Statement](docs/FOUNDER_VISION_STATEMENT.md) | Product vision. |
+| [Project Masterplan](docs/PROJECT-MASTERPLAN.md) | Official scope and phased priorities. |
+| [Architecture](docs/ARCHITECTURE.md) | Foundational architecture planning; read alongside the current contract and dated implementation evidence. |
+| [Security](docs/SECURITY.md) | Security planning and principles. |
+| [Roadmap](docs/ROADMAP.md) | Planning record; not the current production acceptance checklist. |
+| [Modules](docs/MODULES.md) | Intended module responsibilities. |
+| [Functional Reference](docs/UBER-FUNCTIONAL-REFERENCE.md) | Functional research, subject to LV Transport's independent identity and the prohibition on copying. |
 
-La etapa inicial centrada exclusivamente en documentación es histórica. Las fuentes fechadas del inicio permiten determinar qué está implementado, en revisión, publicado o pendiente de aceptación. Los materiales anteriores de planificación y recuperación conservan su función original; su título no demuestra el estado del sistema en ejecución.
+The initial documentation-only stage is historical. The dated sources at the top distinguish what is implemented, under review, released, or awaiting acceptance. Earlier planning and recovery materials retain their original purpose; their titles do not demonstrate the state of the running system.
 
-## Copias de seguridad y recuperación
+## Backup and Recovery
 
-El protocolo y los scripts de respaldo y recuperación están en:
+The backup and recovery protocol and scripts are available at:
 
-- [Protocolo de respaldo y recuperación](docs/operations/LVTP_BACKUP_AND_DISASTER_RECOVERY_PROTOCOL.md)
-- [Script de respaldo](scripts/backup/lvtp-backup.sh)
-- [Script de comprobación de restauración](scripts/backup/lvtp-restore-check.sh)
+- [Backup and recovery protocol](docs/operations/LVTP_BACKUP_AND_DISASTER_RECOVERY_PROTOCOL.md)
+- [Backup script](scripts/backup/lvtp-backup.sh)
+- [Restore-check script](scripts/backup/lvtp-restore-check.sh)
 
-Estas referencias documentan trabajo de recuperación; la existencia de un script no certifica que se ejecutara un respaldo o una restauración concretos.
+These references document recovery work; the existence of a script does not certify that a particular backup or restore was performed.
