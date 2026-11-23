@@ -56,9 +56,21 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
   async function run(work: () => Promise<unknown>) {
     if (pending.current) return;
     pending.current = true; setBusy(true); setError('');
-    try { await work(); await refresh(); }
+    try {
+      await work();
+      await refresh().catch(() => { if (alive.current) setError('De lijst kon niet worden vernieuwd. Probeer opnieuw te vernieuwen.'); });
+    }
     catch (cause) { if (alive.current) setError(cause instanceof Error ? cause.message : 'Actie mislukt.'); }
     finally { pending.current = false; if (alive.current) setBusy(false); }
+  }
+  async function transition(booking: Booking, status: string, keyPrefix = 'driver') {
+    const { booking: updated } = await client.request<{ booking: Booking }>(`/operations/bookings/${booking.id}/status`, {
+      body: { status, expectedVersion: booking.version },
+      key: keyPrefix === 'reject' ? `reject:${booking.id}:${booking.version}` : `driver:${booking.id}:${booking.version}:${status}`,
+    });
+    if (!alive.current) return;
+    sequence.current++;
+    setBookings(list => list.map(item => item.id === updated.id && item.version <= updated.version ? updated : item));
   }
   const activeBooking = bookings.find(booking => !terminal.has(booking.status));
   const selectedVehicle = activeBooking?.assignment?.vehicleId || vehicleId;
@@ -77,23 +89,10 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
     };
   }, [client, gps, activeBooking?.id, gpsService]);
 
-  return <div className="space-y-6">
+  return <div className="lv-driver-cockpit space-y-6">
     <header><h2 className="text-xl">Mijn ritten</h2><p>Laatst geladen: {loadedAt || 'Nog niet geladen'}</p>
       <button disabled={busy} onClick={() => void run(refresh)}>Vernieuwen</button></header>
     {error && <p role="alert">{error}</p>}
-    <section className="rounded border border-amber-400/30 p-4">
-      <label>Voertuig <select className="bg-zinc-800 p-2" disabled={busy || Boolean(activeBooking) || available} value={selectedVehicle} onChange={e => setVehicleId(e.target.value)}>
-        <option value="">Selecteer geregistreerd voertuig</option>
-        {vehicles.map(vehicle => <option key={vehicle.id} value={vehicle.id}>{vehicle.registration} · {vehicle.name}</option>)}
-      </select></label>
-      <p>Beschikbaarheid: {available ? 'Bevestigd' : 'Niet aangemeld'}</p>
-      <button disabled={busy || !selectedVehicle} onClick={() => void run(async () => {
-        const availability = available ? 'unavailable' : 'available';
-        await client.request('/operations/drivers/me/presence', { body: { availability, vehicleId: selectedVehicle } });
-        if (alive.current) { setAvailable(availability === 'available'); setConfirmedVehicle(selectedVehicle); }
-      })}>{available ? 'Niet beschikbaar melden' : 'Beschikbaar melden'}</button>
-      {loadedAt && !vehicles.length && <p>Er zijn nog geen voertuigen geregistreerd door de administratie.</p>}
-    </section>
     {loadedAt && !bookings.length && <p>Er zijn geen ritten aan uw account toegewezen.</p>}
     {activeBooking && <section className="rounded border border-amber-400/30 p-4">
       <p>Locatie delen met de administratie en de geverifieerde klant van deze rit.</p>
@@ -106,25 +105,40 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
         }
       })}>{gps ? 'Locatie delen stoppen' : 'Locatie delen starten'}</button>
     </section>}
-    {bookings.map(booking => <article key={booking.id} className="rounded border border-amber-400/30 p-4 space-y-3">
+    {[...bookings].sort((a, b) => Number(b.id === activeBooking?.id) - Number(a.id === activeBooking?.id)).map(booking =>
+      <article key={booking.id} className="lv-operations-panel space-y-3">
+      {booking.id === activeBooking?.id && <h2>Huidige rit</h2>}
       <h3>{booking.referenceCode} · {booking.status}</h3>
       <p>{new Date(booking.scheduleAt).toLocaleString()}</p>
       <p>{booking.pickup} → {booking.destination}</p>
+      {booking.id === activeBooking?.id && <a className="btn-primary inline-flex" target="_blank" rel="noreferrer"
+        href={`https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(booking.status === 'in_progress' ? booking.destination : booking.pickup)}`}>
+        Navigeren
+      </a>}
       {booking.customerName && <p>{booking.customerName}</p>}
       {booking.customerPhone && <p><a href={`tel:${booking.customerPhone}`}>{booking.customerPhone}</a></p>}
       {booking.notes && <p>{booking.notes}</p>}
       <p>Voertuig: {vehicles.find(vehicle => vehicle.id === booking.assignment?.vehicleId)?.registration ?? booking.assignment?.vehicleId}</p>
-      {next[booking.status] && <button disabled={busy} onClick={() => void run(() => client.request(`/operations/bookings/${booking.id}/status`, {
-        body: { status: next[booking.status].status, expectedVersion: booking.version },
-        key: `driver:${booking.id}:${booking.version}:${next[booking.status].status}`,
-      }))}>{next[booking.status].label}</button>}
+      {booking.status === 'assigned' && <p>Er is een rit aan u toegewezen. Accepteer de rit om verder te gaan.</p>}
+      {next[booking.status] && <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => transition(booking, next[booking.status].status))}>{next[booking.status].label}</button>}
       {booking.status === 'assigned' && <button disabled={busy} onClick={() => {
         if (window.confirm('Deze toewijzing weigeren? De reservering wordt geannuleerd volgens de huidige ritstatusregels.')) {
-          void run(() => client.request(`/operations/bookings/${booking.id}/status`, {
-            body: { status: 'cancelled', expectedVersion: booking.version }, key: `reject:${booking.id}:${booking.version}`,
-          }));
+          void run(() => transition(booking, 'cancelled', 'reject'));
         }
       }}>Weigeren</button>}
     </article>)}
+    <section className="lv-operations-panel">
+      <label>Voertuig <select className="bg-zinc-800 p-2" disabled={busy || Boolean(activeBooking) || available} value={selectedVehicle} onChange={e => setVehicleId(e.target.value)}>
+        <option value="">Selecteer geregistreerd voertuig</option>
+        {vehicles.map(vehicle => <option key={vehicle.id} value={vehicle.id}>{vehicle.registration} · {vehicle.name}</option>)}
+      </select></label>
+      <p>Beschikbaarheid: {available ? 'Bevestigd' : 'Niet aangemeld'}</p>
+      <button disabled={busy || !selectedVehicle} onClick={() => void run(async () => {
+        const availability = available ? 'unavailable' : 'available';
+        await client.request('/operations/drivers/me/presence', { body: { availability, vehicleId: selectedVehicle } });
+        if (alive.current) { setAvailable(availability === 'available'); setConfirmedVehicle(selectedVehicle); }
+      })}>{available ? 'Niet beschikbaar melden' : 'Beschikbaar melden'}</button>
+      {loadedAt && !vehicles.length && <p>Er zijn nog geen voertuigen geregistreerd door de administratie.</p>}
+    </section>
   </div>;
 }

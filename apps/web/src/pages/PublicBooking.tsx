@@ -1,5 +1,8 @@
 import { FormEvent, lazy, Suspense, useRef, useState } from 'react'
-import type { VerifiedOperationsClient } from '@lvtransport/auth'
+import { useLocation } from 'react-router-dom'
+import type { CustomerConnection } from './CustomerAccount'
+import { routePrices } from '../modules/pricing/constants/route-prices'
+import { bookingSchedule } from '../modules/moni/services/booking-time'
 import { readBookingStatus } from '../modules/moni/services/booking-status-client'
 const CustomerAccount = lazy(() => import('./CustomerAccount'))
 
@@ -20,23 +23,29 @@ const fieldStyle = {
 }
 
 export default function Booking() {
+  const bookingContext = useLocation().state as { pickup?: unknown; destination?: unknown } | null
   const [form, setForm] = useState({
     name: '',
     phone: '',
     email: '',
-    pickup: '',
-    destination: '',
+    pickup: typeof bookingContext?.pickup === 'string' ? bookingContext.pickup : '',
+    destination: typeof bookingContext?.destination === 'string' ? bookingContext.destination : '',
     date: '',
     time: '',
     notes: '',
     serviceType: 'airport',
   })
 
-  const [client, setClient] = useState<VerifiedOperationsClient | null>(null)
+  const destination = form.destination.trim().toLowerCase()
+  const publishedDestination = destination === 'luchthaven zaventem' ? 'zaventem' : destination
+  const price = form.serviceType === 'business' ? undefined
+    : routePrices.find(route => route.destination.toLowerCase() === publishedDestination)
+
+  const [connection, setConnection] = useState<CustomerConnection | null>(null)
   const [revision, setRevision] = useState(0)
   const [confirmedForm, setConfirmedForm] = useState('')
   const inFlight = useRef(false)
-  const requestIntent = useRef<{ payload: string; key: string } | null>(null)
+  const requestIntent = useRef<{ payload: string; key: string; customerId: string | null } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [confirmation, setConfirmation] = useState('')
   const [trackingCode, setTrackingCode] = useState('')
@@ -59,7 +68,7 @@ export default function Booking() {
     setConfirmation('')
 
     try {
-      const scheduleAt = new Date(`${form.date}T${form.time}`).toISOString()
+      const scheduleAt = bookingSchedule(form.date, form.time)
       const payload = {
         customerName: form.name.trim(), customerPhone: form.phone.trim(), customerEmail: form.email.trim(),
         pickup: form.pickup.trim(), destination: form.destination.trim(), scheduleAt,
@@ -67,11 +76,17 @@ export default function Booking() {
         customerTier: form.serviceType === 'business' ? 'business' : 'retail', notes: form.notes.trim(),
       }
       const intent = JSON.stringify(payload)
-      if (!requestIntent.current || requestIntent.current.payload !== intent) requestIntent.current = { payload: intent, key: crypto.randomUUID() }
+      const customerId = connection?.userId ?? null
+      if (requestIntent.current?.payload === intent && requestIntent.current.customerId !== customerId) {
+        throw new Error('Meld u aan met hetzelfde account of stuur de aanvraag verder als dezelfde gast.')
+      }
+      if (!requestIntent.current || requestIntent.current.payload !== intent) {
+        requestIntent.current = { payload: intent, key: crypto.randomUUID(), customerId }
+      }
       const key = requestIntent.current.key
       let result: { booking?: { referenceCode: string; status: string }; message?: string; error?: string }
-      if (client) {
-        result = await client.request('/customer/bookings', { body: payload, key })
+      if (connection) {
+        result = await connection.client.request('/customer/bookings', { body: payload, key })
       } else {
         const response = await fetch(`${API_V1_BASE}/bookings`, {
           method: 'POST', headers: { 'Content-Type': 'application/json', 'Idempotency-Key': key },
@@ -129,12 +144,18 @@ export default function Booking() {
               <input style={fieldStyle} placeholder="Naam klant" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} required />
               <input style={fieldStyle} placeholder="Telefoon / WhatsApp" value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} required />
               <input style={fieldStyle} placeholder="E-mail" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
-              <input style={fieldStyle} placeholder="Vertrekadres" value={form.pickup} onChange={(e) => setForm({ ...form, pickup: e.target.value })} required />
-              <input style={fieldStyle} placeholder="Bestemming" value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} required />
+              <input style={fieldStyle} aria-label="Vertrekadres" placeholder="Bijv. Antwerpen-Centraal" list="booking-places" autoComplete="off" value={form.pickup} onChange={(e) => setForm({ ...form, pickup: e.target.value })} required />
+              <input style={fieldStyle} aria-label="Bestemming" placeholder="Bijv. Luchthaven Zaventem" list="booking-places" autoComplete="off" value={form.destination} onChange={(e) => setForm({ ...form, destination: e.target.value })} required />
+              <datalist id="booking-places">
+                {['Antwerpen-Centraal', 'Antwerpen-Berchem', 'Luchthaven Antwerpen', 'Luchthaven Zaventem',
+                  'Brussel', 'Mechelen', 'Gent', 'Schiphol', 'Eindhoven', 'Charleroi', 'Breda', 'Rotterdam', 'Brugge']
+                  .map(place => <option key={place} value={place} />)}
+              </datalist>
 
+              <p id="booking-timezone">Vertrektijd in België</p>
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12 }}>
-                <input style={fieldStyle} type="date" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
-                <input style={fieldStyle} type="time" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required />
+                <input style={fieldStyle} type="date" aria-label="Vertrekdatum" aria-describedby="booking-timezone" value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} required />
+                <input style={fieldStyle} type="time" aria-label="Vertrektijd" aria-describedby="booking-timezone" value={form.time} onChange={(e) => setForm({ ...form, time: e.target.value })} required />
               </div>
 
               <select style={fieldStyle} value={form.serviceType} onChange={(e) => setForm({ ...form, serviceType: e.target.value })}>
@@ -145,6 +166,15 @@ export default function Booking() {
 
               <textarea style={{ ...fieldStyle, minHeight: 96, resize: 'vertical' }} placeholder="Opmerking: vlucht, bagage, kinderstoel, voorkeurstaal..." value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} />
 
+              <section data-booking-price aria-label="Prijsindicatie" aria-live="polite"
+                style={{ border: '1px solid rgba(212,175,55,.25)', borderRadius: 14, padding: '12px 16px' }}>
+                {price ? <>
+                  <p>Gepubliceerde prijsindicatie voor {price.destination} <strong style={{ color: gold }}>{price.price}</strong></p>
+                  <p>We bevestigen de prijs voor uw vertrekadres en rittype na uw aanvraag.</p>
+                </> : <p>{destination
+                  ? 'We bevestigen de prijs na controle van uw route en rittype.'
+                  : 'Kies een bestemming om een gepubliceerde prijsindicatie te bekijken.'}</p>}
+              </section>
               <button type="submit" disabled={submitting || confirmedForm === JSON.stringify(form)} style={{ border: 0, borderRadius: 16, padding: '15px 18px', background: gold, color: '#080808', fontWeight: 900, cursor: submitting ? 'wait' : 'pointer', opacity: submitting ? 0.7 : 1 }}>
                 {submitting ? 'Verwerken...' : 'Maak ritaanvraag'}
               </button>
@@ -169,7 +199,7 @@ export default function Booking() {
           <h2 style={{ fontSize: 36, margin: '8px 0 16px' }}>Controleer uw aanvraag</h2>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1fr) auto', gap: 12 }}>
-            <input style={fieldStyle} placeholder="Bijvoorbeeld LV-MA37F9-F3A29D" value={trackingCode} onChange={(e) => updateTrackingCode(e.target.value)} />
+            <input style={fieldStyle} placeholder="Bijvoorbeeld 48271" value={trackingCode} onChange={(e) => updateTrackingCode(e.target.value)} />
             <button type="button" disabled={trackingLoading || !trackingCode.trim()} onClick={lookupTracking} style={{ border: 0, borderRadius: 16, padding: '0 18px', background: gold, color: '#080808', fontWeight: 900 }}>
               {trackingLoading ? 'Controleren...' : 'Controleer status'}
             </button>
@@ -179,7 +209,7 @@ export default function Booking() {
         </div>
       </section>
       <Suspense fallback={<p role="status">Account laden…</p>}>
-        <CustomerAccount onConnection={setClient} revision={revision} />
+        <CustomerAccount onConnection={setConnection} revision={revision} suggestedEmail={form.email} />
       </Suspense>
     </main>
   )

@@ -4,6 +4,8 @@ import { createFirebaseBrowserProvider } from '../providers/firebase-browser.ada
 // Public web configuration supplied by the project owner. Not an Admin credential.
 // Only Authentication fields are included; no Analytics/DB/Storage initialization.
 export const LVTP_FIREBASE_PROJECT_ID = 'lv-tranport';
+// Publish Microsoft buttons only after enabling the provider in this Firebase project.
+export const LVTP_MICROSOFT_SIGN_IN_ENABLED = false;
 export const LVTP_FIREBASE_WEB_OPTIONS: Readonly<FirebaseOptions> = Object.freeze({
   apiKey: 'AIzaSyCAGFSLoEsR7cVJrxzKBY0N8YNUFiW8Rr0',
   authDomain: 'lv-tranport.firebaseapp.com',
@@ -12,7 +14,7 @@ export const LVTP_FIREBASE_WEB_OPTIONS: Readonly<FirebaseOptions> = Object.freez
 });
 
 /** Explicit, lazy bootstrap. Importing this module never signs a user in. */
-export function createLVTransportFirebaseProvider(portal: 'admin' | 'driver' | 'customer') {
-  if (!['admin', 'driver', 'customer'].includes(portal)) throw new Error('Unknown portal');
+export function createLVTransportFirebaseProvider(portal: 'admin' | 'driver' | 'customer' | 'founder') {
+  if (!['admin', 'driver', 'customer', 'founder'].includes(portal)) throw new Error('Unknown portal');
   return createFirebaseBrowserProvider(LVTP_FIREBASE_WEB_OPTIONS, `lvtransport-${portal}-auth`);
 }

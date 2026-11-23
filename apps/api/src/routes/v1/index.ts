@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { respondToMoniRide } from './moni-ride.routes.js';
 import healthRoutes from './health.routes.js';
 import customerBookingRoutes from './customer-booking.routes.js';
 import { createAuthSessionRoutes } from './auth-session.routes.js';
@@ -10,6 +11,7 @@ import { createCustomerAccountRoutes } from './customer-account.routes.js';
 const router = Router();
 const bookingOperations = createBookingOperations(undefined, resolveConfiguredDriver);
 
+router.post('/moni/ride/chat', respondToMoniRide);
 router.use('/health', healthRoutes);
 // Lazy trusted bootstrap: never accept a project or verifier from an HTTP caller.
 router.use('/auth', createAuthSessionRoutes(token => createConfiguredFirebaseVerifier('lv-tranport')(token),

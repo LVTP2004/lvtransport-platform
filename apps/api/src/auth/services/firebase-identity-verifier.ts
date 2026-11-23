@@ -1,4 +1,4 @@
-import type { AuthRole } from '../models/request-auth-context.js';
+import { isAuthRole } from '../models/request-auth-context.js';
 import type { IdentityVerifier } from '../middleware/authenticate.js';
 
 /** Subset of the official Admin SDK, supplied by trusted bootstrap, not HTTP. */
@@ -7,7 +7,7 @@ export interface AdminAuthSdk {
     uid: string; aud: string; iss: string; exp: number; iat: number; auth_time: number;
   }>;
   getUser(uid: string): Promise<{
-    uid: string; disabled: boolean; customClaims?: Record<string, unknown>;
+    uid: string; disabled: boolean; emailVerified?: boolean; customClaims?: Record<string, unknown>;
   }>;
 }
 
@@ -31,9 +31,9 @@ export function createFirebaseIdentityVerifier(sdk: AdminAuthSdk, projectId: str
       return { userId: account.uid, role: 'customer', status: 'active' };
     }
     if (account.uid !== decoded.uid || account.disabled !== false || account.customClaims?.status !== 'active'
-        || typeof role !== 'string' || !['customer', 'driver', 'admin', 'super_admin'].includes(role)) {
+        || !isAuthRole(role) || (role === 'founder' && (account.emailVerified !== true || options.allowUnassignedCustomer === true))) {
       throw new Error('Inactive or unauthorized identity');
     }
-    return { userId: account.uid, role: role as AuthRole, status: 'active' };
+    return { userId: account.uid, role, status: 'active' };
   };
 }

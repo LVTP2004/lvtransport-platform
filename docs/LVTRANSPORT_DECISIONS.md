@@ -18,6 +18,66 @@ Consultar junto a LVTRANSPORT_SPEC_LOCK.md y al estado de implementación.
 | Autorización admin ya registrada para cuenta concreta | Ver architecture/FIREBASE_ADMIN_AUTHORIZATION.md; no preguntar otra vez por el mismo grant ni extenderlo a otras cuentas/Founder/Finance |
 | Sin merge automático ni despliegue de producción en la fase actual | Preparar cambios verificables; no confundir autorización de implementación con publicación o movimiento real de dinero |
 
+### Acceso sin contraseña solicitado el 20 de noviembre de 2026
+
+| Portal | Cuenta indicada |
+| --- | --- |
+| Founder OS | `leonardo-vargas@lvtransport.be` |
+| Control Tower | `info@lvtransport.be` |
+| Driver | `leo.vargas@outlook.be` |
+| Ride (Cliente) | `leo-vargas@hotmail.be` |
+
+Leonardo solicita un acceso sencillo que no pida usuario y contraseña en cada
+visita. Las asignaciones anteriores registran la intención del propietario.
+El flujo principal acordado para los cuatro portales privados consiste en
+escribir el correo una vez, recibir un código de un solo uso e introducirlo
+en la misma página. Tras verificar el código, el servidor confirma los
+permisos del portal y el usuario puede optar por recordar su sesión en ese
+dispositivo. La portada y la solicitud pública de reserva siguen disponibles
+sin cuenta. El formulario publicado todavía verifica por enlace. El código
+requiere configurar un servicio de envío de correo transaccional.
+
+La activación requiere verificar la identidad y aplicar los permisos en el
+servidor. Founder OS todavía comparte la autorización de Admin en el código
+local y necesita una autorización propia para distinguirlo de Control Tower.
+
+### Alta de conductores en Amberes
+
+El propietario indicó seguir la secuencia de alta que Uber publica para
+Bélgica. LVTransport tendrá una entrada independiente para conductores.
+La cuenta permite iniciar una solicitud y consultar su estado antes de
+obtener el permiso operativo. El recorrido es crear y verificar la cuenta,
+elegir conducción con flota o con operador y vehículo propios, acreditar
+la habilitación aplicable y completar la revisión de Control Tower.
+Solo se habilitan disponibilidad y asignaciones con conductor y vehículo
+vigentes. La caducidad bloquea nuevas asignaciones hasta nueva revisión.
+
+Control Tower tendrá una página privada de seguimiento de conductores y
+vehículos. El personal autorizado puede consultar el estado y los vencimientos,
+pedir correcciones, actualizar la relación con una flota o vehículo y aprobar,
+rechazar o suspender la habilitación con un motivo. Cada cambio registra
+quién lo hizo, cuándo y el motivo. El conductor ve su estado y los pasos que
+le corresponden. El servidor comprueba el permiso para cada acción y la
+vigencia de la habilitación al aceptar nuevas asignaciones.
+
+### Founder OS · portal privado del propietario
+
+Founder OS tendrá su propia página privada, reservada al propietario
+autenticado y autorizado por el servidor. Desde allí puede consultar la
+operación completa, incluidos reservas, viajes, flota, conductores,
+incidencias, auditoría y finanzas. Puede gobernar permisos y aprobaciones.
+Las acciones sensibles se autorizan y auditan en el servidor. El acceso
+ejecutivo a datos financieros no constituye autorización para ejecutar pagos.
+
+La referencia de proceso es [Uber Bélgica](https://www.uber.com/be/nl/drive/requirements/).
+Para Amberes se aplican los requisitos oficiales de
+[tarjeta de conductor](https://www.vlaanderen.be/mobiliteit-en-openbare-werken/taxi/bestuurderspas-voor-taxichauffeurs)
+y [licencia de taxi](https://www.vlaanderen.be/mobiliteit-en-openbare-werken/taxi/vergunning-voor-taxidiensten)
+de Flandes. Los certificados médicos y de antecedentes se tramitan según la
+autoridad competente. La plataforma registra la documentación y vigencia
+necesarias para la revisión. Antes de admitir copias de documentos sensibles,
+se debe determinar la base legal, acceso y plazo de conservación.
+
 La etapa anterior de solo análisis terminó cuando Leonardo solicitó implementar
 la plataforma funcional. Se mantiene su resultado como evidencia histórica, no
 como prohibición de programar indefinidamente. Un mensaje de estado/tiempo o

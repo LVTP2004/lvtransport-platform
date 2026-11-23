@@ -1,7 +1,15 @@
 import type { AuthProviderAdapter } from '../interfaces/auth-provider.interface.js';
 
 export type VerifiedPortalIdentity = { userId: string; role: string; status: 'active'; permissions: string[] };
-export type OperationsProvider = Pick<AuthProviderAdapter, 'signInWithGoogle' | 'getSession' | 'signOut'>;
+export type PortalOAuthProvider = 'google' | 'microsoft';
+export type OperationsProvider = Pick<AuthProviderAdapter, 'signInWithGoogle' | 'signInWithMicrosoft' | 'linkMicrosoftAccount'
+  | 'signInWithEmailLink' | 'getSession' | 'signOut' | 'rememberSession'>;
+const portalRoles = {
+  admin: ['admin', 'super_admin'],
+  driver: ['driver'],
+  customer: ['customer', 'driver', 'admin', 'super_admin'],
+  founder: ['founder'],
+};
 
 const requestMessages: Record<string, string> = {
   VERSION_CONFLICT: 'This booking changed. Refresh before trying again.',
@@ -29,19 +37,43 @@ export class VerifiedOperationsClient {
   private sharedLocationBookingId: string | null = null;
   private sharedLocationSessionId: string | null = null;
   constructor(private readonly provider: OperationsProvider, private readonly apiBase: string,
-    private readonly expectedRole: 'admin' | 'driver' | 'customer', private readonly fetcher: typeof fetch = fetch,
+    private readonly expectedRole: keyof typeof portalRoles, private readonly fetcher: typeof fetch = fetch,
     private readonly onUnauthorized: () => void = () => {}) {}
 
-  async connect(): Promise<VerifiedPortalIdentity> {
-    if (!this.provider.signInWithGoogle) throw new Error('Google sign-in unavailable');
-    const result = await this.provider.signInWithGoogle();
-    if (!result.isAuthenticated || this.closed) throw new Error('Authentication required');
+  async connect(emailSignIn?: { email: string; link: string }, remember = false,
+    oauth: PortalOAuthProvider = 'google'): Promise<VerifiedPortalIdentity> {
+    if (!emailSignIn && oauth === 'microsoft' && !this.allowsMicrosoft()) {
+      throw new OperationsRequestError('PORTAL_ACCESS_DENIED', 403);
+    }
+    await this.provider.rememberSession?.(remember);
+    const result = emailSignIn
+      ? await this.provider.signInWithEmailLink?.(emailSignIn.email, emailSignIn.link)
+      : oauth === 'microsoft' ? await this.provider.signInWithMicrosoft?.() : await this.provider.signInWithGoogle?.();
+    if (!result?.isAuthenticated || this.closed) throw new Error('Authentication required');
+    return this.verifySession();
+  }
+
+  private allowsMicrosoft(): boolean {
+    return this.expectedRole === 'driver' || this.expectedRole === 'customer';
+  }
+
+  async linkMicrosoftAccount(userId: string): Promise<void> {
+    if (this.closed || !this.allowsMicrosoft() || !this.provider.linkMicrosoftAccount) {
+      throw new OperationsRequestError('PORTAL_ACCESS_DENIED', 403);
+    }
+    await this.provider.linkMicrosoftAccount(userId);
+    const identity = await this.verifySession();
+    if (identity.userId !== userId) throw new OperationsRequestError('PORTAL_ACCESS_DENIED', 403);
+  }
+
+  async verifySession(): Promise<VerifiedPortalIdentity> {
     const response = await this.request<{ identity: VerifiedPortalIdentity }>(this.expectedRole === 'customer' ? '/auth/customer-session' : '/auth/session');
     const identity = response.identity;
-    const roles = this.expectedRole === 'admin' ? ['admin', 'super_admin']
-      : this.expectedRole === 'driver' ? ['driver'] : ['customer', 'driver', 'admin', 'super_admin'];
-    if (!identity || identity.status !== 'active' || !identity.userId || !roles.includes(identity.role)
-        || !Array.isArray(identity.permissions)) throw new OperationsRequestError('PORTAL_ACCESS_DENIED', 403);
+    if (!identity || identity.status !== 'active' || !identity.userId || !portalRoles[this.expectedRole].includes(identity.role)
+        || !Array.isArray(identity.permissions)
+        || (this.expectedRole === 'founder' && !identity.permissions.includes('founder:read'))) {
+      throw new OperationsRequestError('PORTAL_ACCESS_DENIED', 403);
+    }
     return identity;
   }
 
@@ -85,7 +117,7 @@ export class VerifiedOperationsClient {
     }
     return body as T;
   }
-  async disconnect(): Promise<void> {
+  async disconnect(signOut = true): Promise<void> {
     try {
       if (!this.closed && this.sharedLocationBookingId) {
         try {
@@ -98,6 +130,6 @@ export class VerifiedOperationsClient {
         });
       }
     } catch { /* A failed/offline logout cannot forge a fresh heartbeat; server TTL still applies. */ }
-    finally { this.closed = true; await this.provider.signOut(); }
+    finally { this.closed = true; if (signOut) await this.provider.signOut(); }
   }
 }

@@ -1,5 +1,6 @@
 import { closeSync, existsSync, fsyncSync, mkdirSync, openSync, readFileSync, renameSync, unlinkSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
+import { createReferenceCode } from './reference-code.js';
 import { dirname, resolve } from 'node:path';
 import type { BookingRecord } from './dto.js';
 import { createBookingDuplicateFingerprint } from './fingerprint.js';
@@ -99,7 +100,10 @@ export class FileBookingRepository implements BookingRepository {
       }
     }
 
-    store.bookings.unshift(record);
+    const used = new Set(store.bookings.map(booking => booking.referenceCode));
+    const referenceCode = used.has(record.referenceCode) ? createReferenceCode(used) : record.referenceCode;
+    const saved = referenceCode === record.referenceCode ? record : { ...record, referenceCode };
+    store.bookings.unshift(saved);
     store.idempotencyIndex[idempotencyKey] = record.id;
     const fingerprint = createBookingDuplicateFingerprint(record);
     if (fingerprint) {
@@ -107,7 +111,7 @@ export class FileBookingRepository implements BookingRepository {
       store.fingerprintIndex[fingerprint] = { bookingId: record.id, createdAt: record.createdAt };
     }
     this.writeStore(store);
-    return record;
+    return saved;
   }
 
   async update(record: BookingRecord): Promise<BookingRecord> {

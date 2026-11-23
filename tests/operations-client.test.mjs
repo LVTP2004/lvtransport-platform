@@ -20,6 +20,83 @@ function provider() {
 }
 const response = (body, status = 200) => new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
+test('Microsoft sign-in remembers the opt-in and still requires a verified Driver role', async () => {
+  const calls = [];
+  const auth = {
+    ...provider(),
+    rememberSession: async remember => { calls.push(remember); },
+    signInWithMicrosoft: async () => { calls.push('microsoft'); return { isAuthenticated: true }; },
+    signInWithGoogle: async () => assert.fail('Google must not be called'),
+  };
+  const driver = new VerifiedOperationsClient(auth, 'https://synthetic.invalid/api/v1', 'driver', async (url, options) => {
+    assert.equal(new URL(url).pathname, '/api/v1/auth/session');
+    assert.equal(options.headers.Authorization, 'Bearer synthetic-token');
+    return response({ success: true, identity });
+  });
+  assert.deepEqual(await driver.connect(undefined, true, 'microsoft'), identity);
+  assert.deepEqual(calls, [true, 'microsoft']);
+
+  const customer = { ...identity, role: 'customer' };
+  const ride = new VerifiedOperationsClient(auth, 'https://synthetic.invalid/api/v1', 'customer', async url => {
+    assert.equal(new URL(url).pathname, '/api/v1/auth/customer-session');
+    return response({ success: true, identity: customer });
+  });
+  assert.deepEqual(await ride.connect(undefined, false, 'microsoft'), customer);
+
+  const denied = new VerifiedOperationsClient(auth, 'https://synthetic.invalid/api/v1', 'driver', async () => {
+    return response({ success: true, identity: { ...identity, role: 'customer' } });
+  });
+  await assert.rejects(denied.connect(undefined, false, 'microsoft'), { code: 'PORTAL_ACCESS_DENIED' });
+
+  for (const role of ['admin', 'founder']) {
+    const restricted = new VerifiedOperationsClient(auth, 'https://synthetic.invalid/api/v1', role, async () => {
+      assert.fail('The restricted portal must not send an API request');
+    });
+    const previousCalls = calls.length;
+    await assert.rejects(restricted.connect(undefined, false, 'microsoft'), { code: 'PORTAL_ACCESS_DENIED' });
+    assert.equal(calls.length, previousCalls);
+  }
+});
+
+test('Microsoft linking targets the existing Firebase UID and revalidates it with the API', async () => {
+  const linkedTo = [];
+  const auth = { ...provider(), linkMicrosoftAccount: async userId => { linkedTo.push(userId); } };
+  let serverIdentity = identity;
+  const driver = new VerifiedOperationsClient(auth, 'https://synthetic.invalid/api/v1', 'driver', async () => {
+    return response({ success: true, identity: serverIdentity });
+  });
+  const signedIn = await driver.connect();
+  await driver.linkMicrosoftAccount(signedIn.userId);
+  serverIdentity = { ...identity, userId: 'another-driver' };
+  await assert.rejects(driver.linkMicrosoftAccount(signedIn.userId), { code: 'PORTAL_ACCESS_DENIED' });
+  assert.deepEqual(linkedTo, [identity.userId, identity.userId]);
+});
+
+test('a remembered session revalidates the portal role without starting another sign-in', async () => {
+  const events = [];
+  const p = {
+    ...provider(),
+    rememberSession: async remember => { events.push(['remember', remember]); },
+    signInWithGoogle: async () => { events.push('google'); return { isAuthenticated: true }; },
+    signOut: async () => { events.push('signout'); },
+  };
+  let serverRole = 'driver';
+  const fetchSession = async url => {
+    assert.match(url, /\/auth\/session$/);
+    return response({ success: true, identity: { ...identity, role: serverRole } });
+  };
+  const createClient = () => new VerifiedOperationsClient(p, 'https://synthetic.invalid/api/v1', 'driver', fetchSession);
+  const first = createClient();
+  await first.connect(undefined, true);
+  await first.disconnect(false);
+  const reopened = createClient();
+  assert.deepEqual(await reopened.verifySession(), identity);
+  serverRole = 'admin';
+  await assert.rejects(reopened.verifySession(), { code: 'PORTAL_ACCESS_DENIED' });
+  await reopened.disconnect();
+  assert.deepEqual(events, [['remember', true], 'google', 'signout']);
+});
+
 test('Google success alone does not open operations without verified server identity', async () => {
   for (const body of [{ success: true }, { success: true, identity: { ...identity, role: 'admin' } },
     { success: true, identity: { ...identity, status: 'inactive' } }]) {
@@ -28,6 +105,19 @@ test('Google success alone does not open operations without verified server iden
   }
   const denied = new VerifiedOperationsClient(provider(), 'https://synthetic.invalid/api/v1', 'driver', async () => response({ success: false }, 401));
   await assert.rejects(denied.connect());
+});
+
+test('Founder OS and Tower require distinct server-verified access', async () => {
+  const founder = { ...identity, userId: 'synthetic-founder', role: 'founder', permissions: ['founder:read'] };
+  const admin = { ...identity, userId: 'synthetic-admin', role: 'admin', permissions: ['founder:read'] };
+  const createClient = (portal, account) => new VerifiedOperationsClient(provider(), 'https://synthetic.invalid/api/v1', portal, async url => {
+    assert.match(url, /\/auth\/session$/);
+    return response({ success: true, identity: account });
+  });
+  assert.deepEqual(await createClient('founder', founder).verifySession(), founder);
+  await assert.rejects(createClient('founder', { ...founder, permissions: [] }).verifySession(), { code: 'PORTAL_ACCESS_DENIED' });
+  await assert.rejects(createClient('founder', admin).verifySession(), { code: 'PORTAL_ACCESS_DENIED' });
+  await assert.rejects(createClient('admin', founder).verifySession(), { code: 'PORTAL_ACCESS_DENIED' });
 });
 
 test('browser fetch is called without the operations client as receiver', async () => {

@@ -19,6 +19,7 @@ function fields(value: unknown, required: string[]) : asserts value is Record<st
     && Object.keys(value).length === required.length && required.every(key => Object.hasOwn(value, key)), 400, 'INVALID_FIELDS');
 }
 const isAdmin = (actor: VerifiedIdentity) => actor.status === 'active' && ['admin', 'super_admin'].includes(actor.role);
+const isFounder = (actor: VerifiedIdentity) => actor.status === 'active' && actor.role === 'founder';
 const active = (booking: BookingRecord) => !TERMINAL_BOOKING_STATUSES.has(booking.lifecycle.state);
 export const DRIVER_PRESENCE_TTL_MS = 120_000;
 
@@ -49,6 +50,19 @@ export function createBookingOperations(
       ...(includeEmail ? { customerEmail: booking.customerEmail } : {}), status: booking.lifecycle.state, version: booking.lifecycle.version,
       assignment: booking.assignment ?? null, location: locationFor(booking),
       transitions: booking.lifecycle.transitions.map(entry => ({ ...entry })) };
+  }
+  function founderBookingView(booking: BookingRecord) {
+    return {
+      id: booking.id, referenceCode: booking.referenceCode, pickup: booking.pickup,
+      destination: booking.destination, scheduleAt: booking.scheduleAt, status: booking.lifecycle.state,
+      assignment: booking.assignment ? {
+        driverId: booking.assignment.driverId, vehicleId: booking.assignment.vehicleId,
+      } : null,
+      location: locationFor(booking),
+      transitions: booking.lifecycle.transitions.map(({ from, to, occurredAt, metadata }) => ({
+        from, to, occurredAt, metadata: { operation_id: metadata?.operation_id },
+      })),
+    };
   }
   function visible(actor: VerifiedIdentity, booking: BookingRecord) {
     return isAdmin(actor) || (actor.status === 'active' && actor.role === 'driver' && booking.assignment?.driverId === actor.userId);
@@ -165,11 +179,12 @@ export function createBookingOperations(
       return { sharing: true, sessionId: request.sessionId, location, duplicate: false };
     },
     listBookings(actor: VerifiedIdentity) {
+      if (isFounder(actor)) return repository.snapshot().bookings.map(founderBookingView);
       requireValue(actor.status === 'active' && (isAdmin(actor) || actor.role === 'driver'), 403, 'OPERATIONS_ACCESS_DENIED');
       return repository.snapshot().bookings.filter(booking => visible(actor, booking)).map(booking => bookingView(booking, isAdmin(actor)));
     },
     listVehicles(actor: VerifiedIdentity) {
-      requireValue(actor.status === 'active' && (isAdmin(actor) || actor.role === 'driver'), 403, 'OPERATIONS_ACCESS_DENIED');
+      requireValue(isFounder(actor) || (actor.status === 'active' && (isAdmin(actor) || actor.role === 'driver')), 403, 'OPERATIONS_ACCESS_DENIED');
       return Object.values(repository.snapshot().vehicles ?? {});
     },
     createVehicle(actor: VerifiedIdentity, body: unknown) {
@@ -220,7 +235,7 @@ export function createBookingOperations(
       });
     },
     listDrivers(actor: VerifiedIdentity) {
-      requireAdmin(actor);
+      if (!isFounder(actor)) requireAdmin(actor);
       const store = repository.snapshot();
       return Object.values(store.drivers ?? {}).map(driver => driverView(store, driver));
     },

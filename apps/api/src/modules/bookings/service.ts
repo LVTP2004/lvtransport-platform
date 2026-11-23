@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { createReferenceCode } from './reference-code.js';
 import type { BookingRecord, CreateBookingDto } from './dto.js';
 import { bookingRepository, type BookingRepository } from './repository.js';
 import { TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
@@ -7,12 +8,6 @@ import { DomainError } from '../../errors/domain-error.js';
 import { createBookingDuplicateFingerprint } from './fingerprint.js';
 import { projectOperationalBooking } from './operational-projection.js';
 import { logger } from '../../utils/logger.js';
-
-const createReferenceCode = (): string => {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const token = randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
-  return `LV-${stamp}-${token}`;
-};
 
 const createSafeFareQuote = (input: CreateBookingDto, now: string) => {
   const distance = input.estimatedDistanceKm ?? 5;

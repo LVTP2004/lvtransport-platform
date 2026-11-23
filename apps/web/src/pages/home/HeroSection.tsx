@@ -1,6 +1,7 @@
 import { useRef, useState, type FormEvent } from 'react';
 import { readBookingStatus } from '../../modules/moni/services/booking-status-client';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { routePrices } from '../../modules/pricing/constants/route-prices';
 
 const services = [
   { label: 'TAXI ANTWERPEN', title: 'Taxi Antwerpen', copy: 'Snel en comfortabel vervoer in Antwerpen en omgeving.', icon: '🚖' },
@@ -10,24 +11,12 @@ const services = [
   { label: 'LANGE AFSTAND', title: 'Lange afstanden', copy: 'Comfortabele ritten door België en naar bestemmingen in de buurlanden.', icon: '➜' },
 ];
 
-const routePrices = [
-  { destination: 'Zaventem', price: '€80' },
-  { destination: 'Brussel', price: '€80' },
-  { destination: 'Mechelen', price: '€45' },
-  { destination: 'Gent', price: '€100' },
-  { destination: 'Schiphol', price: '€200' },
-  { destination: 'Eindhoven', price: '€130' },
-  { destination: 'Charleroi', price: '€150' },
-  { destination: 'Breda', price: '€95' },
-  { destination: 'Rotterdam', price: '€150' },
-  { destination: 'Brugge', price: '€165' },
-];
-
 const whatsappUrl = 'https://wa.me/32466487936';
 const routeRequestUrl = (destination: string) =>
   `${whatsappUrl}?text=${encodeURIComponent('Hallo, ik wil graag een rit naar ' + destination + ' reserveren.')}`;
 
 export default function HeroSection() {
+  const navigate = useNavigate();
   const [menuOpen, setMenuOpen] = useState(false);
   const closeMenu = () => setMenuOpen(false);
   const [reference, setReference] = useState('');
@@ -64,6 +53,7 @@ export default function HeroSection() {
               <a href="#tracking" onClick={closeMenu} className="nav-link">Volg uw rit</a>
               <a href="#prijzen" onClick={closeMenu} className="nav-link">Prijzen</a>
               <a href="#contact" onClick={closeMenu} className="nav-link">Contact</a>
+              <Link to="/ride" onClick={closeMenu} className="nav-link text-lv-champagne">Inloggen / registreren</Link>
               <a href="tel:+32466487936" className="btn-primary inline-flex min-h-10 items-center justify-center px-4">Bel nu</a>
             </nav>
           </div>
@@ -71,17 +61,19 @@ export default function HeroSection() {
 
         <section id="home" className="glass-panel hero-panel scroll-mt-28 rounded-3xl p-6 sm:p-10">
           <p className="text-xs uppercase tracking-[0.25em] text-lv-champagne">LV Transport Platform · Antwerpen</p>
-          <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">Calm Luxury Mobility,<br className="hidden sm:block" /> Realtime Intelligence</h1>
+          <h1 className="mt-4 max-w-4xl text-4xl font-semibold leading-tight tracking-tight sm:text-6xl">Uw taxi, met zorg geregeld.</h1>
           <p className="mt-5 max-w-2xl text-base leading-7 text-lv-mist">Premium vervoer in Antwerpen en België. Discreet, comfortabel en op reservatie.</p>
-          <div className="mt-7 flex flex-wrap gap-3">
-            <Link to="/booking" className="btn-primary inline-flex min-h-12 items-center justify-center px-5">Reserveer uw rit <span className="ml-2" aria-hidden="true">→</span></Link>
-            <a href="#prijzen" className="btn-secondary inline-flex min-h-12 items-center justify-center px-5">Bekijk tarieven</a>
-          </div>
+          <form className="lv-quick-booking" onSubmit={event => {
+            event.preventDefault();
+            const fields = new FormData(event.currentTarget);
+            navigate('/booking', { state: { pickup: fields.get('pickup'), destination: fields.get('destination') } });
+          }}>
+            <label>Vertrekadres<input name="pickup" placeholder="Bijv. Antwerpen-Centraal" required /></label>
+            <label>Bestemming<input name="destination" placeholder="Bijv. Luchthaven Zaventem" required /></label>
+            <button type="submit" className="btn-primary">Reserveer uw rit</button>
+            <a href="#prijzen" className="btn-secondary">Bekijk tarieven</a>
+          </form>
           <div className="mt-8 flex flex-wrap gap-5 border-t border-lv-gold/20 pt-5 text-sm text-lv-mist"><span>Antwerpen & België</span><span>Taxi · Luchthaven · Zakelijk</span><a className="text-lv-champagne" href="tel:+32466487936">+32 466 48 79 36</a></div>
-        </section>
-
-        <section className="glass-panel overflow-hidden rounded-3xl" aria-label="LV Transport identiteit">
-          <img src="/brand/lv-logo-presentation.svg" alt="LV Transport — luxury mobility" className="h-auto w-full" />
         </section>
 
         <section aria-label="Uw reservering" className="grid gap-3 sm:grid-cols-3">
@@ -90,7 +82,7 @@ export default function HeroSection() {
 
         <section id="tracking" className="glass-panel scroll-mt-28 rounded-3xl p-6 sm:p-8">
           <div className="grid gap-6 md:grid-cols-2 md:items-center">
-            <div><p className="text-xs uppercase tracking-[.2em] text-lv-champagne">Volg uw rit</p><h2 className="mt-3 text-2xl font-semibold">Uw aanvraag, helder in beeld.</h2><p className="mt-3 text-sm leading-6 text-lv-mist">Controleer de geregistreerde status met de referentiecode van uw reservering. Bekijk uw eigen ritgegevens na het inloggen bij uw reserveringen.</p><Link to="/booking" className="mt-4 inline-block text-sm text-lv-champagne underline underline-offset-4">Mijn reserveringen</Link></div>
+            <div><p className="text-xs uppercase tracking-[.2em] text-lv-champagne">Volg uw rit</p><h2 className="mt-3 text-2xl font-semibold">Uw aanvraag, helder in beeld.</h2><p className="mt-3 text-sm leading-6 text-lv-mist">Controleer de geregistreerde status met de referentiecode van uw reservering. Bekijk uw eigen ritgegevens na het inloggen bij uw reserveringen.</p><Link to="/ride" className="mt-4 inline-block text-sm text-lv-champagne underline underline-offset-4">Mijn reserveringen</Link></div>
             <form onSubmit={checkBooking} className="space-y-3">
               <label htmlFor="home-booking-reference" className="block text-sm text-lv-mist">Uw referentiecode</label>
               <input id="home-booking-reference" autoComplete="off" spellCheck={false} className="w-full rounded-xl border border-lv-gold/30 bg-black/25 px-4 py-3 text-white" required maxLength={100} value={reference} disabled={checking} onChange={event => { setReference(event.target.value); setTracking(''); }} />
@@ -160,7 +152,7 @@ export default function HeroSection() {
           </div>
           <nav aria-label="LVTransport portalen" className="mt-8 grid gap-3 border-t border-lv-gold/20 pt-6 sm:grid-cols-2 lg:grid-cols-4">
             {[
-              ['/booking', 'Client', 'MONI Ride', 'Mijn reserveringen'],
+              ['/ride', 'Client', 'MONI Ride', 'Mijn reserveringen'],
               ['/driver', 'Driver', 'MONI Drive', 'Operational Cockpit'],
               ['/admin', 'Admin', 'MONI Assistant', 'Control Tower'],
               ['/founder', 'Founder', 'MONI Core', 'Governance & Intelligence OS'],

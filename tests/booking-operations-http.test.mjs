@@ -79,6 +79,29 @@ test('public HTTP booking is persisted before projection, retains identity and s
   assert.deepEqual((await tracking.json()).booking, { referenceCode: saved.referenceCode, status: 'pending' });
 });
 
+test('new references are short, collisions are resolved before saving, and legacy codes still track', async t => {
+  const f = await fixture(t); const m = load();
+  const repository = new m.FileBookingRepository(f.filename);
+  const service = m.createBookingFlowService(repository, () => {});
+  const first = await service.createBooking(payload, 'synthetic-short-reference');
+  const shape = /^\d{5}$/;
+  assert.match(first.referenceCode, shape);
+  const legacy = { ...first, referenceCode: 'LV-OLDTEST1-4F7DFF' };
+  await repository.update(legacy);
+  const second = await repository.create({
+    ...legacy, id: 'synthetic-reference-collision',
+    lifecycle: { ...legacy.lifecycle, initIdempotencyKey: 'synthetic-reference-collision-key' },
+  });
+  assert.match(second.referenceCode, shape);
+  assert.notEqual(second.referenceCode, legacy.referenceCode);
+  const api = await http(t, m, service);
+  for (const record of [legacy, second]) {
+    const response = await fetch(api.base + '/tracking/booking/' + record.referenceCode);
+    assert.equal(response.status, 200);
+    assert.deepEqual((await response.json()).booking, { referenceCode: record.referenceCode, status: 'pending' });
+  }
+});
+
 test('fingerprint duplicate also reuses persisted identity; a fresh runtime rebuilds pending intake from disk once', async t => {
   const f = await fixture(t); const m = load();
   const service = m.createBookingFlowService(new m.FileBookingRepository(f.filename));

@@ -23,6 +23,15 @@ test('Moni reads the actual matching reference/status without inventing driver, 
   assert.equal(requested.options.cache,'no-store');
 });
 
+test('tracking accepts five-digit references and preserves leading zeros', async () => {
+  const code = '00427';
+  const status = await readBookingStatus(code, 'https://synthetic.invalid', async url => {
+    assert.equal(url, 'https://synthetic.invalid/api/v1/tracking/booking/' + code);
+    return response({ success: true, booking: { referenceCode: code, status: 'pending' } });
+  });
+  assert.deepEqual(status, { referenceCode: code, status: 'pending' });
+});
+
 test('unknown, mismatched and failed tracking is never reported as a confirmed booking status', async () => {
   for (const body of [{success:false}, {success:true,booking:{referenceCode:'LV-OTHER',status:'completed'}},
     {success:true,booking:{referenceCode:reference,status:'paid'}}, {success:true}]) {

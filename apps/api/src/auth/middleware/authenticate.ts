@@ -1,5 +1,5 @@
 import type { RequestHandler } from 'express';
-import type { RequestAuthContext, AuthRole } from '../models/request-auth-context.js';
+import { isAuthRole, type RequestAuthContext, type AuthRole } from '../models/request-auth-context.js';
 import { accessControlService } from '../services/access-control.service.js';
 
 export type VerifiedIdentity = { userId: string; role: AuthRole; status: 'active' };
@@ -16,7 +16,7 @@ export async function authenticate<T extends HeaderLikeRequest>(req: T, verify?:
   try {
     const identity = await verify(match[1]);
     if (!identity.userId || identity.status !== 'active'
-        || !['customer', 'driver', 'admin', 'super_admin'].includes(identity.role)) return req;
+        || !isAuthRole(identity.role)) return req;
     req.auth = { ...identity, token: match[1],
       permissions: accessControlService.permissionsForRole(identity.role) };
   } catch {

@@ -18,6 +18,30 @@ export class FirebaseAuthProvider implements AuthProviderAdapter {
     if (!adapter.signInWithGoogle) throw new Error('Google authentication is not configured');
     return adapter.signInWithGoogle();
   }
+  async signInWithMicrosoft(): Promise<AuthState> {
+    const adapter = this.configured();
+    if (!adapter.signInWithMicrosoft) throw new Error('Microsoft authentication is not configured');
+    return adapter.signInWithMicrosoft();
+  }
+  async linkMicrosoftAccount(userId: string): Promise<void> {
+    const adapter = this.configured();
+    if (!adapter.linkMicrosoftAccount) throw new Error('Microsoft account linking is not configured');
+    await adapter.linkMicrosoftAccount(userId);
+  }
+  async rememberSession(remember: boolean): Promise<void> {
+    const change = this.configured();
+    if (change.rememberSession) await change.rememberSession(remember);
+  }
+  async sendEmailLink(email: string, returnUrl: string): Promise<void> {
+    const adapter = this.configured();
+    if (!adapter.sendEmailLink) throw new Error('Email sign-in is not configured');
+    await adapter.sendEmailLink(email, returnUrl);
+  }
+  async signInWithEmailLink(email: string, link: string): Promise<AuthState> {
+    const adapter = this.configured();
+    if (!adapter.signInWithEmailLink) throw new Error('Email sign-in is not configured');
+    return adapter.signInWithEmailLink(email, link);
+  }
   async signOut(sessionId?: string): Promise<void> {
     if (this.adapter) await this.adapter.signOut(sessionId);
   }

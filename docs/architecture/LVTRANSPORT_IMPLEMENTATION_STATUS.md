@@ -4,6 +4,10 @@ Actualizado: 2026-11-15. Decisiones: ../LVTRANSPORT_DECISIONS.md.
 Implementación local autorizada de plataforma funcional. Sin merge. Despliegue VPS autorizado, realizado y verificado: ver VPS_DEPLOYMENT_2026_11_16.md.
 La plataforma completa todavía no está terminada ni validada en producción.
 
+## Continuidad del historial
+
+Consultar el [inventario de commits, PR y pendientes de staging](continuidad-historica-2026-11-20/README.md) antes de recuperar o sustituir funciones históricas.
+
 ## Recorrido implementado
 
 Reserva pública → JSON existente → intake operacional con identidad conservada.
@@ -334,20 +338,325 @@ diagnóstico adicional en el workspace local. Pasaron sus pruebas de entrada,
 typecheck y builds Web/Admin/Driver. El parche en producción incluye únicamente
 la corrección de fetch.
 
-### Fuentes de GPS y seguimiento en la rama del PR #410
+### Aceptación registrada y trabajo paralelo — 19-11-2026
 
-Se consolidó la base que faltaba para compilar la API y la página pública de
-reservas desde una instalación limpia. Incluye persistencia y proyección de
-reservas, autorización Firebase, rutas de cliente y operaciones, las entradas
-verificadas de los paneles y sus componentes de reserva. La autorización del
-fundador cubre los manifiestos de API y auth y el lockfile para incorporar las
-versiones de Firebase ya usadas por la aplicación. Los archivos de la portada y
-Tailwind forman parte de la entrada web que comparte este build.
+El issue [#411](https://github.com/LVTP2004/lvtransport-platform/issues/411)
+mantiene pendiente la aceptación con Google y un viaje de extremo a extremo
+con recursos autorizados. Las pruebas locales usan identidades sintéticas.
 
-Instalación con lockfile congelado, 34 pruebas Node, typecheck de las apps y
-builds de API, Web, Admin, Driver y Business correctos. Estos builds prueban la
-base desde GitHub. La publicación previa aplicó parches acotados a los
-artefactos activos de la VPS y tiene su recibo en el issue #411. Sigue pendiente
-la aceptación con Google y un viaje completo. El Spec Guard de GitHub bloquea
-cambios de API, Admin y lockfile por rutas, incluso con autorización, y requiere
-revisión antes de cualquier merge.
+- `apps/api/src/modules/bookings/operations.ts` elimina las observaciones y la
+  sesión de GPS solo después de confirmar la escritura de la transición terminal.
+- `tests/operational-platform-http.test.mjs` reproduce la pérdida de GPS tras un
+  fallo antes del commit y comprueba que un reintento confirmado sí cierra el GPS.
+- `apps/web/src/pages/PublicBooking.tsx` reutiliza el cliente de tracking que
+  valida referencia y estado y descarta respuestas de consultas sustituidas.
+- Este registro documenta los cambios y enlaza la aceptación pendiente.
+
+Pasan 55 pruebas Node, 22 simulaciones Python, typecheck, build Web, bundle API
+y `git diff --check`. Las dos correcciones quedan locales. La rama del PR #410
+no contiene la base completa de esos módulos. Para publicar código de forma
+reproducible queda consolidar la base, conservando los cambios existentes.
+
+### Reanudación de la revisión tras el reinicio — 19-11-2026
+
+Volvieron a pasar las 12 pruebas HTTP de la plataforma operativa, incluido el
+fallo de escritura terminal con GPS activo, el typecheck y el build web con
+salida temporal. Al consultar el árbol del PR #410 en `4b3216ea`, se confirmó
+que siguen faltando `apps/api/src/modules/bookings/operations.ts`,
+`apps/api/src/routes/v1/booking-operations.routes.ts`,
+`apps/web/src/pages/PublicBooking.tsx` y `tests/operational-platform-http.test.mjs`.
+El PR ya tiene los archivos de entrada `apps/web/src/main.tsx` y
+`packages/auth/src/index.ts`, que deben compararse con sus versiones locales al
+consolidar la base. La aceptación con identidades y recursos reales continúa en
+el issue #411.
+
+`qwen3-coder:30b` no pudo iniciar en Ollama por falta de memoria en la GPU.
+La revisión directa comprobó que la limpieza de GPS se ejecuta después de
+`repository.transact`, y la prueba HTTP confirmó que un fallo antes de guardar
+preserva la sesión hasta el reintento exitoso.
+
+### GPS y seguimiento publicados en la VPS — 19-11-2026
+
+Entrega `gps-tracking-20261119T194949Z`. Se aplicaron parches acotados sobre
+los artefactos activos para preservar las correcciones de producción. El bundle
+de API difiere únicamente en la limpieza de GPS después de confirmar la
+transacción. La web conserva su grafo de módulos y usa el cliente de seguimiento
+existente para validar la referencia y el estado y descartar respuestas antiguas.
+Se añadieron cuatro JS versionados y se actualizaron las referencias del script
+en `index.html`, `booking/index.html`, `admin/index.html` y `driver/index.html`.
+
+Pasaron 55 pruebas locales de Node, typecheck y build web. Sobre el bundle de
+API candidato pasaron las 12 pruebas HTTP; la regresión de GPS falló como se
+esperaba sobre el bundle anterior. Pasaron cuatro pruebas sobre el artefacto web
+y una en Firefox. La comprobación previa al reinicio encontró cero reservas
+asignadas activas. Se reinició `lvtransport-api` con su configuración existente.
+
+Tras publicar, los ocho archivos web coincidieron por SHA-256 con las
+respuestas HTTPS. Founder y tracking respondieron 200. La salud de la API
+respondió 200 JSON, las tres rutas privadas 401 JSON y una referencia de
+seguimiento inexistente 404 JSON. SHA-256 de la API activa:
+`32b706018d3d479cc97fcffeded253646811763249b49dc8bb0817704fbeb6ed`.
+Respaldo y manifiesto: `/home/ubuntu/lvtp-backups/gps-tracking-20261119T194949Z`.
+Se conservaron los assets anteriores, los datos, el acceso real a la API y la
+configuración de la VPS. La aceptación con Google y un viaje autorizado sigue
+en el issue #411.
+
+Las fuentes quedaron consolidadas en el PR #410, commit `c510828`. En una copia
+limpia pasaron la instalación con lockfile congelado, 34 pruebas, el typecheck y
+los builds de API, Web, Admin, Driver y Business. La lista de archivos e
+integración está en el commit. Este paso no volvió a publicar en la VPS.
+
+### Acceso sin contraseña con sesión recordada — 20-11-2026
+
+Ride, Driver, Control Tower y Founder OS usan un formulario compartido con
+enlace de correo y Google. El botón principal informa del envío y el formulario
+confirma si el enlace se ha enviado. La sesión en el navegador es opcional y
+se selecciona en el dispositivo donde se completa el acceso. Al volver al
+portal, la web verifica otra vez el usuario y sus permisos con la API.
+Cerrar sesión elimina la sesión guardada.
+
+Founder OS guarda su sesión por separado de Control Tower en Firebase. El
+backend conserva el permiso operativo de Admin que se usaba anteriormente
+para Founder. Los correos del registro de decisiones se mantienen como
+asignaciones previstas, pendientes de activación y verificación en producción.
+
+Pasaron 12 pruebas de sesión y autorización, y el typecheck y la compilación
+de Web, Admin y Driver. En Firefox a 420 px se verificaron los formularios
+iniciales y de confirmación de los cuatro portales. La comprobación de navegador
+no envió correos ni inició sesiones reales.
+
+Publicado en la VPS el 20-11-2026 a las 08:30 UTC. Se añadieron cuatro módulos
+JS versionados y solo se cambió la referencia al módulo principal en
+`index.html`, `booking/index.html`, `admin/index.html` y `driver/index.html`.
+El módulo público principal coincide byte por byte al normalizar las referencias
+a los módulos de acceso. Los dos archivos CSS se conservan. Se verificaron por
+HTTPS los hashes de las cuatro entradas, cuatro módulos y dos CSS. En Firefox
+se comprobaron los cuatro formularios iniciales y las cuatro pantallas de
+confirmación sin enviar correos. Queda por validar el acceso con las cuentas
+reales. Respaldo: `/home/ubuntu/lvtp-backups/login-ux-20261120T083000Z`.
+
+En local, «Mis reservas» sugiere el correo ya escrito en el formulario de
+reserva. Una edición manual tiene prioridad, incluso si se borra el campo.
+La sugerencia dura lo que dura la página. Firefox verificó el prellenado y la
+edición sin enviar datos. Pasaron el typecheck de Web, Admin y Driver y el
+build de Web. Publicado a las 09:41 UTC del 20-11-2026. El formulario
+distingue la cuota agotada de un bloqueo temporal por demasiados intentos.
+Firefox verificó el prellenado en producción sin enviar reservas ni correos.
+Coincidieron los hashes HTTPS de los cuatro HTML, cuatro módulos y dos CSS.
+Respaldo: `/home/ubuntu/lvtp-backups/email-prefill-20261120T094121Z`.
+
+### Separación de Founder OS y Control Tower
+
+La API local exige el rol `founder` activo y el correo verificado para conceder
+`founder:read`. Founder puede consultar reservas, vehículos y conductores.
+La vista de Founder omite datos de contacto y notas de reserva. Las escrituras
+operativas conservan sus controles actuales y el panel Founder verifica el
+permiso nuevo mediante la API antes de mostrar datos.
+
+Pasaron 36 pruebas de autorización y operaciones, incluido el recorrido de
+una reserva en un entorno aislado. Pasaron el typecheck de API, Web, Admin y
+Driver y los builds aislados de API y Web. La separación sigue local. En
+Firebase, el correo de Tower ya está verificado y le falta el rol. Driver ya
+tiene el rol activo. Ride y Founder requieren una primera verificación.
+
+### Alternativas de inicio de sesión
+
+Ride y Driver tienen una integración local con Microsoft que utiliza la
+verificación de sesión de la API y permite vincular Microsoft a un usuario
+Firebase existente. El proveedor está deshabilitado en la interfaz hasta
+configurar Microsoft en Firebase. Pasaron 13 pruebas de cliente, el typecheck
+de Web, Admin y Driver y el build web con las dos configuraciones.
+
+La revisión de producción confirmó que Firebase todavía no tiene configurado
+el proveedor Microsoft y que la API no tiene un remitente de correo
+transaccional configurado. El acceso por código para Tower y Founder está
+pendiente de un servicio de entrega. No se modificaron cuentas ni permisos.
+
+### Pagos en staging privado
+
+Ride muestra el estado de la testbetaling por reserva verificada y el recibo
+de simulación tras la captura. El servicio de staging usa una tarifa
+confirmada de prueba de 42,50 EUR y una operación de reconciliación reservada
+al administrador de pruebas. En la VPS, la prueba de integración verificó la
+autorización, la captura después de finalizar, el mismo recibo al repetir,
+la liberación al cancelar y la denegación de acceso para otros roles.
+
+Pasaron tres pruebas del módulo de pagos, los typechecks de Web y API y el
+build Web. El servicio de staging se reinició para publicar el cambio.
+Producción y el emulador de identidad siguieron operativos. La integración
+con un proveedor real, la tarifa operativa y la conciliación automática
+siguen pendientes.
+
+### Recuperación automática de pagos en staging privado
+
+Al confirmar la tarifa de prueba con el rol de operaciones se registra una
+autorización persistente. La tarea de recuperación consulta las autorizaciones
+pendientes al iniciar y periódicamente. Captura tras completar el viaje y
+libera tras cancelar o fallar. La automatización permanece activa en staging.
+
+En la VPS se pausó la tarea, se finalizó la reserva de prueba 04928 y se
+canceló otra. Ambas conservaron sus autorizaciones hasta reiniciar el
+servicio privado. Al reiniciar, se recuperaron la captura y la liberación.
+Las comprobaciones posteriores devolvieron el mismo recibo y ninguna emisión
+para la cancelación. Pasaron las tres pruebas del servicio, el typecheck de
+API y la compilación del bundle privado. Producción queda fuera del alcance.
+
+### Reanudación tras el reinicio del 21-11-2026
+
+Se verificó el árbol local existente con 63 pruebas Node, incluidas las
+pruebas HTTP por loopback, el typecheck de las aplicaciones y el build de
+Web con salida temporal. Se actualizaron las pruebas de entrada de Admin,
+Driver y Founder para proporcionar la URL del navegador y verificar la
+pantalla de acceso vigente. La prueba del popup de Google ahora proporciona
+los exports que usa el adaptador actual de Firebase.
+
+La copia local temporal del staging privado ya no existe. La consulta de
+solo lectura a la VPS encontró el bundle `server-payments-auto.cjs` en
+`/home/ubuntu/lvtp-staging/lvtransport-preview-d3638b86bce3`. Pasó
+`node --check`. El archivo inicial de staging conserva fuentes de acceso
+por código, pero su índice no incluye las fuentes de pagos. La comprobación
+de procesos no confirmó que el worker del bundle estuviera activo. Quedan
+pendientes la recuperación de las fuentes de pagos y la verificación
+funcional del servicio privado. La consulta no leyó datos de pagos ni
+reinició servicios.
+
+### Fuentes de pagos recuperadas y comprobación del staging privado
+
+Se recuperaron del historial el servicio de pagos simulados, su ruta de
+lectura autenticada y las tres pruebas. El repositorio de staging conserva
+la enumeración que utiliza el worker para retomar autorizaciones pendientes.
+Las pruebas abren de nuevo el archivo y verifican que una captura o una
+liberación elimina la autorización de la lista de recuperación. Pasaron las
+tres pruebas y el typecheck de API. La ruta recuperada se mantiene sin montar.
+
+El PID del servicio privado ejecuta `server-tower-reassignment.cjs`, una
+versión posterior a `server-payments-auto.cjs`. Su endpoint local de salud
+respondió con emulador de Firebase, pagos simulados y
+`paymentRecovery: true`. Esta comprobación fue de solo lectura y no
+ejecutó una nueva conciliación. Queda por repetir la prueba integral sobre
+el bundle actual con reservas de prueba y recuperar el punto de entrada
+completo de staging.
+
+### Conciliación automática verificada en el staging activo
+
+La prueba integral se ejecutó contra el bundle activo de Control Tower en
+staging privado. Antes de crear reservas, verificó el emulador de identidad,
+el buzón de pruebas, el modo de pagos simulados, la recuperación habilitada y
+el permiso vigente del conductor de pruebas. Control Tower confirmó una
+tarifa simulada de 42,50 EUR para cada reserva.
+
+- La reserva de prueba 38407 recorrió asignación, aceptación, recogida y
+  finalización. El worker capturó el importe automáticamente. El recibo se
+  conservó al consultarlo de nuevo después de otros ciclos del worker.
+- La reserva de prueba 44281 se canceló después de autorizar el importe.
+  El worker liberó la autorización automáticamente y no emitió recibo.
+- El cliente no pudo confirmar tarifas y Control Tower no pudo consultar el
+  pago por la ruta reservada al pasajero. El seguimiento público reflejó la
+  finalización y Founder pudo consultar el estado sin datos de contacto.
+
+La prueba se ejecutó con identidades, vehículo y reservas de staging. No
+reinició el servicio, desplegó código ni realizó cargos reales. La
+recuperación del punto de entrada completo de staging sigue pendiente.
+
+### Punto de entrada de staging recuperado
+
+`tools/release/staging-entry-recovery.patch` conserva el punto de entrada
+`preview-vps/entry.ts` y los ajustes de API necesarios para compilarlo.
+El parche se comprobó sobre una copia aislada de `apps/api/src` que incluye
+las fuentes de pagos simulados recuperadas anteriormente. La copia pasó
+el typecheck de API, el build de esbuild para Node 22 y `node --check`.
+
+La sección compilada desde `var projectId` hasta el final coincide con
+la del bundle activo `server-tower-reassignment.cjs` de staging. SHA-256:
+`41446720fe0db9b8cc81c4d7c9edb079d4d52ad9a1792934fd28aec10e916b8e`.
+La coincidencia cubre el punto de entrada compilado. Los módulos que lo
+preceden en el bundle no se compararon byte por byte. El modo Stripe de
+prueba aparece en las fuentes recuperadas. La entrega activa se verificó
+con pagos simulados.
+
+El parche debe aplicarse a una copia aislada con `git apply`. Para compilar,
+usar el esbuild instalado con Vite, `preview-vps/entry.ts` como entrada,
+`bundle: true`, plataforma Node, formato CJS, destino Node 22 y
+`firebase-admin/app`, `firebase-admin/auth` y `express` como externos.
+No se ejecutó el nuevo bundle ni se modificó el servicio privado.
+
+### Prueba integral del bundle reconstruido
+
+El 21 de noviembre de 2026 se arrancó una copia byte por byte del bundle
+reconstruido en un directorio temporal. Usó el emulador local de Firebase
+Auth con el proyecto de demostración `demo-lvtransport-otp`, el buzón de
+pruebas y un almacén de reservas nuevo. Los cuatro roles iniciaron sesión
+por código. El conductor empezó sin permiso vigente, presentó un documento
+de prueba por la API y obtuvo la aprobación de Control Tower.
+
+- La reserva de prueba 47151 recorrió asignación, aceptación, recogida y
+  finalización. El worker capturó automáticamente 42,50 EUR simulados y el
+  recibo se mantuvo igual después de otros ciclos del worker.
+- En la reserva de prueba 19187, el worker liberó la autorización al
+  cancelar y la respuesta del cliente no incluyó recibo.
+- La prueba comprobó la idempotencia de la creación y la asignación, el
+  seguimiento público, la vista de Founder sin datos de contacto y la
+  denegación de acciones fuera de los permisos de cada rol.
+
+La prueba integral HTTP terminó con código 0. El servidor temporal y el
+emulador se detuvieron al terminar. Se probó el modo de pagos simulados,
+con Stripe deshabilitado y sin acceso a los datos del staging activo.
+
+### Recuperación de pagos simulados tras reiniciar el servidor
+
+Una segunda prueba pausó el worker y dejó dos autorizaciones persistidas
+en un almacén temporal nuevo. Antes de detener el servidor, verificó por
+HTTP que ambas seguían autorizadas después de finalizar la reserva 62780
+y cancelar la 33058. Se arrancó el mismo bundle con el mismo almacén y se
+reactivó el worker. Sin repetir las acciones de viaje ni confirmar de
+nuevo las tarifas, el worker capturó 42,50 EUR simulados para la primera
+reserva y liberó la segunda autorización sin emitir recibo. El recibo de
+la primera se mantuvo estable durante los ciclos siguientes.
+
+La prueba HTTP terminó con código 0. El emulador de Firebase Auth se
+mantuvo activo durante el reinicio del servidor. Stripe permaneció
+deshabilitado y el staging activo quedó intacto.
+
+### Conciliación local con GitHub · #418 · 23-11-2026
+
+El entorno local autorizado leyó el repositorio `leonardo-AI-Series`.
+`HEAD` y `main` en GitHub coincidían en
+`a7708afbdcba16dcef7e146c4501297daab3bdfd`. Antes de actualizar este
+registro había 40 archivos modificados y 75 sin seguimiento. El inventario
+temporal registra sus rutas y huellas SHA-256 antes de esta actualización.
+Las referencias de las PR se descargaron a una copia aislada en
+`/tmp/lvtp-418.BLkXLgL5/repo`.
+
+- #410, borrador (`c5108288`): 29 de 59 archivos coinciden byte por
+  byte con el árbol local y 30 tienen versiones locales distintas.
+- #416 (`588a1512`): su único archivo de referencia visual falta en el
+  árbol local.
+- #417 (`68fab8df`): sus seis archivos documentales no están incorporados
+  en el árbol local.
+
+El puente MONI sigue en modo de solo lectura, con el índice del Minisforum
+del 19-11-2026 fuera del umbral de frescura. Su ejecutor limita las escrituras
+automáticas a `scratch`. La ejecución de Git local mediante MONI sigue
+bloqueada por falta de capacidad autenticada.
+
+Sobre las fuentes locales pasaron 63 pruebas Node, los typechecks de Web,
+Admin, Driver y API con el compilador de cada aplicación, y el build Vite
+de Web con salida temporal. Queda pendiente respaldar de forma duradera
+las fuentes locales, revisar los 30 archivos divergentes y validar un
+candidato integrado antes de abrir la PR de conciliación.
+
+### Candidato local de integración · #418
+
+Se preservaron las fuentes locales en un archivo privado con SHA-256 verificado.
+La rama local `integration/418` conserva el historial de las PR #410, #416 y
+#417. Sobre esa base incorpora las versiones locales de las fuentes operativas,
+sus recursos y pruebas. Los cambios a espejos JavaScript, cachés de compilación
+y documentos locales ajenos a esta integración se conservaron en el respaldo.
+Los manifiestos de dependencias y el lockfile coinciden con #410.
+
+El candidato pasó 63 pruebas Node, 22 pruebas de simulación Python, los
+typechecks de Web, Admin, Driver y API, el build Web y la comprobación SHA-256
+del archivo histórico de #417. Las pruebas utilizaron las dependencias ya
+instaladas. La rama y el inventario completo se guardaron junto al respaldo
+privado. Quedan pendientes la revisión de publicación, la PR en GitHub
+y la aceptación integral de staging.

@@ -1,12 +1,19 @@
 import { initializeApp, type FirebaseOptions } from 'firebase/app';
 import {
-  initializeAuth, inMemoryPersistence, signInWithEmailAndPassword, signOut,
+  initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, setPersistence, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail, sendEmailVerification, getIdTokenResult, type Auth, type User,
-  GoogleAuthProvider, signInWithPopup, browserPopupRedirectResolver,
+  GoogleAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, browserPopupRedirectResolver,
+  sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink,
 } from 'firebase/auth';
 import type { AuthProviderAdapter } from '../interfaces/auth-provider.interface.js';
 import type { AuthState, AuthTokens, SessionContext } from '../models/session.models.js';
 import { FirebaseAuthProvider } from './firebase-auth.provider.js';
+
+function microsoftProvider(): OAuthProvider {
+  const provider = new OAuthProvider('microsoft.com');
+  provider.setCustomParameters({ prompt: 'select_account' });
+  return provider;
+}
 
 /** Roles here are presentation hints. Only the API grants resource access. */
 export class FirebaseBrowserAdapter implements AuthProviderAdapter {
@@ -41,6 +48,34 @@ export class FirebaseBrowserAdapter implements AuthProviderAdapter {
       tokens: await this.tokens(credential.user) };
   }
 
+  async signInWithMicrosoft(): Promise<AuthState> {
+    const { user } = await signInWithPopup(this.auth, microsoftProvider(), browserPopupRedirectResolver);
+    return { isAuthenticated: true, isLoading: false,
+      user: { id: user.uid, email: user.email }, tokens: await this.tokens(user) };
+  }
+
+  async linkMicrosoftAccount(userId: string): Promise<void> {
+    const user = this.auth.currentUser;
+    if (!user || user.uid !== userId) throw new Error('The verified account is no longer signed in');
+    if (user.providerData.some(provider => provider.providerId === 'microsoft.com')) return;
+    await linkWithPopup(user, microsoftProvider(), browserPopupRedirectResolver);
+  }
+
+  async rememberSession(remember: boolean): Promise<void> {
+    await setPersistence(this.auth, remember ? browserLocalPersistence : inMemoryPersistence);
+  }
+
+  async sendEmailLink(email: string, returnUrl: string): Promise<void> {
+    await sendSignInLinkToEmail(this.auth, email, { url: returnUrl, handleCodeInApp: true });
+  }
+
+  async signInWithEmailLink(email: string, link: string): Promise<AuthState> {
+    if (!isSignInWithEmailLink(this.auth, link)) throw new Error('Invalid sign-in link');
+    const { user } = await signInWithEmailLink(this.auth, email, link);
+    return { isAuthenticated: true, isLoading: false,
+      user: { id: user.uid, email: user.email }, tokens: await this.tokens(user) };
+  }
+
   async signOut(): Promise<void> { await signOut(this.auth); }
   async refresh(): Promise<AuthTokens> { return this.tokens(await this.user(), true); }
   async sendPasswordReset(email: string): Promise<void> {
@@ -67,12 +102,12 @@ export class FirebaseBrowserAdapter implements AuthProviderAdapter {
   }
 }
 
-/** Explicit config only. No credentials/default project and no persistent storage. */
+/** Explicit config only. Saved sessions can be restored. New persistence is selected per sign-in. */
 export function createFirebaseBrowserProvider(options: FirebaseOptions, appName: string): FirebaseAuthProvider {
   if (!options.projectId || !options.apiKey || !options.appId || !appName.trim()) {
     throw new Error('Firebase project configuration is required');
   }
   const app = initializeApp(options, appName);
-  const auth = initializeAuth(app, { persistence: inMemoryPersistence });
+  const auth = initializeAuth(app, { persistence: [indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence] });
   return new FirebaseAuthProvider(new FirebaseBrowserAdapter(auth));
 }

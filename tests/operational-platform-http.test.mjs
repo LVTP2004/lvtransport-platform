@@ -43,7 +43,7 @@ async function setup(t) {
   const app = express(); app.use(express.json());
   app.use('/api/v1', m.createCustomerBookingRoutes(m.createBookingFlowService(repository)));
   const verify = async token => {
-    const role = token === 'admin' ? 'admin' : token.startsWith('customer') ? 'customer' : authorizedDrivers.has(token) ? 'driver' : null;
+    const role = token === 'admin' || token === 'founder' ? token : token.startsWith('customer') ? 'customer' : authorizedDrivers.has(token) ? 'driver' : null;
     if (!role) throw new Error('Synthetic rejected token');
     return { userId: token, role, status: 'active' };
   };
@@ -121,6 +121,25 @@ test('backend denies forged roles, another driver, invalid transitions and stale
   assert.equal((await request(`/operations/bookings/${saved.id}/status`, 'driver-one', { status: 'accepted', expectedVersion: 2, actor: 'admin' }, 'synthetic-injected')).status, 400);
   assert.equal((await request(`/operations/bookings/${saved.id}/status`, 'admin', { status: 'completed', expectedVersion: 2 }, 'synthetic-bypass')).status, 403);
   assert.equal((await request('/operations/bookings', 'admin')).headers.get('cache-control'), 'no-store');
+});
+
+test('Founder can inspect operations with no booking contact details or mutation rights', async t => {
+  const f = await setup(t);
+  const { request, saved } = f;
+  const vehicle = await f.ready();
+  const bookings = await request('/operations/bookings', 'founder');
+  assert.equal(bookings.status, 200);
+  assert.equal(bookings.body.bookings[0].id, saved.id);
+  for (const field of ['customerName', 'customerEmail', 'customerPhone', 'notes']) {
+    assert.equal(Object.hasOwn(bookings.body.bookings[0], field), false);
+  }
+  assert.equal((await request('/operations/vehicles', 'founder')).body.vehicles[0].id, vehicle.id);
+  assert.equal((await request('/operations/drivers', 'founder')).body.drivers[0].id, 'driver-one');
+  assert.equal((await request('/operations/vehicles', 'founder', {})).status, 403);
+  assert.equal((await request('/operations/drivers/me', 'founder')).status, 403);
+  for (const action of ['assignment', 'status', 'location']) {
+    assert.equal((await request(`/operations/bookings/${saved.id}/${action}`, 'founder', {})).status, 403);
+  }
 });
 
 test('presence freshness is separate from desired availability; revoked drivers cannot be assigned', async t => {
