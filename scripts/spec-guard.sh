@@ -4,9 +4,7 @@ set -euo pipefail
 BASE_REF="${BASE_REF:-origin/main}"
 
 echo "Checking spec drift against $BASE_REF..."
-
-changed_files="$(git diff --name-only "$BASE_REF"...HEAD || true)"
-
+changed_files="$(git diff --no-renames --name-only "$BASE_REF"...HEAD)"
 echo "$changed_files"
 
 fail() {
@@ -14,18 +12,19 @@ fail() {
   exit 1
 }
 
-# Files that should not be touched by visual homepage tasks unless explicitly approved.
-if echo "$changed_files" | grep -E '^(apps/api/|apps/admin/|apps/web/src/pages/Admin\.tsx|apps/web/src/pages/Driver\.tsx|package\.json|pnpm-lock\.yaml|\.github/)' >/dev/null; then
-  fail "Sensitive files changed. Founder approval required."
+protected_paths='^(apps/api/|apps/admin/|apps/web/src/pages/(Admin|Driver)\.tsx$|apps/web/src/app/App\.tsx$|package\.json$|pnpm-lock\.yaml$|\.github/|scripts/spec-guard\.sh$|AGENTS\.md$|docs/LVTRANSPORT_SPEC_LOCK\.md$)'
+if grep -Eq "$protected_paths" <<<"$changed_files"; then
+  if [[ "${SPEC_GUARD_FOUNDER_APPROVED_HEAD:-}" != "$(git rev-parse HEAD)" ]]; then
+    fail "Sensitive files changed. Founder approval of the current PR head required."
+  fi
 fi
 
-# Detect fake/demo production patterns in homepage.
-if git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx | grep -Ei 'hardcoded|fake|demo|38052|ETA|license|1-TRP|localStorage|sessionStorage|placeholder|400 00 00 00|support@lvtransport\.be' >/dev/null; then
+homepage_diff="$(git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx)"
+if grep -Eiq 'hardcoded|fake|demo|38052|ETA|license|1-TRP|localStorage|sessionStorage|placeholder|400 00 00 00|support@lvtransport\.be' <<<"$homepage_diff"; then
   fail "Potential demo/fake/local production behavior detected in homepage."
 fi
 
-# Detect forms that may not submit to production flow.
-if git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx | grep -E 'onSubmit=.*preventDefault|e\.preventDefault\(\)' >/dev/null; then
+if grep -Eq 'onSubmit=.*preventDefault|e\.preventDefault\(\)' <<<"$homepage_diff"; then
   fail "Form preventDefault detected. Confirm this is not replacing production booking."
 fi
 

@@ -3,6 +3,7 @@
 /AGENTS.md @leovargas-max
 /docs/LVTRANSPORT_SPEC_LOCK.md @leovargas-max
 /.github/ @leovargas-max
+/scripts/spec-guard.sh @leovargas-max
 
 /apps/web/src/pages/Admin.tsx @leovargas-max
 /apps/web/src/pages/Driver.tsx @leovargas-max
