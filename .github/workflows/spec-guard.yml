@@ -4,16 +4,47 @@ on:
   pull_request:
     branches:
       - main
+  pull_request_review:
+    types: [submitted, dismissed]
+
+permissions:
+  contents: read
+  pull-requests: read
 
 jobs:
   spec-guard:
+    if: github.event.pull_request.base.ref == 'main'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Run LVTransport spec guard
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.sha }}
         run: |
-          git fetch origin main
-          BASE_REF=origin/main bash scripts/spec-guard.sh
+          current_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .head.sha)"
+          if [[ "$current_head" != "$PR_HEAD" ]]; then
+            echo "The pull request head changed during verification." >&2
+            exit 1
+          fi
+          latest_owner_review="$(gh api --paginate --slurp \
+            "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/reviews?per_page=100" |
+            jq -c '[.[][] | select(.user.id == 280932462 and
+              (.state == "APPROVED" or .state == "CHANGES_REQUESTED" or .state == "DISMISSED"))]
+              | max_by(.id)')"
+          if jq -e --arg head "$PR_HEAD" \
+            '.state == "APPROVED" and .commit_id == $head' <<<"$latest_owner_review" >/dev/null; then
+            export SPEC_GUARD_FOUNDER_APPROVED_HEAD="$PR_HEAD"
+          fi
+          unset GH_TOKEN
+          trusted_guard="$(mktemp)"
+          trap 'rm -f -- "$trusted_guard"' EXIT
+          git show "$BASE_REF:scripts/spec-guard.sh" > "$trusted_guard"
+          bash "$trusted_guard"
