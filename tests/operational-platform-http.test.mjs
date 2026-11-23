@@ -2,6 +2,8 @@
 import assert from 'node:assert/strict';
 import { once } from 'node:events';
 import { createRequire } from 'node:module';
+import { createServer, request as proxyRequest } from 'node:http';
+import { gzipSync } from 'node:zlib';
 import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
@@ -14,6 +16,7 @@ const { build } = createRequire(uiRequire.resolve('vite'))('esbuild');
 const express = require('express');
 const src = file => JSON.stringify(path.join(root, file));
 const bundle = await build({ stdin: { resolveDir: root, loader: 'ts', contents: `
+export { default as v1Routes } from ${src('apps/api/src/routes/v1/index.ts')};
 export { default as healthRoutes } from ${src('apps/api/src/routes/v1/health.routes.ts')};
 export { FileBookingRepository } from ${src('apps/api/src/modules/bookings/repository.ts')};
 export { createBookingFlowService } from ${src('apps/api/src/modules/bookings/service.ts')};
@@ -21,7 +24,7 @@ export { createCustomerBookingRoutes } from ${src('apps/api/src/routes/v1/custom
 export { createBookingOperations } from ${src('apps/api/src/modules/bookings/operations.ts')};
 export { createCustomerAccountRoutes } from ${src('apps/api/src/routes/v1/customer-account.routes.ts')};
 export { createBookingOperationsRoutes } from ${src('apps/api/src/routes/v1/booking-operations.routes.ts')};
-` }, bundle: true, write: false, platform: 'node', format: 'cjs', external: ['express'] });
+` }, bundle: true, write: false, platform: 'node', format: 'cjs', external: ['express', 'firebase-admin/app', 'firebase-admin/auth'] });
 function load() {
   const module = { exports: {} };
   new Function('require', 'module', 'exports', bundle.outputFiles[0].text)(require, module, module.exports);
@@ -385,4 +388,53 @@ test('Ride does not grant operational identities customer booking access', async
       { expectedVersion: 1 }, 'synthetic-cancel-denied')).status, 403);
   }
   assert.equal((await f.request('/customer/bookings', 'customer-one')).status, 200);
+});
+
+
+test('real v1 routes reject compressed JSON and use a shared peer budget behind an untrusted proxy', async t => {
+  const app = express();
+  app.use('/api/v1', load().v1Routes);
+  const api = app.listen(0, '127.0.0.1');
+  await once(api, 'listening');
+  t.after(() => { api.closeAllConnections(); return new Promise(resolve => api.close(resolve)); });
+  const proxy = createServer((incoming, outgoing) => {
+    const forwarded = proxyRequest({
+      hostname: '127.0.0.1', port: api.address().port, method: incoming.method,
+      path: incoming.url, headers: incoming.headers,
+    }, upstream => {
+      outgoing.writeHead(upstream.statusCode, upstream.headers);
+      upstream.pipe(outgoing);
+    });
+    incoming.pipe(forwarded);
+  }).listen(0, '127.0.0.1');
+  await once(proxy, 'listening');
+  t.after(() => { proxy.closeAllConnections(); return new Promise(resolve => proxy.close(resolve)); });
+  const base = 'http://127.0.0.1:' + proxy.address().port + '/api/v1';
+  const compressedJson = gzipSync('{}');
+  const post = (route, forwardedFor) => fetch(base + route, {
+    method: 'POST',
+    headers: { 'content-type': 'application/json', 'content-encoding': 'gzip',
+      'x-forwarded-for': forwardedFor, 'x-real-ip': forwardedFor, forwarded: 'for=' + forwardedFor },
+    body: compressedJson,
+  });
+  for (const route of ['/bookings', '/customer/bookings', '/operations/vehicles']) {
+    const response = await post(route, '192.0.2.1');
+    assert.equal(response.status, 415, route);
+    assert.deepEqual(await response.json(), { success: false, message: 'Ongeldige aanvraaginhoud.' });
+  }
+  for (let i = 1; i <= 8; i++) {
+    const response = await post('/moni/ride/chat', '192.0.2.' + i);
+    assert.equal(response.status, 415);
+    await response.json();
+  }
+  const exhausted = await post('/moni/ride/chat', '192.0.2.254');
+  assert.equal(exhausted.status, 429, 'MONI rejects over budget before its JSON parser');
+  assert.ok(Number(exhausted.headers.get('retry-after')) > 0);
+  for (let i = 1; i <= 30; i++) {
+    const response = await fetch(base + '/tracking/booking/invalid', { headers: { 'x-forwarded-for': '198.51.100.' + i } });
+    assert.equal(response.status, 400);
+    await response.json();
+  }
+  const tracking = await fetch(base + '/tracking/booking/invalid', { headers: { 'x-forwarded-for': '198.51.100.254' } });
+  assert.equal(tracking.status, 429, 'tracking also uses the shared untrusted proxy budget');
 });

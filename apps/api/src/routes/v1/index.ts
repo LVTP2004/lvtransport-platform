@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { parseApiJson } from './parse-api-json.js';
 import { publicRateLimit } from './public-rate-limit.js';
 import { respondToMoniRide } from './moni-ride.routes.js';
 import healthRoutes from './health.routes.js';
@@ -16,16 +17,16 @@ if (process.env.LVTP_FIREBASE_MODE === 'staging') {
 }
 const bookingOperations = createBookingOperations(undefined, userId => resolveConfiguredDriver(userId, firebaseProject));
 
-router.post('/moni/ride/chat', publicRateLimit(8, 30), respondToMoniRide);
+router.post('/moni/ride/chat', publicRateLimit(8, 30), parseApiJson, respondToMoniRide);
 router.use('/health', healthRoutes);
 // Lazy trusted bootstrap: never accept a project or verifier from an HTTP caller.
+router.use(customerBookingRoutes);
 router.use('/auth', createAuthSessionRoutes(token => createConfiguredFirebaseVerifier(firebaseProject)(token),
   token => createConfiguredCustomerVerifier(firebaseProject)(token)));
-router.use('/customer', createCustomerAccountRoutes(token => createConfiguredCustomerVerifier(firebaseProject)(token), undefined, bookingOperations));
-router.use('/operations', createBookingOperationsRoutes(
+router.use('/customer', parseApiJson, createCustomerAccountRoutes(token => createConfiguredCustomerVerifier(firebaseProject)(token), undefined, bookingOperations));
+router.use('/operations', parseApiJson, createBookingOperationsRoutes(
   token => createConfiguredFirebaseVerifier(firebaseProject)(token),
   bookingOperations,
 ));
-router.use(customerBookingRoutes);
 
 export default router;

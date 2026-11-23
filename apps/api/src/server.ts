@@ -9,7 +9,6 @@ const domainApp = createApp();
 const server = express();
 
 server.use(cors());
-server.use(express.json());
 server.use(morgan('dev'));
 
 server.get('/health', (_req, res) => {

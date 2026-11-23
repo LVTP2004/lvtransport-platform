@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
+import { parseApiJson } from './parse-api-json.js';
 import { publicRateLimit } from './public-rate-limit.js';
 import { bookingFlowService } from '../../modules/bookings/service.js';
 import { validateCreateBookingPayload } from '../../modules/bookings/validation.js';
@@ -7,7 +8,7 @@ import { validateCreateBookingPayload } from '../../modules/bookings/validation.
 export function createCustomerBookingRoutes(service: typeof bookingFlowService = bookingFlowService) {
   const router = Router();
 
-  router.post('/bookings', async (req, res) => {
+  router.post('/bookings', parseApiJson, async (req, res) => {
     let payload;
     try {
       payload = validateCreateBookingPayload(req.body);
