@@ -1,49 +1,37 @@
-import type { RequestAuthContext, AuthRole, AuthStatus } from '../models/request-auth-context.js';
-import { AUTH_HEADER, BEARER_PREFIX } from '../constants/auth.constants.js';
+import type { RequestHandler } from 'express';
+import { isAuthRole, type RequestAuthContext, type AuthRole } from '../models/request-auth-context.js';
 import { accessControlService } from '../services/access-control.service.js';
 
-type HeaderLikeRequest = {
-  headers?: Record<string, string | string[] | undefined>;
-} & RequestAuthContext;
+export type VerifiedIdentity = { userId: string; role: AuthRole; status: 'active' };
+export type IdentityVerifier = (token: string) => Promise<VerifiedIdentity>;
+type HeaderLikeRequest = { headers?: Record<string, string | string[] | undefined> } & RequestAuthContext;
 
-const parseRole = (value: unknown): AuthRole => {
-  if (value === 'driver' || value === 'admin' || value === 'super_admin') return value;
-  return 'customer';
-};
-
-const parseStatus = (value: unknown): AuthStatus => {
-  if (value === 'inactive' || value === 'pending') return value;
-  return 'active';
-};
-
-export function authenticate<T extends HeaderLikeRequest>(req: T): T {
-  const raw = req.headers?.[AUTH_HEADER];
-  const header = Array.isArray(raw) ? raw[0] : raw;
-
-  if (!header?.startsWith(BEARER_PREFIX)) return req;
-
-  const token = header.slice(BEARER_PREFIX.length).trim();
-
+/** Verifier supplied only by trusted server bootstrap; no Base64 fallback. */
+export async function authenticate<T extends HeaderLikeRequest>(req: T, verify?: IdentityVerifier): Promise<T> {
+  req.auth = undefined;
+  const header = req.headers?.authorization;
+  if (!verify || typeof header !== 'string' || header.length > 16384) return req;
+  const match = /^Bearer ([^\s]+)$/.exec(header);
+  if (!match) return req;
   try {
-    const decoded = JSON.parse(Buffer.from(token, 'base64').toString('utf8')) as {
-      sub?: string;
-      role?: string;
-      status?: string;
-    };
-
-    const role = parseRole(decoded.role);
-    const status = parseStatus(decoded.status);
-
-    req.auth = {
-      userId: decoded.sub ?? 'unknown',
-      role,
-      status,
-      token,
-      permissions: accessControlService.permissionsForRole(role)
-    };
+    const identity = await verify(match[1]);
+    if (!identity.userId || identity.status !== 'active'
+        || !isAuthRole(identity.role)) return req;
+    req.auth = { ...identity, token: match[1],
+      permissions: accessControlService.permissionsForRole(identity.role) };
   } catch {
     req.auth = undefined;
   }
-
   return req;
+}
+
+export function createAuthenticationMiddleware(verify?: IdentityVerifier): RequestHandler {
+  return async (req, res, next) => {
+    await authenticate(req, verify);
+    if (!(req as HeaderLikeRequest).auth) {
+      res.status(401).json({ success: false, message: 'Unauthorized' });
+      return;
+    }
+    next();
+  };
 }

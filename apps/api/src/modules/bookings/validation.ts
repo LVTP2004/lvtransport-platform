@@ -13,10 +13,14 @@ const optionalText = (value: unknown, field: string, maxLength: number): string 
 };
 
 export const validateCreateBookingPayload = (payload: unknown): CreateBookingDto => {
+  if (Array.isArray(payload)) throw new Error('Payload must be an object, not an array');
   if (!payload || typeof payload !== 'object') throw new Error('Payload is required');
   const candidate = payload as Partial<CreateBookingDto> & { scheduledAt?: string };
   const scheduleAt = candidate.scheduleAt ?? candidate.scheduledAt;
 
+  if (candidate.pickup != null && typeof candidate.pickup !== 'string') throw new Error('pickup must be a string');
+  if (candidate.destination != null && typeof candidate.destination !== 'string') throw new Error('destination must be a string');
+  if (scheduleAt != null && typeof scheduleAt !== 'string') throw new Error('scheduledAt must be a string');
   if (!candidate.pickup?.trim()) throw new Error('pickup is required');
   if (!candidate.destination?.trim()) throw new Error('destination is required');
   if (!scheduleAt) throw new Error('scheduledAt is required');

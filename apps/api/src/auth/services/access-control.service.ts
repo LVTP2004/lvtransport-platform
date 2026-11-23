@@ -4,7 +4,8 @@ const rolePermissions: Record<AuthRole, string[]> = {
   customer: ['book:ride', 'manage:profile'],
   driver: ['driver:update_status'],
   admin: ['admin:read', 'admin:write'],
-  super_admin: ['admin:read', 'admin:write', 'admin:secure_action', 'audit:read']
+  super_admin: ['admin:read', 'admin:write', 'admin:secure_action', 'audit:read'],
+  founder: ['founder:read']
 };
 
 export const accessControlService = {

@@ -1,6 +1,6 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-import { App } from './app/App';
+import { App } from './app/VerifiedPortal';
 import { initPwa, registerServiceWorker } from './pwa';
 import './styles/index.css';
 

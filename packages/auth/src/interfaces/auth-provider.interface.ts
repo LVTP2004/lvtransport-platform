@@ -16,6 +16,12 @@ export interface UserAccount {
 
 export interface AuthProviderAdapter {
   signIn(email: string, password: string): Promise<AuthState>;
+  rememberSession?(remember: boolean): Promise<void>;
+  sendEmailLink?(email: string, returnUrl: string): Promise<void>;
+  signInWithEmailLink?(email: string, link: string): Promise<AuthState>;
+  signInWithGoogle?(): Promise<AuthState>;
+  signInWithMicrosoft?(): Promise<AuthState>;
+  linkMicrosoftAccount?(userId: string): Promise<void>;
   signOut(sessionId?: string): Promise<void>;
   refresh(token?: string): Promise<AuthTokens | undefined>;
   getUserProfile(): Promise<unknown>;

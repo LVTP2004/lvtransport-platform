@@ -14,10 +14,16 @@
   inset: 0;
   pointer-events: none;
   background-image: url('/brand/world-map-gold.svg');
-  opacity: .22;
-  background-size: cover;
+  opacity: .68;
+  background-size: contain;
   background-position: center;
+  background-repeat: no-repeat;
   mix-blend-mode: screen;
+}
+
+.premium-shell .glass-panel {
+  background-color: rgb(20 22 27 / 15%);
+  backdrop-filter: none;
 }
 .boot-splash {
   position: fixed;
@@ -136,3 +142,152 @@
 .moni-avatar{position:relative;width:42px;height:42px;border-radius:9999px;background:linear-gradient(180deg,#2a2d33,#1d2026);border:1px solid rgba(212,175,55,.45);display:flex;align-items:center;justify-content:center;}
 .moni-eyes{display:flex;gap:10px;}
 .moni-eyes i{display:block;width:7px;height:7px;border-radius:9999px;background:#d4af37;animation:moniBlink 5.2s ease-in-out infinite;}
+
+.lv-quick-booking {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+  align-items: end;
+  gap: .75rem;
+  max-width: 58rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #d4af3740;
+  border-radius: 1rem;
+  background: #081018a6;
+}
+.lv-quick-booking label, .lv-operations-panel form label {
+  display: grid;
+  gap: .35rem;
+  min-width: 0;
+}
+.lv-quick-booking input {
+  min-width: 0;
+  width: 100%;
+  border: 1px solid #d4af3755;
+  border-radius: .65rem;
+  background: #080d15;
+  padding: .65rem .75rem;
+  color: #fff;
+}
+.lv-quick-booking a { justify-self: start; }
+.lv-operations {
+  display: grid;
+  grid-template-columns: 13rem minmax(0, 1fr);
+  gap: 1rem;
+  margin-inline: auto;
+  max-width: 88rem;
+}
+.lv-operations-nav, .lv-operations-panel, .lv-operations-metrics > div {
+  border: 1px solid #d4af3733;
+  border-radius: .85rem;
+  background: #0d171f;
+  padding: 1rem;
+}
+.lv-operations-nav { display: grid; gap: .45rem; align-content: start; align-self: start; }
+.lv-operations-nav img { width: 9rem; margin-bottom: .5rem; }
+.lv-operations-nav button { text-align: left; border-radius: .45rem; padding: .55rem .65rem; }
+.lv-operations-nav button[aria-current] { color: #ffe09a; background: #d4af3726; }
+.lv-operations-body { display: grid; min-width: 0; gap: 1rem; }
+.lv-operations-metrics { display: grid; gap: .75rem; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.lv-operations-metrics dt { color: #c7cbd0; font-size: .85rem; }
+.lv-operations-metrics dd { color: #ffe09a; font-size: 1.5rem; font-weight: 600; }
+.lv-operations-panel { overflow-wrap: anywhere; }
+.lv-driver-cockpit { max-width: 66rem; margin-inline: auto; }
+.lv-driver-cockpit h2 { font-weight: 600; color: #ffe09a; }
+@media (max-width: 700px) {
+  .lv-quick-booking, .lv-operations { grid-template-columns: minmax(0, 1fr); }
+  .lv-operations-nav { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .lv-operations-nav img { grid-column: 1 / -1; }
+  .lv-operations-nav button { padding-inline: .35rem; }
+  .lv-operations-metrics > div { padding: .6rem; }
+}
+
+.lv-assignment-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: .75rem;
+  margin-block: .75rem;
+}
+.lv-assignment-controls select {
+  min-width: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  border-radius: .5rem;
+}
+.lv-assignment-controls button {
+  min-height: 2.75rem;
+  padding-inline: .9rem;
+  border-radius: .5rem;
+  background: #fbbf24;
+  color: #17130a;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.lv-assignment-controls button:disabled { opacity: .5; }
+@media (max-width: 520px) {
+  .lv-assignment-controls { grid-template-columns: minmax(0, 1fr); }
+}
+
+
+.fd-geo-map {
+  position: relative;
+  aspect-ratio: 3 / 2;
+  overflow: hidden;
+  border: 1px solid #283741;
+  border-radius: 8px;
+  background: #08141d;
+}
+.fd-geo-tiles {
+  display: grid;
+  position: absolute;
+  inset: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  filter: invert(.9) hue-rotate(173deg) saturate(.65) brightness(.86);
+}
+.fd-geo-tiles img { width: 100%; height: 100%; display: block; }
+.fd-geo-pin {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 2px solid #ffe19c;
+  background: #281b08;
+  color: #ffbe45 !important;
+  box-shadow: 0 0 0 3px #0a121a9e;
+}
+.fd-geo-attribution {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  background: #07121be8;
+  color: #e1eaf0 !important;
+  padding: 3px 5px;
+  font-size: 10px;
+}
+.fd-trip-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: clamp(3px, 1vw, 10px);
+  height: 9rem;
+  padding: 1rem .5rem .2rem;
+  border-bottom: 1px solid #2d3c49;
+  background: repeating-linear-gradient(0deg, transparent 0 24%, #293640 25%);
+}
+.fd-trip-bar {
+  position: relative;
+  height: 100%;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  font-size: 10px;
+  color: #bac5cf;
+}
+.fd-trip-bar div { width: 80%; background: #efbb5e; border-radius: 3px 3px 0 0; }
+.lv-dispatch-map .fd-geo-map { max-width: 42rem; margin-block: .7rem; }

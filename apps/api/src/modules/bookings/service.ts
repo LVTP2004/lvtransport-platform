@@ -1,16 +1,13 @@
 import { randomUUID } from 'node:crypto';
+import { createReferenceCode } from './reference-code.js';
 import type { BookingRecord, CreateBookingDto } from './dto.js';
-import { bookingRepository } from './repository.js';
+import { bookingRepository, type BookingRepository } from './repository.js';
 import { TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
 import { validateLifecycleTransition } from './lifecycle-validation.js';
 import { DomainError } from '../../errors/domain-error.js';
 import { createBookingDuplicateFingerprint } from './fingerprint.js';
-
-const createReferenceCode = (): string => {
-  const stamp = Date.now().toString(36).toUpperCase();
-  const token = randomUUID().replace(/-/g, '').slice(0, 6).toUpperCase();
-  return `LV-${stamp}-${token}`;
-};
+import { projectOperationalBooking } from './operational-projection.js';
+import { logger } from '../../utils/logger.js';
 
 const createSafeFareQuote = (input: CreateBookingDto, now: string) => {
   const distance = input.estimatedDistanceKm ?? 5;
@@ -33,131 +30,163 @@ const createSafeFareQuote = (input: CreateBookingDto, now: string) => {
   };
 };
 
-export const bookingFlowService = {
-  async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
-    const existing = await bookingRepository.findByIdempotencyKey(idempotencyKey);
-    if (existing) return existing;
-
-    const duplicateFingerprint = createBookingDuplicateFingerprint(input);
-    if (duplicateFingerprint) {
-      const recentDuplicate = await bookingRepository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
-      if (recentDuplicate) return recentDuplicate;
+/** Dependencies come from server bootstrap/tests, never HTTP input. */
+export function createBookingFlowService(
+  repository: BookingRepository = bookingRepository,
+  project: (booking: BookingRecord) => void = projectOperationalBooking,
+) {
+  const projectPersisted = (booking: BookingRecord): BookingRecord => {
+    try {
+      project(booking);
+    } catch {
+      // Persistence already succeeded: do not turn a recoverable projection failure
+      // into a false "booking not saved" response or log customer/contact data.
+      logger.warn('booking.operational_projection.pending', { bookingId: booking.id });
     }
-
-    const now = new Date().toISOString();
-    const booking: BookingRecord = {
-      id: randomUUID(),
-      referenceCode: createReferenceCode(),
-      status: 'pending',
-      createdAt: now,
-      ...input,
-      customerTier: input.customerTier ?? (input.serviceType === 'vip' ? 'vip' : 'retail'),
-      fareQuote: createSafeFareQuote(input, now),
-      billing: {
-        invoiceLifecycleState: 'ready_for_invoice',
-        isBillingConsistent: true,
-        synchronizedAt: now
-      },
-      rideHistoryMeta: {
-        firstRideAt: now,
-        lastRideAt: now,
-        ridesCompletedUnderAccount: 0
-      },
-      lifecycle: {
-        initializedAt: now,
-        state: 'pending',
-        initIdempotencyKey: idempotencyKey,
-        version: 1,
-        transitions: [{ from: null, to: 'pending', occurredAt: now, actor: 'system', reason: 'booking_created' }]
-      },
-      airportIntelligence: input.airportIntel
-        ? {
-            enabled: true,
-            synchronizedAt: now,
-            pickupBufferMin: 20,
-            monitoring: {
-              providerPriority: ['manual'],
-              status: 'unknown',
-              delayMin: 0,
-              terminal: input.airportIntel.terminal ?? null,
-              notes: ['Safe baseline airport intelligence placeholder.']
-            }
-          }
-        : undefined,
-      lvMessenger: {
-        threadId: randomUUID(),
-        messages: [],
-        lastMessageAt: now
+    return booking;
+  };
+  return {
+    async createBooking(input: CreateBookingDto, idempotencyKey: string): Promise<BookingRecord> {
+      const existing = await repository.findByIdempotencyKey(idempotencyKey);
+      if (existing) {
+        if ((existing.customerIdentityVerified === true) !== (input.customerIdentityVerified === true)
+            || (input.customerIdentityVerified === true && existing.customerId !== input.customerId)) {
+          throw new Error('Booking identity scope conflict');
+        }
+        return projectPersisted(existing);
       }
-    };
 
-    return bookingRepository.create(booking);
-  },
+      const duplicateFingerprint = createBookingDuplicateFingerprint(input);
+      if (duplicateFingerprint) {
+        const recentDuplicate = await repository.findRecentDuplicateFingerprint(duplicateFingerprint, 2 * 60_000);
+        if (recentDuplicate) return projectPersisted(recentDuplicate);
+      }
 
-  async listBookings(): Promise<BookingRecord[]> {
-    return bookingRepository.list();
-  },
+      const now = new Date().toISOString();
+      const booking: BookingRecord = {
+        id: randomUUID(),
+        referenceCode: createReferenceCode(),
+        status: 'pending',
+        createdAt: now,
+        ...input,
+        customerTier: input.customerTier ?? (input.serviceType === 'vip' ? 'vip' : 'retail'),
+        fareQuote: createSafeFareQuote(input, now),
+        billing: {
+          invoiceLifecycleState: 'ready_for_invoice',
+          isBillingConsistent: true,
+          synchronizedAt: now
+        },
+        rideHistoryMeta: {
+          firstRideAt: now,
+          lastRideAt: now,
+          ridesCompletedUnderAccount: 0
+        },
+        lifecycle: {
+          initializedAt: now,
+          state: 'pending',
+          initIdempotencyKey: idempotencyKey,
+          version: 1,
+          transitions: [{ from: null, to: 'pending', occurredAt: now, actor: 'system', reason: 'booking_created' }]
+        },
+        airportIntelligence: input.airportIntel
+          ? {
+              enabled: true,
+              synchronizedAt: now,
+              pickupBufferMin: 20,
+              monitoring: {
+                providerPriority: ['manual'],
+                status: 'unknown',
+                delayMin: 0,
+                terminal: input.airportIntel.terminal ?? null,
+                notes: ['Safe baseline airport intelligence placeholder.']
+              }
+            }
+          : undefined,
+        lvMessenger: {
+          threadId: randomUUID(),
+          messages: [],
+          lastMessageAt: now
+        }
+      };
 
-  async getAirportIntelligence(bookingId: string) {
-    const booking = (await bookingRepository.list()).find((item) => item.id === bookingId);
-    if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
-    return {
-      bookingId: booking.id,
-      referenceCode: booking.referenceCode,
-      airportIntel: booking.airportIntel,
-      airportIntelligence: booking.airportIntelligence,
-      generatedLVMessages: booking.lvMessenger.messages
-    };
-  },
+      return projectPersisted(await repository.create(booking));
+    },
 
-  async updateBookingLifecycle(
-    bookingId: string,
-    nextState: CanonicalBookingLifecycleStatus,
-    actor: 'system' | 'admin' | 'driver' | 'customer',
-    reason?: string,
-    metadata?: Record<string, unknown>,
-    expectedVersion?: number
-  ): Promise<BookingRecord> {
-    const bookings = await bookingRepository.list();
-    const booking = bookings.find((item) => item.id === bookingId);
-    if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
+    async getPublicBookingStatus(reference: string) {
+      const record = (await repository.list()).find(booking => booking.referenceCode.toUpperCase() === reference);
+      return record ? { referenceCode: record.referenceCode, status: record.status } : null;
+    },
 
-    const currentState = booking.lifecycle.state;
-    const validation = validateLifecycleTransition({
-      currentState,
-      nextState,
-      currentVersion: booking.lifecycle.version,
-      expectedVersion
-    });
+    async listBookings(): Promise<BookingRecord[]> {
+      const bookings = await repository.list();
+      // Rebuild missing pending intake projections after a process restart, using
+      // the same persisted IDs. Existing operational records are left untouched.
+      return bookings.map(projectPersisted);
+    },
 
-    if (!validation.ok) {
-      throw new DomainError(
-        validation.reason === 'VERSION_MISMATCH' ? 'BOOKING_VERSION_CONFLICT' : validation.reason === 'TERMINAL_IMMUTABLE' ? 'TERMINAL_STATE_IMMUTABLE' : 'INVALID_TRANSITION',
-        'Ongeldige statusovergang voor deze rit.',
-        409,
-        { bookingId, ...validation.details }
-      );
+    async getAirportIntelligence(bookingId: string) {
+      const booking = (await repository.list()).find((item) => item.id === bookingId);
+      if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
+      return {
+        bookingId: booking.id,
+        referenceCode: booking.referenceCode,
+        airportIntel: booking.airportIntel,
+        airportIntelligence: booking.airportIntelligence,
+        generatedLVMessages: booking.lvMessenger.messages
+      };
+    },
+
+    async updateBookingLifecycle(
+      bookingId: string,
+      nextState: CanonicalBookingLifecycleStatus,
+      actor: 'system' | 'admin' | 'driver' | 'customer',
+      reason?: string,
+      metadata?: Record<string, unknown>,
+      expectedVersion?: number
+    ): Promise<BookingRecord> {
+      const bookings = await repository.list();
+      const booking = bookings.find((item) => item.id === bookingId);
+      if (!booking) throw new DomainError('BOOKING_NOT_FOUND', 'Boeking niet gevonden.', 404, { bookingId });
+
+      const currentState = booking.lifecycle.state;
+      const validation = validateLifecycleTransition({
+        currentState,
+        nextState,
+        currentVersion: booking.lifecycle.version,
+        expectedVersion
+      });
+
+      if (!validation.ok) {
+        throw new DomainError(
+          validation.reason === 'VERSION_MISMATCH' ? 'BOOKING_VERSION_CONFLICT' : validation.reason === 'TERMINAL_IMMUTABLE' ? 'TERMINAL_STATE_IMMUTABLE' : 'INVALID_TRANSITION',
+          'Ongeldige statusovergang voor deze rit.',
+          409,
+          { bookingId, ...validation.details }
+        );
+      }
+
+      if (validation.duplicate) return booking;
+
+      const now = new Date().toISOString();
+      booking.status = nextState;
+      booking.lifecycle.state = nextState;
+      booking.lifecycle.version += 1;
+      booking.lifecycle.transitions.push({ from: currentState, to: nextState, occurredAt: now, actor, reason, metadata });
+      booking.lvMessenger.lastMessageAt = now;
+
+      return repository.update(booking);
+    },
+
+    async getOperationalMetrics() {
+      const bookings = await repository.list();
+      const total = bookings.length;
+      const completed = bookings.filter((booking) => booking.lifecycle.state === 'completed').length;
+      const cancelled = bookings.filter((booking) => booking.lifecycle.state === 'cancelled').length;
+      const active = bookings.filter((booking) => !TERMINAL_BOOKING_STATUSES.has(booking.lifecycle.state)).length;
+      const completionRate = total === 0 ? 0 : Number((completed / total).toFixed(4));
+      return { total, completed, cancelled, active, completionRate };
     }
+  };
+}
 
-    if (validation.duplicate) return booking;
-
-    const now = new Date().toISOString();
-    booking.status = nextState;
-    booking.lifecycle.state = nextState;
-    booking.lifecycle.version += 1;
-    booking.lifecycle.transitions.push({ from: currentState, to: nextState, occurredAt: now, actor, reason, metadata });
-    booking.lvMessenger.lastMessageAt = now;
-
-    return bookingRepository.update(booking);
-  },
-
-  async getOperationalMetrics() {
-    const bookings = await bookingRepository.list();
-    const total = bookings.length;
-    const completed = bookings.filter((booking) => booking.lifecycle.state === 'completed').length;
-    const cancelled = bookings.filter((booking) => booking.lifecycle.state === 'cancelled').length;
-    const active = bookings.filter((booking) => !TERMINAL_BOOKING_STATUSES.has(booking.lifecycle.state)).length;
-    const completionRate = total === 0 ? 0 : Number((completed / total).toFixed(4));
-    return { total, completed, cancelled, active, completionRate };
-  }
-};
+export const bookingFlowService = createBookingFlowService();
