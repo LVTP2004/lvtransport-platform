@@ -69,7 +69,7 @@ function CustomerBookings({ client, userId, onConnection, revision }: { client: 
       <p>{booking.pickup} → {booking.destination}</p><p>{new Date(booking.scheduleAt).toLocaleString('nl-BE', { timeZone: bookingTimeZone })}</p>
       {booking.assignment && <p>{booking.assignment.driverName} · {booking.assignment.vehicleRegistration}</p>}
       {booking.location && <p>Door chauffeur gemelde positie ({new Date(booking.location.capturedAt).toLocaleTimeString()}):
-        {' '}<a target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${encodeURIComponent(booking.location.lat + ',' + booking.location.lng)}`}>Kaart openen</a>
+        {' '}{booking.location.lat.toFixed(5)}, {booking.location.lng.toFixed(5)}
       </p>}
       {booking.status === 'pending' && <button disabled={busy} onClick={() => void cancel(booking)}>Annuleer aanvraag</button>}
     </article>)}

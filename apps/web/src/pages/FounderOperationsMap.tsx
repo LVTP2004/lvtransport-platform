@@ -26,23 +26,22 @@ export function FounderOperationsMap({ points, caption }: { points: OperationsMa
     <div className="fd-geo-map" aria-label="Antwerp operations map">
       <div className="fd-geo-tiles" aria-hidden="true">{tiles.map(({ x, y }) =>
         <img key={`${x}/${y}`} src={`https://tile.openstreetmap.org/${zoom}/${x}/${y}.png`}
-          alt="" loading="lazy" width="256" height="256" referrerPolicy="strict-origin-when-cross-origin" />
+          alt="" loading="lazy" width="256" height="256" referrerPolicy="no-referrer" />
       )}</div>
       {points.map(point => {
         const { x, y } = tilePosition(point.lat, point.lng);
         const horizontal = (x - left) / across;
         const vertical = (y - top) / down;
         if (horizontal <= 0 || horizontal >= 1 || vertical <= 0 || vertical >= 1) return null;
-        return <a className="fd-geo-pin" key={point.referenceCode}
-          aria-label={`Open position for ${point.referenceCode}`} title={point.referenceCode}
-          style={{ left: `${horizontal * 100}%`, top: `${vertical * 100}%` }}
-          href={`https://www.google.com/maps?q=${point.lat},${point.lng}`} target="_blank" rel="noreferrer">●</a>;
+        return <span className="fd-geo-pin" role="img" key={point.referenceCode}
+          aria-label={`Reported position for ${point.referenceCode}`} title={point.referenceCode}
+          style={{ left: `${horizontal * 100}%`, top: `${vertical * 100}%` }}>●</span>;
       })}
       <a className="fd-geo-attribution" href="https://www.openstreetmap.org/copyright" target="_blank" rel="noreferrer">© OpenStreetMap contributors</a>
     </div>
     <p className="fd-note">{caption}</p>
     {points.length > 0 && <ul className="fd-feed">{points.map(point => <li key={point.referenceCode}>
-      <strong>{point.referenceCode}</strong><a href={`https://www.google.com/maps?q=${point.lat},${point.lng}`} target="_blank" rel="noreferrer">Open reported position ↗</a>
+      <strong>{point.referenceCode}</strong><span>{point.lat.toFixed(5)}, {point.lng.toFixed(5)}</span>
     </li>)}</ul>}
   </>;
 }

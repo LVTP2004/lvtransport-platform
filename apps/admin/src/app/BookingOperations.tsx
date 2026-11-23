@@ -150,7 +150,7 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
         {booking.customerEmail && <p><a href={`mailto:${encodeURIComponent(booking.customerEmail)}`}>{booking.customerEmail}</a></p>}
         {booking.notes && <p>{booking.notes}</p>}
         {booking.location && <p>Driver-reported location ({new Date(booking.location.capturedAt).toLocaleTimeString()}):
-          {' '}<a target="_blank" rel="noreferrer" href={`https://www.google.com/maps?q=${encodeURIComponent(booking.location.lat + ',' + booking.location.lng)}`}>Open map</a>
+          {' '}{booking.location.lat.toFixed(5)}, {booking.location.lng.toFixed(5)}
         </p>}
         {booking.assignment && <p>Driver: {drivers.find(d => d.id === booking.assignment?.driverId)?.name ?? booking.assignment.driverId} · Vehicle: {vehicles.find(v => v.id === booking.assignment?.vehicleId)?.registration ?? booking.assignment.vehicleId}</p>}
         {booking.status === 'pending' && !booking.assignment && (
