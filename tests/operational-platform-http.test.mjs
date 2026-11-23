@@ -325,3 +325,53 @@ test('failed terminal write preserves active GPS until the terminal transition c
   assert.equal(completed.body.booking.location, null);
   assert.equal((await f.request(locationPath, 'driver-one', { sessionId, position })).status, 409);
 });
+
+test('one verified Ride booking is traceable through Tower, Driver and Founder', async t => {
+  const f = await setup(t);
+  await f.ready();
+
+  const intake = await f.request('/customer/bookings', 'customer-one', input, 'synthetic-419-intake');
+  assert.equal(intake.status, 201);
+  const [booking] = (await f.request('/customer/bookings', 'customer-one')).body.bookings;
+  const route = '/operations/bookings/' + booking.id;
+  const tower = await f.request('/operations/bookings', 'admin');
+  assert.ok(tower.body.bookings.some(item => item.id === booking.id));
+  const assignment = await f.request(route + '/assignment', 'admin',
+    { driverId: 'driver-one', expectedVersion: 1 }, 'synthetic-419-assignment');
+  assert.equal(assignment.status, 200);
+
+  const sharing = await f.request(route + '/location', 'driver-one', { sharing: true });
+  assert.equal(sharing.status, 200);
+  const sample = await f.request(route + '/location', 'driver-one', {
+    sessionId: sharing.body.sessionId,
+    position: { lat: 51.2, lng: 4.4, capturedAt: '2026-11-15T12:00:00Z' },
+  });
+  assert.equal(sample.status, 200);
+  assert.deepEqual((await f.request('/customer/bookings', 'customer-one')).body.bookings[0].location, sample.body.location);
+  assert.deepEqual((await f.request('/customer/bookings', 'customer-two')).body.bookings, []);
+  const tracking = '/tracking/booking/' + booking.referenceCode;
+  assert.equal((await f.request(tracking)).body.booking.location, undefined);
+
+  const denied = await f.request(route + '/status', 'founder',
+    { status: 'accepted', expectedVersion: 2 }, 'synthetic-419-denied');
+  assert.equal(denied.status, 403);
+  let version = 2;
+  for (const status of ['accepted', 'en_route', 'arrived', 'in_progress', 'completed']) {
+    const response = await f.request(route + '/status', 'driver-one',
+      { status, expectedVersion: version }, 'synthetic-419-' + status);
+    assert.equal(response.status, 200);
+    assert.equal(response.body.booking.version, ++version);
+  }
+
+  const founder = await f.request('/operations/bookings', 'founder');
+  const observed = founder.body.bookings.find(item => item.id === booking.id);
+  assert.equal(observed.status, 'completed');
+  assert.equal(observed.location, null);
+  assert.equal(Object.hasOwn(observed, 'customerEmail'), false);
+  assert.equal((await f.request(tracking)).body.booking.status, 'completed');
+  const recovered = f.m.createBookingOperations(new f.m.FileBookingRepository(f.file));
+  const persisted = recovered.listCustomerBookings({ userId: 'customer-one', role: 'customer', status: 'active' });
+  assert.equal(persisted[0].id, booking.id);
+  assert.equal(persisted[0].status, 'completed');
+  assert.equal(persisted[0].location, null);
+});
