@@ -1,0 +1,9 @@
+[Unit]
+Description=LVTransport safe GitHub main mirror (no production deployment)
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=%h/.local/bin/lvtp-github-sync
+TimeoutStartSec=180
