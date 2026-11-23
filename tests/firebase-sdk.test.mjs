@@ -17,6 +17,7 @@ new Function('require', 'module', 'exports', compiled.outputFiles[0].text)(authR
 const { createFirebaseBrowserProvider } = module.exports;
 const configured = await build({
   entryPoints: [path.join(root, 'packages/auth/src/config/lvtp-firebase.ts')],
+  define: { 'import.meta.env': '{}' },
   bundle: true, write: false, platform: 'node', format: 'cjs',
   external: ['firebase/app', 'firebase/auth'],
 });
@@ -133,4 +134,25 @@ test('Google adapter requests account selection and propagates popup failure wit
     if (previous === undefined) delete globalThis.__lvtpGoogleAdapterTest;
     else globalThis.__lvtpGoogleAdapterTest = previous;
   }
+});
+
+test('browser staging mode requires its own project, app, key and local API', () => {
+  const { resolveFirebaseWebOptions, LVTP_FIREBASE_WEB_OPTIONS } = configModule.exports;
+  const staging = {
+    MODE: 'staging',
+    VITE_API_BASE_URL: 'http://127.0.0.1:49153/api/v1',
+    VITE_LVTP_STAGING_FIREBASE_PROJECT_ID: 'lvtp-synthetic-staging',
+    VITE_LVTP_STAGING_FIREBASE_API_KEY: 'synthetic-key',
+    VITE_LVTP_STAGING_FIREBASE_APP_ID: 'synthetic-app',
+  };
+  assert.equal(resolveFirebaseWebOptions({ MODE: 'production' }), LVTP_FIREBASE_WEB_OPTIONS);
+  assert.equal(resolveFirebaseWebOptions(staging).authDomain, 'lvtp-synthetic-staging.firebaseapp.com');
+  for (const invalid of [
+    { MODE: 'staging' },
+    { ...staging, MODE: 'production' },
+    { ...staging, VITE_LVTP_STAGING_FIREBASE_PROJECT_ID: LVTP_FIREBASE_WEB_OPTIONS.projectId },
+    { ...staging, VITE_LVTP_STAGING_FIREBASE_API_KEY: LVTP_FIREBASE_WEB_OPTIONS.apiKey },
+    { ...staging, VITE_LVTP_STAGING_FIREBASE_APP_ID: LVTP_FIREBASE_WEB_OPTIONS.appId },
+    { ...staging, VITE_API_BASE_URL: 'https://api.lvtransport.be/api/v1' },
+  ]) assert.throws(() => resolveFirebaseWebOptions(invalid), /staging/i);
 });
