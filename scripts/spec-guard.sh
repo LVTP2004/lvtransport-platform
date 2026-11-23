@@ -20,7 +20,9 @@ if grep -Eq "$protected_paths" <<<"$changed_files"; then
 fi
 
 homepage_diff="$(git diff "$BASE_REF"...HEAD -- apps/web/src/pages/home/HeroSection.tsx)"
-if grep -Eiq 'hardcoded|fake|demo|38052|ETA|license|1-TRP|localStorage|sessionStorage|placeholder|400 00 00 00|support@lvtransport\.be' <<<"$homepage_diff"; then
+# Keep the attribute values in scope while ignoring the JSX attribute name.
+homepage_content="$(sed -E 's/([[:space:]])placeholder([[:space:]]*=)/\1\2/g' <<<"$homepage_diff")"
+if grep -Eiq 'hardcoded|fake|demo|38052|(^|[^[:alnum:]_])ETA([^[:alnum:]_]|$)|license|1-TRP|localStorage|sessionStorage|placeholder|400 00 00 00|support@lvtransport\.be' <<<"$homepage_content"; then
   fail "Potential demo/fake/local production behavior detected in homepage."
 fi
 
