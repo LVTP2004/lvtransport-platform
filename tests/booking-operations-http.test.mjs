@@ -16,6 +16,8 @@ const source = name => JSON.stringify(path.join(root, name));
 const bundle = await build({ stdin: { contents: `
 export { createBookingFlowService } from ${source('apps/api/src/modules/bookings/service.ts')};
 export { FileBookingRepository } from ${source('apps/api/src/modules/bookings/repository.ts')};
+export { publicRateLimit } from ${source('apps/api/src/routes/v1/public-rate-limit.ts')};
+export { respondToMoniRide } from ${source('apps/api/src/routes/v1/moni-ride.routes.ts')};
 export { createCustomerBookingRoutes } from ${source('apps/api/src/routes/v1/customer-booking.routes.ts')};
 export { realtimeOrchestratorService } from ${source('apps/api/src/services/realtime-orchestrator.service.ts')};
 `, resolveDir: root, loader: 'ts' }, bundle: true, write: false, platform: 'node', format: 'cjs', external: ['express'] });
@@ -32,6 +34,7 @@ async function fixture(t) {
 async function http(t, module, service) {
   const app = express(); app.use(express.json());
   app.use('/api/v1', module.createCustomerBookingRoutes(service));
+  app.post('/moni', module.publicRateLimit(8, 30), module.respondToMoniRide);
   const server = app.listen(0, '127.0.0.1');
   await once(server, 'listening');
   t.after(async () => { server.closeAllConnections(); await new Promise(resolve => server.close(resolve)); });
@@ -163,4 +166,53 @@ test('rehydration never manufactures an assigned booking without persisted drive
   await restarted.createBookingFlowService(new restarted.FileBookingRepository(f.filename)).listBookings();
   assert.equal(restarted.realtimeOrchestratorService.listBookings().length, 0);
   assert.equal((await repository.list())[0].id, booking.id);
+});
+
+test('public tracking uses read-only lookup and bounds requests independently of MONI', async t => {
+  const f = await fixture(t);
+  const m = load();
+  const repository = new m.FileBookingRepository(f.filename);
+  let projected = 0;
+  const api = await http(t, m, m.createBookingFlowService(repository, () => projected++));
+  const result = await (await api.create(payload, 'synthetic-track-limits')).json();
+  const tracking = api.base + '/tracking/booking/' + result.booking.referenceCode;
+  const initial = await fetch(tracking);
+  assert.equal(initial.status, 200);
+  assert.equal(initial.headers.get('cache-control'), 'no-store');
+  assert.deepEqual((await initial.json()).booking, result.booking);
+  assert.equal(projected, 1, 'tracking must not rebuild operational projections');
+
+  const stored = (await repository.list())[0];
+  await repository.update({ ...stored, referenceCode: 'LV-SYNTHETIC-A1B2C3' });
+  const legacy = await fetch(api.base + '/tracking/booking/lv-synthetic-a1b2c3');
+  assert.equal(legacy.status, 200);
+  for (let i = 0; i < 28; i++) {
+    assert.equal((await fetch(tracking)).status, 404);
+  }
+  const throttled = await fetch(tracking);
+  assert.equal(throttled.status, 429);
+  assert.ok(Number(throttled.headers.get('retry-after')) > 0);
+  const moniUrl = new URL('/moni', api.base);
+  for (let i = 0; i < 8; i++) {
+    assert.equal((await fetch(moniUrl, { method: 'POST' })).status, 400);
+  }
+  assert.equal((await fetch(moniUrl, { method: 'POST' })).status, 429);
+});
+
+test('public limiter bounds total budget and resets after its fixed window', () => {
+  const m = load();
+  let tick = 1000;
+  const limiter = m.publicRateLimit(2, 3, () => tick);
+  function decision(ip) {
+    const res = { statusCode: 429, set() { return this; }, status(status) { this.statusCode = status; return this; }, json() {} };
+    limiter({ ip }, res, () => { res.statusCode = 200; });
+    return res.statusCode;
+  }
+  assert.equal(decision('client-a'), 200);
+  assert.equal(decision('client-a'), 200);
+  assert.equal(decision('client-a'), 429);
+  assert.equal(decision('client-b'), 200);
+  assert.equal(decision('client-c'), 429);
+  tick += 60_000;
+  assert.equal(decision('client-a'), 200);
 });

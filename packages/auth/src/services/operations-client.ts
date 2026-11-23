@@ -7,7 +7,7 @@ export type OperationsProvider = Pick<AuthProviderAdapter, 'signInWithGoogle' | 
 const portalRoles = {
   admin: ['admin', 'super_admin'],
   driver: ['driver'],
-  customer: ['customer', 'driver', 'admin', 'super_admin'],
+  customer: ['customer'],
   founder: ['founder'],
 };
 

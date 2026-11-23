@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import { publicRateLimit } from './public-rate-limit.js';
 import { respondToMoniRide } from './moni-ride.routes.js';
 import healthRoutes from './health.routes.js';
 import customerBookingRoutes from './customer-booking.routes.js';
@@ -15,7 +16,7 @@ if (process.env.LVTP_FIREBASE_MODE === 'staging') {
 }
 const bookingOperations = createBookingOperations(undefined, userId => resolveConfiguredDriver(userId, firebaseProject));
 
-router.post('/moni/ride/chat', respondToMoniRide);
+router.post('/moni/ride/chat', publicRateLimit(8, 30), respondToMoniRide);
 router.use('/health', healthRoutes);
 // Lazy trusted bootstrap: never accept a project or verifier from an HTTP caller.
 router.use('/auth', createAuthSessionRoutes(token => createConfiguredFirebaseVerifier(firebaseProject)(token),

@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { Router } from 'express';
+import { publicRateLimit } from './public-rate-limit.js';
 import { bookingFlowService } from '../../modules/bookings/service.js';
 import { validateCreateBookingPayload } from '../../modules/bookings/validation.js';
 
@@ -25,36 +26,29 @@ export function createCustomerBookingRoutes(service: typeof bookingFlowService =
     } catch {
       res.status(500).json({ success: false, message: 'De aanvraag kon niet veilig worden opgeslagen.' });
     }
-});
+  });
 
-router.get('/tracking/booking/:code', async (req, res) => {
-  const code = String(req.params.code ?? '').trim().toUpperCase();
-  if (!code) {
-    res.status(400).json({ success: false, message: 'Een ritreferentie is vereist.' });
-    return;
-  }
-
-  try {
-    const bookings = await service.listBookings();
-    const record = bookings.find((booking) => booking.referenceCode.toUpperCase() === code);
-    if (!record) {
-      res.status(404).json({ success: false, message: 'Rit niet gevonden.' });
+  router.get('/tracking/booking/:code', publicRateLimit(30, 240), async (req, res) => {
+    res.set('Cache-Control', 'no-store');
+    const code = String(req.params.code ?? '').trim().toUpperCase();
+    if (!/^(?:[0-9]{5}|LV-[0-9A-Z]{1,16}-[0-9A-F]{6})$/.test(code)) {
+      res.status(400).json({ success: false, message: 'Een geldige ritreferentie is vereist.' });
       return;
     }
 
-    res.json({
-      success: true,
-      booking: {
-        referenceCode: record.referenceCode,
-        status: record.status,
-      },
-    });
-  } catch {
-    res.status(500).json({ success: false, message: 'De ritstatus kan momenteel niet worden opgehaald.' });
-  }
-});
+    try {
+      const booking = await service.getPublicBookingStatus(code);
+      if (!booking) {
+        res.status(404).json({ success: false, message: 'Rit niet gevonden.' });
+        return;
+      }
+      res.json({ success: true, booking });
+    } catch {
+      res.status(500).json({ success: false, message: 'De ritstatus kan momenteel niet worden opgehaald.' });
+    }
+  });
 
-return router;
+  return router;
 }
 
 export default createCustomerBookingRoutes();

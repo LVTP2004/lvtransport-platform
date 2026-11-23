@@ -112,6 +112,11 @@ export function createBookingFlowService(
       return projectPersisted(await repository.create(booking));
     },
 
+    async getPublicBookingStatus(reference: string) {
+      const record = (await repository.list()).find(booking => booking.referenceCode.toUpperCase() === reference);
+      return record ? { referenceCode: record.referenceCode, status: record.status } : null;
+    },
+
     async listBookings(): Promise<BookingRecord[]> {
       const bookings = await repository.list();
       // Rebuild missing pending intake projections after a process restart, using

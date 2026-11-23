@@ -121,7 +121,8 @@ test('unassigned Firebase accounts can identify as customers only through the ex
   await assert.rejects(createFirebaseIdentityVerifier(f.sdk, 'synthetic-project', () => now)('synthetic'));
   const customer = createFirebaseIdentityVerifier(f.sdk, 'synthetic-project', () => now, { allowUnassignedCustomer: true });
   assert.deepEqual(await customer('synthetic'), { userId: 'synthetic-user', role: 'customer', status: 'active' });
-  for (const customClaims of [{ role: 'unknown' }, { status: 'inactive' }, { status: 'pending' }]) {
+  for (const customClaims of [{ role: 'unknown' }, { status: 'inactive' }, { status: 'pending' },
+    ...['admin', 'super_admin', 'driver', 'founder'].map(role => ({ role, status: 'active' }))]) {
     const denied = fixture({}, { customClaims });
     await assert.rejects(createFirebaseIdentityVerifier(denied.sdk, 'synthetic-project', () => now,
       { allowUnassignedCustomer: true })('synthetic'));

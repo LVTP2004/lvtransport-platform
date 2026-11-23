@@ -375,3 +375,14 @@ test('one verified Ride booking is traceable through Tower, Driver and Founder',
   assert.equal(persisted[0].status, 'completed');
   assert.equal(persisted[0].location, null);
 });
+
+test('Ride does not grant operational identities customer booking access', async t => {
+  const f = await setup(t);
+  for (const role of ['admin', 'founder', 'driver-one']) {
+    assert.equal((await f.request('/customer/bookings', role)).status, 403);
+    assert.equal((await f.request('/customer/bookings', role, input, 'synthetic-role-denied')).status, 403);
+    assert.equal((await f.request('/customer/bookings/' + f.saved.id + '/cancel', role,
+      { expectedVersion: 1 }, 'synthetic-cancel-denied')).status, 403);
+  }
+  assert.equal((await f.request('/customer/bookings', 'customer-one')).status, 200);
+});

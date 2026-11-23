@@ -31,7 +31,8 @@ export function createFirebaseIdentityVerifier(sdk: AdminAuthSdk, projectId: str
       return { userId: account.uid, role: 'customer', status: 'active' };
     }
     if (account.uid !== decoded.uid || account.disabled !== false || account.customClaims?.status !== 'active'
-        || !isAuthRole(role) || (role === 'founder' && (account.emailVerified !== true || options.allowUnassignedCustomer === true))) {
+        || !isAuthRole(role) || (role === 'founder' && account.emailVerified !== true)
+        || (options.allowUnassignedCustomer === true && role !== 'customer')) {
       throw new Error('Inactive or unauthorized identity');
     }
     return { userId: account.uid, role, status: 'active' };

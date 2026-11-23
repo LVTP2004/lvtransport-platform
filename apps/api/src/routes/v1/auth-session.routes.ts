@@ -1,5 +1,6 @@
 import { Router } from 'express';
 import { createAuthenticationMiddleware, type IdentityVerifier } from '../../auth/middleware/authenticate.js';
+import { requirePermissions } from '../../auth/middleware/authorize.js';
 import type { RequestAuthContext } from '../../auth/models/request-auth-context.js';
 
 /** Inspection of the verified caller only; no role or account mutations. */
@@ -20,7 +21,7 @@ export function createAuthSessionRoutes(verify: IdentityVerifier, customerVerify
       permissions: [...auth.permissions],
     } });
   });
-  if (customerVerify) router.get('/customer-session', createAuthenticationMiddleware(customerVerify), (req, res) => {
+  if (customerVerify) router.get('/customer-session', createAuthenticationMiddleware(customerVerify), requirePermissions([], ['customer']), (req, res) => {
     const auth = (req as RequestAuthContext).auth;
     if (!auth) { res.status(401).json({ success: false }); return; }
     res.json({ success: true, identity: { userId: auth.userId, role: auth.role, status: 'active', scope: 'customer',

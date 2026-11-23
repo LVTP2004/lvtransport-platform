@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto';
 import { Router } from 'express';
 import { createAuthenticationMiddleware, type IdentityVerifier } from '../../auth/middleware/authenticate.js';
+import { requirePermissions } from '../../auth/middleware/authorize.js';
 import type { RequestAuthContext } from '../../auth/models/request-auth-context.js';
 import { bookingFlowService } from '../../modules/bookings/service.js';
 import { validateCreateBookingPayload } from '../../modules/bookings/validation.js';
@@ -10,7 +11,7 @@ export function createCustomerAccountRoutes(verify: IdentityVerifier, service: t
   operations = createBookingOperations()) {
   const router = Router();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
-  router.use(createAuthenticationMiddleware(verify));
+  router.use(createAuthenticationMiddleware(verify), requirePermissions([], ['customer']));
   router.get('/bookings', async (req, res) => {
     const identity = (req as RequestAuthContext).auth!;
     try {
