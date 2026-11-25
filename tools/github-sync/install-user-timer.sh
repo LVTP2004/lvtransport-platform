@@ -42,11 +42,16 @@ for dir in "$HOME/.local" "$HOME/.local/bin" "$HOME/.config" "$HOME/.config/syst
   fi
 done
 
-install -d -m 0700 "$HOME/.local/bin" "$HOME/.config/systemd/user"
+# Set restrictive permissions only on newly created directories.
+for dir in "$HOME/.local/bin" "$HOME/.config/systemd/user"; do
+  if [[ ! -d "$dir" ]]; then
+    mkdir -p -m 0700 -- "$dir"
+  fi
+done
 install -m 0700 "${src[0]}" "${dst[0]}"
 install -m 0600 "${src[1]}" "${dst[1]}"
 install -m 0600 "${src[2]}" "${dst[2]}"
 systemctl --user daemon-reload
-systemctl --user enable --now lvtp-github-sync.timer
 systemctl --user start lvtp-github-sync.service
+systemctl --user enable --now lvtp-github-sync.timer
 systemctl --user status --no-pager lvtp-github-sync.timer || true
