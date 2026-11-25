@@ -660,3 +660,26 @@ del archivo histórico de #417. Las pruebas utilizaron las dependencias ya
 instaladas. La rama y el inventario completo se guardaron junto al respaldo
 privado. Quedan pendientes la revisión de publicación, la PR en GitHub
 y la aceptación integral de staging.
+
+### Conciliación Minisforum y GitHub · 25 de noviembre de 2026
+
+La PR #427 incorporó la integración a `main` en `498eefe`. Esta entrada
+actualiza los pendientes de publicación y aceptación de las notas anteriores.
+El árbol candidato pasó 69 pruebas Node, 22 pruebas Python, comprobaciones de
+tipos de Web, Admin, Driver y API, y el build Web. El recorrido HTTP con Firebase
+de staging completó una reserva sintética y confirmó su persistencia tras un
+reinicio de la API. La repetición en Firefox completó Ride, Control Tower,
+Driver y Founder con una sesión nueva después de un HTTP 401 en el primer
+intento de inicio de sesión en Ride. La evidencia figura en la PR #427.
+
+La PR #426 incorporó el uso de la revisión nativa del propietario en Spec Guard.
+La PR #429 corrigió los falsos positivos de la portada. La tarea #428 registra
+el respaldo privado, su restauración verificada y la comparación con GitHub.
+
+La PR #431 añadió la actualización periódica de una copia separada de
+`main` en el Minisforum. La primera sincronización terminó correctamente.
+El checkout operativo conserva su trabajo local. La actualización de la copia
+no publica cambios locales. El workflow de despliegue al VPS sigue pausado.
+
+La [arquitectura de roles](./MONI_ROLE_CONTROL_PLANE.md) resume los controles
+vigentes y las propuestas de MONI pendientes de revisión.
