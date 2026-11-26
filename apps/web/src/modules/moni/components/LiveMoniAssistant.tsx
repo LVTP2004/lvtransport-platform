@@ -1,14 +1,9 @@
+import { bookingStatusLabel } from '../../booking/BookingStatus';
 import { useEffect, useRef, useState, type FormEvent, type PointerEvent } from 'react';
 import { Link } from 'react-router-dom';
 import { routePrices } from '../../pricing/constants/route-prices';
 import { hasUnverifiedNumber } from '../logic/moni-reply';
 import { readBookingStatus } from '../services/booking-status-client';
-
-const statusLabel: Record<string, string> = {
-  pending: 'Aanvraag ontvangen', assigned: 'Toegewezen', accepted: 'Geaccepteerd',
-  en_route: 'Onderweg', arrived: 'Aangekomen', in_progress: 'Rit bezig',
-  completed: 'Afgerond', cancelled: 'Geannuleerd', failed: 'Niet uitgevoerd',
-};
 
 type Reply = { text: string; destination?: string; booking?: boolean; prices?: boolean };
 type Exchange = { question: string; reply: Reply; conversation?: string };
@@ -251,7 +246,7 @@ export function LiveMoniAssistant() {
     setStatus('');
     try {
       const ride = await readBookingStatus(reference, import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be');
-      if (alive.current) setStatus(`${ride.referenceCode}: ${statusLabel[ride.status]}.`);
+      if (alive.current) setStatus(`${ride.referenceCode}: ${bookingStatusLabel(ride.status)}.`);
     } catch (error) {
       if (alive.current) setStatus(error instanceof Error ? error.message : 'De aanvraagstatus kan nu niet worden bevestigd.');
     } finally {
