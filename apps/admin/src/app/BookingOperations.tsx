@@ -1,13 +1,18 @@
 import { FounderOperationsMap } from '../../../web/src/pages/FounderOperationsMap';
 import { useCallback, useEffect, useRef, useState, type FormEvent } from 'react';
 import type { VerifiedOperationsClient } from '@lvtransport/auth';
+import { StagingCheckoutRefunds } from './StagingCheckoutRefunds';
 
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string; scheduleAt: string;
   customerName?: string; customerPhone?: string; customerEmail?: string; notes?: string; status: string; version: number; location?: { lat: number; lng: number; capturedAt: string; receivedAt?: string } | null; assignment: { driverId: string; vehicleId: string } | null;
+  passengerAbsence?: { reason: string; reportedBy: string; reportedAt: string;
+    resolution?: { decision: string; reason: string; by: string; at: string } };
   transitions: { to: string; occurredAt: string; metadata?: { actor_id?: string; operation_id?: string } }[] };
 type Driver = { id: string; name: string; status: string; vehicleId: string; lastSeenAt: string };
 type Vehicle = { id: string; registration: string; name: string; fleetType: string };
 const terminal = new Set(['completed', 'cancelled', 'failed']);
+const checkoutEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+const checkoutEnabled = checkoutEnv?.MODE === 'staging' && checkoutEnv.VITE_LVTP_STAGING_CHECKOUT === 'true';
 
 export function BookingOperations({ client }: { client: VerifiedOperationsClient }) {
   const [section, setSection] = useState<'reservations' | 'vehicles' | 'drivers'>('reservations');
@@ -16,6 +21,7 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [assignmentFeedback, setAssignmentFeedback] = useState<{ id: string; text: string } | null>(null);
   const [selection, setSelection] = useState<Record<string, string>>({});
+  const [testFares, setTestFares] = useState<Record<string, string>>({});
   const [form, setForm] = useState({ registration: '', name: '', fleetType: 'own' });
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
@@ -144,6 +150,46 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
       {updated && !bookings.length && <p>No bookings loaded.</p>}
       {queue.map(booking => <article className="rounded border border-amber-400/30 p-4" key={booking.id}>
         <h3>{booking.referenceCode} · {booking.status}</h3>
+        {checkoutEnabled && !terminal.has(booking.status) && <form onSubmit={event => {
+          event.preventDefault();
+          const value = (testFares[booking.id] ?? '').trim();
+          if (value && !/^\d{1,6}(?:[,.]\d{1,2})?$/.test(value)) {
+            setAssignmentFeedback({ id: booking.id, text: 'Enter a valid EUR test amount.' });
+            return;
+          }
+          const body = value ? { amountMinor: Math.round(Number(value.replace(',', '.')) * 100) } : {};
+          void run(async () => {
+            const confirmed = await client.request<{ amountMinor: number }>(
+              `/operations/staging-checkout/${encodeURIComponent(booking.id)}/confirm`, { body });
+            setAssignmentFeedback({ id: booking.id, text: `Stripe test fare confirmed: €${(confirmed.amountMinor / 100).toFixed(2)}.` });
+          });
+        }}>
+          <label>Stripe test fare in EUR
+            <input inputMode="decimal" placeholder="Use current quote" value={testFares[booking.id] ?? ''}
+              onChange={event => setTestFares(values => ({ ...values, [booking.id]: event.target.value }))} />
+          </label>
+          <button type="submit" disabled={busy}>Confirm Stripe test fare</button>
+        </form>}
+        {checkoutEnabled && booking.status === 'completed' && <StagingCheckoutRefunds id={booking.id} client={client} />}
+        {checkoutEnabled && booking.passengerAbsence && <div>
+          <p>Passenger absence reported by {booking.passengerAbsence.reportedBy} · {booking.passengerAbsence.reason}</p>
+          {booking.passengerAbsence.resolution ? <p>
+            {booking.passengerAbsence.resolution.decision} · {booking.passengerAbsence.resolution.by} · {booking.passengerAbsence.resolution.reason}
+          </p> : <form onSubmit={event => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget, (event.nativeEvent as SubmitEvent).submitter);
+            const decision = form.get('decision');
+            const reason = String(form.get('reason') ?? '').trim();
+            if (!reason || (decision !== 'confirmed' && decision !== 'dismissed')) return;
+            void run(() => client.request(`/operations/bookings/${booking.id}/passenger-absence/review`, {
+              body: { decision, reason, expectedVersion: booking.version }, key: `absence-review:${booking.id}:${booking.version}:${decision}`,
+            }));
+          }}>
+            <label>Review reason <input name="reason" required maxLength={500} /></label>
+            <button disabled={busy} type="submit" name="decision" value="confirmed">Confirm absence and cancel</button>
+            <button disabled={busy} type="submit" name="decision" value="dismissed">Dismiss report</button>
+          </form>}
+        </div>}
         <p>{booking.customerName} · {new Date(booking.scheduleAt).toLocaleString()}</p>
         <p>{booking.pickup} → {booking.destination}</p>
         {booking.customerPhone && <p><a href={`tel:${booking.customerPhone}`}>{booking.customerPhone}</a></p>}
@@ -164,7 +210,7 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
         )}
         {booking.status === 'assigned' && <p>Waiting for the driver to accept.</p>}
         {assignmentFeedback?.id === booking.id && <p role="status">{assignmentFeedback.text}</p>}
-        {!terminal.has(booking.status) && <button disabled={busy} onClick={() => {
+        {!terminal.has(booking.status) && (!checkoutEnabled || !booking.passengerAbsence || booking.passengerAbsence.resolution) && <button disabled={busy} onClick={() => {
           if (window.confirm(`Cancel ${booking.referenceCode}?`)) void run(() => client.request(`/operations/bookings/${booking.id}/status`, {
             body: { status: 'cancelled', expectedVersion: booking.version }, key: `cancel:${booking.id}:${booking.version}`,
           }));
