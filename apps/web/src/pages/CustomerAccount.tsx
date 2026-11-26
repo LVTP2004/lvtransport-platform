@@ -1,3 +1,4 @@
+import { BookingStatus } from '../modules/booking/BookingStatus';
 import { bookingTimeZone } from '../modules/moni/services/booking-time';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createLVTransportFirebaseProvider, type VerifiedOperationsClient } from '@lvtransport/auth';
@@ -65,7 +66,7 @@ function CustomerBookings({ client, userId, onConnection, revision }: { client: 
     {cancellation && <p role={cancellation.confirmed ? 'status' : 'alert'}>{cancellation.message}</p>}
     {loaded && !bookings.length && !error && <p>Er zijn nog geen reserveringen aan dit account gekoppeld.</p>}
     {bookings.map(booking => <article className="rounded border border-amber-400/30 p-4" key={booking.id}>
-      <h3>{booking.referenceCode} · {booking.status}</h3>
+      <h3 className="flex flex-wrap items-center gap-2">{booking.referenceCode} <BookingStatus status={booking.status} /></h3>
       <p>{booking.pickup} → {booking.destination}</p><p>{new Date(booking.scheduleAt).toLocaleString('nl-BE', { timeZone: bookingTimeZone })}</p>
       {booking.assignment && <p>{booking.assignment.driverName} · {booking.assignment.vehicleRegistration}</p>}
       {booking.location && <p>Door chauffeur gemelde positie ({new Date(booking.location.capturedAt).toLocaleTimeString()}):
