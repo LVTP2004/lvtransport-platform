@@ -7,6 +7,8 @@ import { join } from 'node:path';
 import { test, type TestContext } from 'node:test';
 import { setTimeout } from 'node:timers/promises';
 import express from 'express';
+import { createBookingOperations } from '../bookings/operations.js';
+import { createBookingOperationsRoutes } from '../../routes/v1/booking-operations.routes.js';
 import { FileBookingRepository } from '../bookings/repository.js';
 import { createStagingCheckout } from './staging-checkout.js';
 import { createStagingCheckoutWebhooks } from './staging-checkout-webhooks.js';
@@ -18,13 +20,14 @@ async function fixture(t: TestContext) {
   const path = join(root, 'bookings.json');
   async function setRide(status: string) {
     await writeFile(path, JSON.stringify({ bookings: [{
-      id: 'ride', referenceCode: '12345', status, customerId: 'customer', customerIdentityVerified: true, fareQuote: { fareTotal: 35.25 },
+      id: 'ride', referenceCode: '12345', status, lifecycle: { state: status, version: 1, transitions: [] },
+      assignment: { driverId: 'driver', vehicleId: 'vehicle' }, customerId: 'customer', customerIdentityVerified: true, fareQuote: { fareTotal: 35.25 },
     }], idempotencyIndex: {} }));
   }
   await setRide('pending');
   const verifier: IdentityVerifier = async token => {
-    if (!['admin', 'finance', 'customer', 'other'].includes(token)) throw Error('Unknown fixture');
-    return { userId: token, role: ['admin', 'finance'].includes(token) ? 'admin' : 'customer', status: 'active' };
+    if (!['admin', 'finance', 'customer', 'other', 'driver', 'other-driver'].includes(token)) throw Error('Unknown fixture');
+    return { userId: token, role: ['admin', 'finance'].includes(token) ? 'admin' : token.endsWith('driver') ? 'driver' : 'customer', status: 'active' };
   };
   type Intent = { id: string; status: string; amount: number; currency: string; amount_capturable: number; amount_received: number };
   type Session = { id: string; amount_total: number; currency: string; status: string; url: string; payment_intent?: Intent };
@@ -73,6 +76,7 @@ async function fixture(t: TestContext) {
     app.use(express.json());
     app.use(createStagingCheckout(new FileBookingRepository(path), join(root, 'checkout'), 'sk_test_fixture',
       'http://localhost:43210', verifier, verifier, fakeStripe, webhooks, new Set(['finance'])));
+    app.use('/operations', createBookingOperationsRoutes(verifier, createBookingOperations(new FileBookingRepository(path)), true));
     const server = app.listen(0, '127.0.0.1');
     await once(server, 'listening');
     const address = server.address();
@@ -80,9 +84,10 @@ async function fixture(t: TestContext) {
     return {
       origin: 'http://127.0.0.1:' + address.port,
       close: () => new Promise<void>(resolve => { server.closeAllConnections(); server.close(() => resolve()); }),
-      async call(route: string, actor: string, body?: object) {
+      async call(route: string, actor: string, body?: object, key?: string) {
         const response = await fetch('http://127.0.0.1:' + address.port + route, {
-          method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + actor, 'Content-Type': 'application/json' },
+          method: body ? 'POST' : 'GET', headers: { Authorization: 'Bearer ' + actor, 'Content-Type': 'application/json',
+            ...(key ? { 'Idempotency-Key': key } : {}) },
           body: body ? JSON.stringify(body) : undefined,
         });
         return { status: response.status, body: await response.json().catch(() => null) };
@@ -161,6 +166,36 @@ test('Checkout reconciles stored notifications in the background without a Ride 
   assert.deepEqual(f.writes.map(entry => entry.operation), ['sessions', 'capture']);
   const payment = await app.call(customer, 'customer');
   assert.deepEqual(payment.body.payment, { status: 'captured', amountMinor: 3525, revision: 1, receipt: 'pi_1' });
+});
+
+test('an absence review releases the authorization once and preserves both actors', async t => {
+  const f = await fixture(t);
+  const app = await f.start();
+  t.after(app.close);
+  assert.equal((await app.call(confirm, 'admin', {})).status, 200);
+  assert.equal((await app.call(customer, 'customer', accepts(3525, 1))).status, 200);
+  f.authorize(0);
+  await f.setRide('arrived');
+  const path = '/operations/bookings/ride/passenger-absence';
+  const report = { expectedVersion: 1, reason: 'Passenger not at pickup' };
+  assert.equal((await app.call(path, 'other-driver', report, 'absence-report')).status, 403);
+  assert.equal((await app.call(path, 'driver', report, 'absence-report')).status, 200);
+  assert.equal((await app.call('/operations/bookings/ride/status', 'driver',
+    { expectedVersion: 2, status: 'in_progress' }, 'start-while-pending')).status, 409);
+  assert.equal((await app.call(customer, 'customer')).body.payment.status, 'authorized');
+  const review = { expectedVersion: 2, decision: 'confirmed', reason: 'Pickup confirmed by dispatch' };
+  assert.equal((await app.call(path + '/review', 'driver', review, 'absence-review')).status, 403);
+  const first = await app.call(path + '/review', 'admin', review, 'absence-review');
+  assert.equal(first.status, 200);
+  assert.equal(first.body.booking.passengerAbsence.reportedBy, 'driver');
+  assert.equal(first.body.booking.passengerAbsence.resolution.by, 'admin');
+  const duplicate = await app.call(path + '/review', 'admin', review, 'absence-review');
+  assert.equal(duplicate.body.replayed, true);
+  assert.equal(duplicate.body.operation.id, first.body.operation.id);
+  assert.equal((await app.call(customer, 'customer')).body.payment.status, 'released');
+  assert.equal((await app.call(customer, 'customer')).body.payment.status, 'released');
+  assert.equal(f.sessions[0].payment_intent?.amount_received, 0);
+  assert.deepEqual(f.writes.map(entry => entry.operation), ['sessions', 'cancel']);
 });
 
 test('signed Checkout deliveries survive restart and retry without processing duplicate event IDs', async t => {

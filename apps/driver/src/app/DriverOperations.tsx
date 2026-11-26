@@ -3,7 +3,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { VerifiedOperationsClient } from '@lvtransport/auth';
 
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string;
-  customerName?: string; customerPhone?: string; notes?: string; scheduleAt: string; status: string; version: number; assignment: { vehicleId: string } | null };
+  customerName?: string; customerPhone?: string; notes?: string; scheduleAt: string; status: string; version: number; assignment: { vehicleId: string } | null;
+  passengerAbsence?: { resolution?: { decision: string } } };
 type Driver = { vehicleId: string; availability: string; status: string };
 type Vehicle = { id: string; registration: string; name: string };
 const next: Record<string, { status: string; label: string }> = {
@@ -11,6 +12,8 @@ const next: Record<string, { status: string; label: string }> = {
   en_route: { status: 'arrived', label: 'Aangekomen' }, arrived: { status: 'in_progress', label: 'Start rit' },
   in_progress: { status: 'completed', label: 'Rit afronden' },
 };
+const testEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+const absenceEnabled = testEnv?.MODE === 'staging' && testEnv.VITE_LVTP_STAGING_CHECKOUT === 'true';
 const terminal = new Set(['completed', 'cancelled', 'failed']);
 
 export function DriverOperations({ client }: { client: VerifiedOperationsClient }) {
@@ -120,7 +123,22 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
       {booking.notes && <p>{booking.notes}</p>}
       <p>Voertuig: {vehicles.find(vehicle => vehicle.id === booking.assignment?.vehicleId)?.registration ?? booking.assignment?.vehicleId}</p>
       {booking.status === 'assigned' && <p>Er is een rit aan u toegewezen. Accepteer de rit om verder te gaan.</p>}
-      {next[booking.status] && <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => transition(booking, next[booking.status].status))}>{next[booking.status].label}</button>}
+      {absenceEnabled && booking.status === 'arrived' && !booking.passengerAbsence && <form onSubmit={event => {
+        event.preventDefault();
+        const reason = String(new FormData(event.currentTarget).get('reason') ?? '').trim();
+        if (!reason) return;
+        void run(() => client.request(`/operations/bookings/${booking.id}/passenger-absence`, {
+          body: { reason, expectedVersion: booking.version }, key: `absence:${booking.id}:${booking.version}`,
+        }));
+      }}>
+        <label>Reden afwezigheid <input name="reason" required maxLength={500} /></label>
+        <button disabled={busy} type="submit">Meld afwezige passagier</button>
+      </form>}
+      {absenceEnabled && booking.passengerAbsence && <p role="status">
+        {booking.passengerAbsence.resolution?.decision === 'confirmed' ? 'Afwezigheid bevestigd'
+          : booking.passengerAbsence.resolution ? 'Afwezigheidsmelding afgewezen' : 'Afwezigheid gemeld. Wacht op Control Tower.'}
+      </p>}
+      {next[booking.status] && (!absenceEnabled || !booking.passengerAbsence || booking.passengerAbsence.resolution) && <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => transition(booking, next[booking.status].status))}>{next[booking.status].label}</button>}
       {booking.status === 'assigned' && <button disabled={busy} onClick={() => {
         if (window.confirm('Deze toewijzing weigeren? De reservering wordt geannuleerd volgens de huidige ritstatusregels.')) {
           void run(() => transition(booking, 'cancelled', 'reject'));

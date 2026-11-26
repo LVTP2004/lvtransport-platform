@@ -53,6 +53,6 @@ server.use('/api/v1', createStagingCheckout(repository, resolve(dataRoot, 'check
 server.use('/api/v1', createCustomerBookingRoutes(flow));
 server.use('/api/v1/auth', createAuthSessionRoutes(verify, customer));
 server.use('/api/v1/customer', createCustomerAccountRoutes(customer, flow, operations));
-server.use('/api/v1/operations', createBookingOperationsRoutes(verify, operations));
+server.use('/api/v1/operations', createBookingOperationsRoutes(verify, operations, true));
 server.get('/health', (_req, res) => res.json({ staging: true, payments: 'stripe-test' }));
 server.listen(port, '127.0.0.1', () => console.log('Stripe Checkout staging is listening on loopback'));

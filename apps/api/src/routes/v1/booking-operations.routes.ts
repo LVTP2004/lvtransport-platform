@@ -4,7 +4,7 @@ import type { RequestAuthContext } from '../../auth/models/request-auth-context.
 import { createBookingOperations, BookingOperationError } from '../../modules/bookings/operations.js';
 
 /** Registered only by trusted server bootstrap. No client-provided roles/verifiers. */
-export function createBookingOperationsRoutes(verify: IdentityVerifier, operations: ReturnType<typeof createBookingOperations>) {
+export function createBookingOperationsRoutes(verify: IdentityVerifier, operations: ReturnType<typeof createBookingOperations>, passengerAbsenceEnabled = false) {
   const router = Router();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   router.use(createAuthenticationMiddleware(verify));
@@ -31,5 +31,11 @@ export function createBookingOperationsRoutes(verify: IdentityVerifier, operatio
   router.post('/bookings/:id/assignment', handle(req => operations.assign(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
   router.post('/bookings/:id/status', handle(req => operations.transition(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
   router.post('/bookings/:id/location', handle(req => operations.setLocation(actor(req), req.params.id, req.body)));
+  if (passengerAbsenceEnabled) {
+    router.post('/bookings/:id/passenger-absence', handle(req =>
+      operations.reportPassengerAbsence(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
+    router.post('/bookings/:id/passenger-absence/review', handle(req =>
+      operations.resolvePassengerAbsence(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
+  }
   return router;
 }

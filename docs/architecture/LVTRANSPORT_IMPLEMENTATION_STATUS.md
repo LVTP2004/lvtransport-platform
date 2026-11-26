@@ -700,3 +700,11 @@ Ride muestra el saldo confirmado. Las regresiones HTTP usan un adaptador.
 Quedan pendientes la validación con Stripe de estos dos flujos, la designación
 del aprobador, el recorrido de ausencia y las decisiones de facturación y
 liquidación. Esta propuesta se limita a staging.
+
+Drive puede reportar una ausencia tras llegar al punto de recogida y
+Control Tower la confirma o la desestima. La reserva conserva motivo, fecha
+y actores. Mientras espera revisión, el viaje permanece en llegada y no
+puede iniciarse. La confirmación reutiliza la cancelación y el flujo de
+liberación de Checkout. Una prueba HTTP rechazó otros conductores y roles,
+verificó el reintento y observó una liberación con cero capturado con un
+adaptador. La aceptación con Stripe en el Fossibot queda pendiente.

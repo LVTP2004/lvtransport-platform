@@ -49,6 +49,7 @@ export function createBookingOperations(
       customerName: booking.customerName, customerPhone: booking.customerPhone, notes: booking.notes,
       ...(includeEmail ? { customerEmail: booking.customerEmail } : {}), status: booking.lifecycle.state, version: booking.lifecycle.version,
       assignment: booking.assignment ?? null, location: locationFor(booking),
+      ...(booking.passengerAbsence ? { passengerAbsence: booking.passengerAbsence } : {}),
       transitions: booking.lifecycle.transitions.map(entry => ({ ...entry })) };
   }
   function founderBookingView(booking: BookingRecord) {
@@ -270,7 +271,32 @@ export function createBookingOperations(
       const allowed = isAdmin(actor) ? ['cancelled'] : ['accepted', 'en_route', 'arrived', 'in_progress', 'completed', 'cancelled'];
       requireValue(typeof status === 'string' && allowed.includes(status), 403, 'TRANSITION_NOT_GRANTED');
       return command(actor, bookingId, key, body, 'transition', (_store, booking, operationId) => {
+        requireValue(!booking.passengerAbsence || booking.passengerAbsence.resolution, 409, 'ABSENCE_REVIEW_REQUIRED');
         recordTransition(booking, status as CanonicalBookingLifecycleStatus, actor, operationId);
+      });
+    },
+    reportPassengerAbsence(actor: VerifiedIdentity, bookingId: string, body: unknown, key: unknown) {
+      requireDriver(actor);
+      fields(body, ['expectedVersion', 'reason']);
+      const reason = text(body.reason, 500);
+      return command(actor, bookingId, key, body, 'passenger_absence_report', (_store, booking) => {
+        requireValue(booking.lifecycle.state === 'arrived' && !booking.passengerAbsence, 409, 'ABSENCE_REPORT_UNAVAILABLE');
+        booking.passengerAbsence = { reason, reportedBy: actor.userId, reportedAt: now().toISOString() };
+        booking.lifecycle.version++;
+      });
+    },
+    resolvePassengerAbsence(actor: VerifiedIdentity, bookingId: string, body: unknown, key: unknown) {
+      requireAdmin(actor);
+      fields(body, ['expectedVersion', 'decision', 'reason']);
+      const reason = text(body.reason, 500);
+      const decision = body.decision;
+      requireValue(decision === 'confirmed' || decision === 'dismissed', 400, 'INVALID_ABSENCE_DECISION');
+      return command(actor, bookingId, key, body, 'passenger_absence_review', (_store, booking, operationId) => {
+        const absence = booking.passengerAbsence;
+        requireValue(booking.lifecycle.state === 'arrived' && absence && !absence.resolution, 409, 'ABSENCE_REVIEW_UNAVAILABLE');
+        absence.resolution = { decision, reason, by: actor.userId, at: now().toISOString() };
+        if (decision === 'confirmed') recordTransition(booking, 'cancelled', actor, operationId);
+        else booking.lifecycle.version++;
       });
     },
     cancelOwn(actor: VerifiedIdentity, bookingId: string, body: unknown, key: unknown) {
