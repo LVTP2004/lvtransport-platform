@@ -683,3 +683,39 @@ no publica cambios locales. El workflow de despliegue al VPS sigue pausado.
 
 La [arquitectura de roles](./MONI_ROLE_CONTROL_PLANE.md) resume los controles
 vigentes y las propuestas de MONI pendientes de revisión.
+
+### Revisión de las cinco superficies y estados de reserva
+
+La revisión parte del commit inicial `2bbfa63` del 9 de mayo y del inventario
+histórico, y contrasta los puntos de entrada con `main@e66c905` y el
+candidato de pagos #437. El historial de main contiene 759 commits
+alcanzables y 476 en primera ascendencia en ese corte. Entre los hitos
+recuperables están Booking MVP (#28 y #102), Stripe/Payconiq (#33),
+facturación (#74), despacho (#371) e integración operativa (#427).
+La presencia de un módulo histórico no acredita que su ruta esté activa.
+
+| Superficie | Base conectada en main | Componente pendiente o por aceptar |
+| --- | --- | --- |
+| Portal | Portada y solicitud real con referencia del servidor y seguimiento por código. | Verificar el recorrido móvil de origen, destino, fecha, revisión y resultado como un flujo continuo. |
+| Ride | Reservas propias, cancelación según estado y seguimiento autenticado. | Conectar tarifa confirmada y suplementos, autorización, recibo y reembolso mediante el candidato Stripe de staging. |
+| Drive | Disponibilidad, asignación y transiciones del viaje con identidad verificada. | Reporte de ausencia con motivo y revisión por Control Tower. Validar fallos de conexión y relectura del mismo viaje. |
+| Control Tower | Cola de reservas, vehículos, asignación y cancelación. | Confirmación de tarifa, revisión de ausencia y gestión de reembolsos con permiso financiero separado. |
+| Founder OS | Vista de gobierno con acceso separado y proyecciones operativas. | Conectar la lectura financiera a evidencia confirmada, con permisos y trazabilidad. |
+
+La API principal monta Booking, cliente y operaciones. El módulo histórico
+de arquitectura de pagos mantiene estados en memoria y usa adaptadores
+de ejemplo. Stripe Checkout, notificaciones firmadas y reembolsos están
+en el PR #437, con validación externa de staging pendiente. Facturación
+y liquidaciones externas siguen pendientes de las decisiones registradas
+en el plan de aceptación.
+
+El cambio propuesto para Portal y Ride usa las etiquetas en neerlandés
+que ya mostraba MONI. La confirmación, el seguimiento público y la
+reserva autenticada presentan el mismo estado recibido de la API.
+
+La verificación pública encontró HTTP 200 en Portal, Booking, Ride, Drive,
+Control Tower y Founder OS, y en el estado de salud de la API. Las listas
+de reservas privadas devolvieron HTTP 401 sin sesión. El Fossibot mostró la
+portada, Ride y el formulario de Booking en producción sin enviar datos.
+El cambio pasó 74 pruebas Node, 22 Python, el typecheck y el build Web en un
+candidato aislado de `e66c905` con dependencias congeladas.

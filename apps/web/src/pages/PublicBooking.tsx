@@ -1,3 +1,4 @@
+import { bookingStatusLabel } from '../modules/booking/BookingStatus'
 import { FormEvent, lazy, Suspense, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
 import type { CustomerConnection } from './CustomerAccount'
@@ -101,7 +102,7 @@ export default function Booking() {
 
       const code = result.booking.referenceCode
       updateTrackingCode(code)
-      setConfirmation(`Aanvraag ontvangen. Referentie: ${code}. Status: ${result.booking.status}. We bevestigen de rit na controle van beschikbaarheid en prijs.`)
+      setConfirmation(`Aanvraag ontvangen. Referentie: ${code}. Status: ${bookingStatusLabel(result.booking.status)}. We bevestigen de rit na controle van beschikbaarheid en prijs.`)
     } catch (error) {
       setConfirmation(error instanceof Error ? error.message : 'Boeking mislukt.')
     } finally {
@@ -119,7 +120,7 @@ export default function Booking() {
     try {
       const ride = await readBookingStatus(trackingCode, API_V1_BASE)
       if (attempt === trackingAttempt.current) {
-        setTrackingResult(`Rit ${ride.referenceCode}: ${ride.status}`)
+        setTrackingResult(`Rit ${ride.referenceCode}: ${bookingStatusLabel(ride.status)}`)
       }
     } catch (error) {
       if (attempt === trackingAttempt.current) {
