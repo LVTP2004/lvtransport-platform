@@ -2,11 +2,13 @@ import { bookingTimeZone } from '../modules/moni/services/booking-time';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createLVTransportFirebaseProvider, type VerifiedOperationsClient } from '@lvtransport/auth';
 import { GoogleLoginBoundary } from '../../../admin/src/modules/auth/components/GoogleLoginBoundary';
+import { StagingCheckoutPayment } from './StagingCheckoutPayment';
 
 export type CustomerConnection = { client: VerifiedOperationsClient; userId: string };
 type Connection = (connection: CustomerConnection | null) => void;
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string; scheduleAt: string; status: string; version: number; location?: { lat: number; lng: number; capturedAt: string } | null; assignment?: { driverName?: string; vehicleRegistration?: string } | null };
 const createProvider = () => createLVTransportFirebaseProvider('customer');
+const checkoutEnabled = import.meta.env.MODE === 'staging' && import.meta.env.VITE_LVTP_STAGING_CHECKOUT === 'true';
 
 function CustomerBookings({ client, userId, onConnection, revision }: { client: VerifiedOperationsClient; userId: string; onConnection: Connection; revision: number }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -72,6 +74,8 @@ function CustomerBookings({ client, userId, onConnection, revision }: { client: 
         {' '}{booking.location.lat.toFixed(5)}, {booking.location.lng.toFixed(5)}
       </p>}
       {booking.status === 'pending' && <button disabled={busy} onClick={() => void cancel(booking)}>Annuleer aanvraag</button>}
+      {checkoutEnabled && <StagingCheckoutPayment id={booking.id} client={client}
+        showOnReturn={new URLSearchParams(window.location.search).get('checkout') === booking.id} />}
     </article>)}
   </section>;
 }

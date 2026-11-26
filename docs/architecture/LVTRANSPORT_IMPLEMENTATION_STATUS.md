@@ -683,3 +683,20 @@ no publica cambios locales. El workflow de despliegue al VPS sigue pausado.
 
 La [arquitectura de roles](./MONI_ROLE_CONTROL_PLANE.md) resume los controles
 vigentes y las propuestas de MONI pendientes de revisión.
+
+### Aceptación de Stripe Checkout en staging
+
+El [plan de aceptación](./LVTRANSPORT_PAYMENT_ACCEPTANCE.md) registra la
+verificación de Checkout de prueba. La implementación conserva una sesión
+por revisión de tarifa, libera autorizaciones al cancelar y captura al
+completar la reserva. En las sesiones de prueba con Fossibot se verificaron
+retorno a Ride, recibo, cancelación y nueva aceptación al revisar la tarifa
+o perder la autorización.
+
+El candidato incorpora un receptor de notificaciones firmadas que persiste
+los eventos antes de conciliarlos. Control Tower registra reembolsos
+parciales y totales, con aprobación de otro administrador designado por UID.
+Ride muestra el saldo confirmado. Las regresiones HTTP usan un adaptador.
+Quedan pendientes la validación con Stripe de estos dos flujos, la designación
+del aprobador, el recorrido de ausencia y las decisiones de facturación y
+liquidación. Esta propuesta se limita a staging.
