@@ -708,3 +708,13 @@ puede iniciarse. La confirmación reutiliza la cancelación y el flujo de
 liberación de Checkout. Una prueba HTTP rechazó otros conductores y roles,
 verificó el reintento y observó una liberación con cero capturado con un
 adaptador. La aceptación con Stripe en el Fossibot queda pendiente.
+
+### Lectura financiera de Founder OS en staging
+
+Founder OS consulta importes observados y persistidos tras una captura
+confirmada por Stripe de pruebas. La vista muestra total capturado,
+reembolsos confirmados y neto, con referencia, recibo y fecha de
+observación. El endpoint de lectura exige Founder activo con
+`founder:read` y consulta el almacén sin ejecutar operaciones financieras.
+La prueba HTTP verifica el permiso y el neto de cero tras un reembolso
+total con el adaptador. Pendiente de aceptación en el Fossibot.

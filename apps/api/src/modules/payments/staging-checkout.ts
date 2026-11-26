@@ -11,6 +11,7 @@ type Refund = { id: string; amountMinor: number; reason: string; requestedBy: st
   approval?: { by: string; at: number; intent: string }; provider?: { id: string; status: string; checkedAt: string } };
 type StripeRefund = { id: string; amount: number; currency: string; payment_intent: string; status: string };
 type CheckoutRecord = { id: string; amount: number; startedAt: number; session?: string; revision?: number; refunds?: Refund[];
+  capture?: { receipt: string; observedAt: string };
   confirmedBy?: string; confirmedAt?: string; previous?: Array<{ revision: number; amount: number; session?: string }> };
 type Intent = { id: string; status: string; amount: number; amount_received: number; amount_capturable: number; currency: string };
 type Session = { id: string; url: string | null; status: string; amount_total: number; currency: string; payment_intent: Intent | null };
@@ -91,6 +92,22 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     const canceled = await stripe<Intent>('/payment_intents/' + intent.id + '/cancel', identity(record), 'cancel', {});
     return canceled.id === intent.id && canceled.status === 'canceled';
   }
+  function observedCapture(record: CheckoutRecord, intent: Intent) {
+    if (record.capture?.receipt !== intent.id) {
+      save({ ...record, capture: { receipt: intent.id, observedAt: new Date().toISOString() } });
+    }
+    const refundedMinor = confirmedRefunds(record);
+    return { status: 'captured', amountMinor: record.amount, revision: revision(record), receipt: intent.id,
+      ...(refundedMinor > 0 ? { refundedMinor, netPaidMinor: record.amount - refundedMinor } : {}) };
+  }
+  function confirmedRefunds(record: CheckoutRecord) {
+    return (record.refunds ?? []).filter(refund => refund.provider?.status === 'succeeded')
+      .reduce((sum, refund) => sum + refund.amountMinor, 0);
+  }
+  function checkoutRecords() {
+    return readdirSync(directory).filter(name => /^[a-f0-9]{64}\.json$/.test(name))
+      .map(file => JSON.parse(readFileSync(join(directory, file), 'utf8')) as CheckoutRecord);
+  }
   async function view(record: CheckoutRecord) {
     const amountMinor = record.amount;
     const version = { amountMinor, revision: revision(record) };
@@ -101,11 +118,7 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     const cancel = ride.status === 'cancelled' || ride.status === 'failed';
     const intent = result.payment_intent;
     if (intent?.status === 'succeeded' && intent.amount_received === amountMinor) {
-      const refunds = record.refunds ?? [];
-      const refundedMinor = refunds.filter(refund => refund.provider?.status === 'succeeded')
-        .reduce((sum, refund) => sum + refund.amountMinor, 0);
-      return { status: 'captured', ...version, receipt: intent.id,
-        ...(refundedMinor > 0 ? { refundedMinor, netPaidMinor: amountMinor - refundedMinor } : {}) };
+      return observedCapture(record, intent);
     }
     if (expired(result)) {
       return { status: terminal.has(ride.status) ? 'released' : 'expired', ...version };
@@ -117,7 +130,7 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
         cancel ? {} : { amount_to_capture: String(amountMinor) });
       if (settled.id !== intent.id || settled.status !== (cancel ? 'canceled' : 'succeeded')
         || (!cancel && settled.amount_received !== amountMinor)) throw Error('Checkout settlement mismatch');
-      return cancel ? { status: 'released', ...version } : { status: 'captured', ...version, receipt: settled.id };
+      return cancel ? { status: 'released', ...version } : observedCapture(record, settled);
     }
     if (result.status === 'open' && terminal.has(ride.status)) {
       const expired = await stripe<Session>('/checkout/sessions/' + result.id + '/expire', identity(record), 'expire', {});
@@ -150,6 +163,26 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
   }
 
   const operationsAuth = createAuthenticationMiddleware(verify);
+  router.get('/operations/staging-checkout/finance', operationsAuth, (req, res) => {
+    const actor = (req as RequestAuthContext).auth;
+    if (actor?.role !== 'founder' || !actor.permissions.includes('founder:read')) return void res.sendStatus(403);
+    try {
+      const bookings = new Map(repository.snapshot().bookings.map(item => [item.id, item.referenceCode]));
+      const payments = checkoutRecords().flatMap(record => {
+        const reference = bookings.get(record.id);
+        if (!reference || !record.capture) return [];
+        const refundedMinor = confirmedRefunds(record);
+        return [{ reference, ...record.capture, capturedMinor: record.amount, refundedMinor,
+          netMinor: record.amount - refundedMinor }];
+      }).sort((a, b) => b.observedAt.localeCompare(a.observedAt));
+      const totals = payments.reduce((sum, item) => ({
+        capturedMinor: sum.capturedMinor + item.capturedMinor,
+        refundedMinor: sum.refundedMinor + item.refundedMinor,
+        netMinor: sum.netMinor + item.netMinor,
+      }), { capturedMinor: 0, refundedMinor: 0, netMinor: 0 });
+      res.json({ success: true, currency: 'EUR', totals, payments });
+    } catch { res.sendStatus(503); }
+  });
   const refundsPath = '/operations/staging-checkout/:id/refunds';
   router.get(refundsPath, operationsAuth, (req, res) => {
     const actor = (req as RequestAuthContext).auth;
@@ -285,8 +318,7 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     if (sweeping) return;
     sweeping = true;
     try {
-      const records = readdirSync(directory).filter(name => /^[a-f0-9]{64}\.json$/.test(name))
-        .map(file => JSON.parse(readFileSync(join(directory, file), 'utf8')) as CheckoutRecord);
+      const records = checkoutRecords();
       await webhooks?.reconcile(async sessionId => {
         const record = records.find(item => item.session === sessionId || item.previous?.some(previous => previous.session === sessionId));
         if (!record) return false;
@@ -303,7 +335,7 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
             const current = read(record.id);
             if (!current?.session) return;
             await view(current);
-            let latest = current;
+            let latest = read(record.id) ?? current;
             for (const refund of current.refunds ?? []) {
               await reconcileRefund(latest, refund).catch(() => {});
               latest = read(record.id) ?? latest;

@@ -26,8 +26,8 @@ async function fixture(t: TestContext) {
   }
   await setRide('pending');
   const verifier: IdentityVerifier = async token => {
-    if (!['admin', 'finance', 'customer', 'other', 'driver', 'other-driver'].includes(token)) throw Error('Unknown fixture');
-    return { userId: token, role: ['admin', 'finance'].includes(token) ? 'admin' : token.endsWith('driver') ? 'driver' : 'customer', status: 'active' };
+    if (!['admin', 'finance', 'customer', 'other', 'driver', 'other-driver', 'founder'].includes(token)) throw Error('Unknown fixture');
+    return { userId: token, role: ['admin', 'finance'].includes(token) ? 'admin' : token.endsWith('driver') ? 'driver' : token === 'founder' ? 'founder' : 'customer', status: 'active' };
   };
   type Intent = { id: string; status: string; amount: number; currency: string; amount_capturable: number; amount_received: number };
   type Session = { id: string; amount_total: number; currency: string; status: string; url: string; payment_intent?: Intent };
@@ -114,6 +114,12 @@ test('staging refunds require separate finance approval and preserve the remaini
   f.authorize(0);
   await f.setRide('completed');
   const receipt = (await app.call(customer, 'customer')).body.payment.receipt;
+  const financePath = '/operations/staging-checkout/finance';
+  assert.equal((await app.call(financePath, 'admin')).status, 403);
+  const cash = await app.call(financePath, 'founder');
+  assert.equal(cash.status, 200);
+  assert.deepEqual(cash.body.totals, { capturedMinor: 3525, refundedMinor: 0, netMinor: 3525 });
+  assert.equal(cash.body.payments[0].receipt, receipt);
   const path = '/operations/staging-checkout/ride/refunds';
   const partial = { requestId: 'partial-1', amountMinor: 1000, reason: 'Partial service adjustment' };
   assert.equal((await app.call(path, 'customer', partial)).status, 403);
@@ -131,6 +137,10 @@ test('staging refunds require separate finance approval and preserve the remaini
   assert.equal((await app.call(path, 'admin', { ...partial, requestId: 'remaining', amountMinor: 2525 })).status, 200);
   assert.equal((await app.call(path + '/remaining/approve', 'finance', {})).status, 200);
   assert.equal((await app.call(customer, 'customer')).body.payment.netPaidMinor, 0);
+  const net = await app.call(financePath, 'founder');
+  assert.deepEqual(net.body.totals, { capturedMinor: 3525, refundedMinor: 3525, netMinor: 0 });
+  assert.equal(net.body.payments[0].reference, '12345');
+
   assert.equal(f.writes.filter(entry => entry.operation === 'refunds').length, 2);
 });
 
