@@ -1,6 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { applicationDefault, getApps, initializeApp } from 'firebase-admin/app';
 import { getAuth } from 'firebase-admin/auth';
+import { createFirebaseEmailCodeService } from './email-code.service.js';
 import { createFirebaseIdentityVerifier } from './firebase-identity-verifier.js';
 
 const productionProject = 'lv-tranport';
@@ -46,13 +47,18 @@ function configuredAuth(projectId: string) {
   return getAuth(app);
 }
 
+export function createConfiguredEmailCodeService(projectId: string,
+  options: Parameters<typeof createFirebaseEmailCodeService>[1]) {
+  return createFirebaseEmailCodeService(configuredAuth(projectId), options);
+}
+
 export function createConfiguredFirebaseVerifier(projectId: string) {
   return createFirebaseIdentityVerifier(configuredAuth(projectId), projectId);
 }
 
-export function createConfiguredCustomerVerifier(projectId = productionProject) {
+export function createConfiguredCustomerVerifier(projectId = productionProject, requireVerifiedEmail = false) {
   return createFirebaseIdentityVerifier(configuredAuth(projectId), projectId, Date.now,
-    { allowUnassignedCustomer: true });
+    { allowUnassignedCustomer: true, requireVerifiedEmail });
 }
 
 /** Resolve only an already authorized driver; never grants roles or creates users. */

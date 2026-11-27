@@ -9,6 +9,10 @@ type Booking = { id: string; referenceCode: string; pickup: string; destination:
     resolution?: { decision: string; reason: string; by: string; at: string } };
   transitions: { to: string; occurredAt: string; metadata?: { actor_id?: string; operation_id?: string } }[] };
 type Driver = { id: string; name: string; status: string; vehicleId: string; lastSeenAt: string };
+type Application = { driverId: string; vehicleId: string; version: number;
+  status: 'pending' | 'approved' | 'corrections' | 'rejected' | 'suspended'; expired: boolean;
+  driverValidUntil: string; vehicleValidUntil: string;
+  history: { status: string; actorId: string; at: string; reason?: string }[] };
 type Vehicle = { id: string; registration: string; name: string; fleetType: string };
 const terminal = new Set(['completed', 'cancelled', 'failed']);
 const checkoutEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
@@ -17,6 +21,7 @@ const checkoutEnabled = checkoutEnv?.MODE === 'staging' && checkoutEnv.VITE_LVTP
 export function BookingOperations({ client }: { client: VerifiedOperationsClient }) {
   const [section, setSection] = useState<'reservations' | 'vehicles' | 'drivers'>('reservations');
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [applications, setApplications] = useState<Application[]>([]);
   const [drivers, setDrivers] = useState<Driver[]>([]);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [assignmentFeedback, setAssignmentFeedback] = useState<{ id: string; text: string } | null>(null);
@@ -31,12 +36,14 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
   const [updated, setUpdated] = useState('');
   const refresh = useCallback(async () => {
     const attempt = ++sequence.current;
-    const [b, d, v] = await Promise.all([
+    const [b, d, v, a] = await Promise.all([
       client.request<{ bookings: Booking[] }>('/operations/bookings'),
       client.request<{ drivers: Driver[] }>('/operations/drivers'),
       client.request<{ vehicles: Vehicle[] }>('/operations/vehicles'),
+      client.request<{ applications: Application[] }>('/operations/driver-applications'),
     ]);
     if (!mounted.current || attempt !== sequence.current) return;
+    setApplications(a.applications);
     setBookings(b.bookings); setDrivers(d.drivers); setVehicles(v.vehicles);
     setUpdated(new Date().toLocaleTimeString()); setError('');
   }, [client]);
@@ -121,6 +128,36 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
     <div className="lv-operations-body">
     <header><h2 className="text-xl">Bookings and dispatch</h2><p>Last loaded: {updated || 'Not loaded'}</p>
       <button disabled={busy} onClick={() => void run(refresh)}>Refresh</button></header>
+    {section === 'drivers' && <section className="lv-operations-panel space-y-3">
+      <h3>Driver applications</h3>
+      {updated && applications.length === 0 && <p>No applications received.</p>}
+      {applications.map(application => {
+        const vehicle = vehicles.find(item => item.id === application.vehicleId);
+        const reviewOptions = {
+          pending: application.expired ? ['corrections', 'rejected'] : ['approved', 'corrections', 'rejected'],
+          approved: ['corrections', 'suspended'], suspended: ['corrections'], rejected: [], corrections: [],
+        }[application.status];
+        return <article key={application.driverId}>
+          <h4>{drivers.find(driver => driver.id === application.driverId)?.name ?? application.driverId}</h4>
+          <p>{vehicle?.registration ?? application.vehicleId} · {vehicle?.fleetType} · {application.expired ? 'Expired' : application.status}</p>
+          <p>Driver valid until {new Date(application.driverValidUntil).toLocaleString()} · Vehicle valid until {new Date(application.vehicleValidUntil).toLocaleString()}</p>
+          <details><summary>Review history</summary><ul>{application.history.map((entry, index) =>
+            <li key={index}>{new Date(entry.at).toLocaleString()} · {entry.actorId} · {entry.status}{entry.reason && ' · ' + entry.reason}</li>
+          )}</ul></details>
+          {reviewOptions.length > 0 && <form onSubmit={event => {
+            event.preventDefault();
+            const form = new FormData(event.currentTarget);
+            void run(() => client.request('/operations/driver-applications/' + encodeURIComponent(application.driverId) + '/review', {
+              body: { status: form.get('decision'), reason: form.get('reason'), expectedVersion: application.version },
+            }));
+          }}>
+            <label>Decision <select name="decision" required>{reviewOptions.map(status => <option key={status}>{status}</option>)}</select></label>
+            <label>Reason <input name="reason" required maxLength={500} /></label>
+            <button type="submit" disabled={busy}>Save review</button>
+          </form>}
+        </article>;
+      })}
+    </section>}
     {error && <p role="alert">{error}</p>}
     <dl className="lv-operations-metrics">
       <div><dt>Pending reservations</dt><dd>{updated ? bookings.filter(booking => booking.status === 'pending').length : '—'}</dd></div>

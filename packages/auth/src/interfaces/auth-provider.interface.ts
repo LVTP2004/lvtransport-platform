@@ -18,6 +18,7 @@ export interface AuthProviderAdapter {
   signIn(email: string, password: string): Promise<AuthState>;
   rememberSession?(remember: boolean): Promise<void>;
   sendEmailLink?(email: string, returnUrl: string): Promise<void>;
+  signInWithCustomToken?(token: string): Promise<AuthState>;
   signInWithEmailLink?(email: string, link: string): Promise<AuthState>;
   signInWithGoogle?(): Promise<AuthState>;
   signInWithMicrosoft?(): Promise<AuthState>;

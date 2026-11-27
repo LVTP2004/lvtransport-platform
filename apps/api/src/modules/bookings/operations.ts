@@ -2,7 +2,7 @@ import { createHash, randomUUID } from 'node:crypto';
 import type { VerifiedIdentity } from '../../auth/middleware/authenticate.js';
 import { CANONICAL_ALLOWED_TRANSITIONS, TERMINAL_BOOKING_STATUSES, type CanonicalBookingLifecycleStatus } from '../../types/lifecycle.js';
 import type { BookingRecord } from './dto.js';
-import { fileBookingRepository, type FileBookingRepository, type BookingStore, type OperationReceipt, type OperationalDriver } from './repository.js';
+import { fileBookingRepository, type FileBookingRepository, type BookingStore, type OperationReceipt, type OperationalDriver, type DriverApplication } from './repository.js';
 
 export class BookingOperationError extends Error {
   constructor(public readonly status: number, public readonly code: string) { super(code); }
@@ -28,6 +28,7 @@ export function createBookingOperations(
   repository: FileBookingRepository = fileBookingRepository,
   resolveDriver: (id: string) => Promise<{ id: string; name: string }> = async () => { throw new BookingOperationError(503, 'DRIVER_DIRECTORY_UNAVAILABLE'); },
   now: () => Date = () => new Date(),
+  enforceDriverApproval = false,
 ) {
   // Live observations are deliberately ephemeral; business state remains in JSON.
   const trackingSessions = new Map<string, string>();
@@ -43,6 +44,9 @@ export function createBookingOperations(
   }
   function requireAdmin(actor: VerifiedIdentity) { requireValue(isAdmin(actor), 403, 'ADMIN_REQUIRED'); }
   function requireDriver(actor: VerifiedIdentity) { requireValue(actor.status === 'active' && actor.role === 'driver', 403, 'DRIVER_REQUIRED'); }
+  function requireApplicant(actor: VerifiedIdentity) {
+    requireValue(actor.status === 'active' && (actor.role === 'driver' || actor.role === 'customer'), 403, 'APPLICANT_REQUIRED');
+  }
   function bookingView(booking: BookingRecord, includeEmail = false) {
     return { id: booking.id, referenceCode: booking.referenceCode, pickup: booking.pickup,
       destination: booking.destination, scheduleAt: booking.scheduleAt, serviceType: booking.serviceType,
@@ -68,13 +72,33 @@ export function createBookingOperations(
   function visible(actor: VerifiedIdentity, booking: BookingRecord) {
     return isAdmin(actor) || (actor.status === 'active' && actor.role === 'driver' && booking.assignment?.driverId === actor.userId);
   }
+  function applicationFor(store: BookingStore, driverId: string) {
+    const applications = store.driverApplications;
+    return applications && Object.hasOwn(applications, driverId) ? applications[driverId] : undefined;
+  }
+  function eligible(store: BookingStore, driverId: string, vehicleId: string, at = now().getTime()) {
+    if (!enforceDriverApproval) return true;
+    const application = applicationFor(store, driverId);
+    return application?.status === 'approved' && application.vehicleId === vehicleId && store.vehicles?.[vehicleId]?.enabled
+      && Date.parse(application.driverValidUntil) > at && Date.parse(application.vehicleValidUntil) > at;
+  }
+  function requireBookingEligibility(store: BookingStore, booking: BookingRecord, driverId: string, vehicleId: string) {
+    const currentTime = now().getTime();
+    const scheduledAt = Date.parse(booking.scheduleAt);
+    const requiredAt = Number.isFinite(scheduledAt) ? Math.max(scheduledAt, currentTime) : currentTime;
+    requireValue(eligible(store, driverId, vehicleId, requiredAt), 409, 'DRIVER_APPROVAL_REQUIRED');
+  }
+  function applicationView(application: DriverApplication) {
+    const at = now().getTime();
+    return { ...application, expired: Math.min(Date.parse(application.driverValidUntil), Date.parse(application.vehicleValidUntil)) <= at };
+  }
   function driverView(store: BookingStore, driver: OperationalDriver) {
     const assigned = store.bookings.find(item => active(item) && item.assignment
       && (item.assignment.driverId === driver.id || item.assignment.vehicleId === driver.vehicleId));
     const age = now().getTime() - Date.parse(driver.lastSeenAt);
     const fresh = Number.isFinite(age) && age >= 0 && age <= DRIVER_PRESENCE_TTL_MS;
     return { ...driver, desired_state: driver.availability,
-      status: !fresh ? 'unknown' : assigned ? 'busy' : driver.availability,
+      status: !fresh ? 'unknown' : assigned ? 'busy' : eligible(store, driver.id, driver.vehicleId) ? driver.availability : 'unavailable',
       activeBookingId: assigned?.id ?? null };
   }
   function recordTransition(booking: BookingRecord, state: CanonicalBookingLifecycleStatus, actor: VerifiedIdentity, operationId: string) {
@@ -202,6 +226,87 @@ export function createBookingOperations(
         return vehicle;
       });
     },
+    listDriverApplications(actor: VerifiedIdentity) {
+      requireAdmin(actor);
+      return Object.values(repository.snapshot().driverApplications ?? {}).map(applicationView);
+    },
+    ownDriverApplication(actor: VerifiedIdentity) {
+      requireApplicant(actor);
+      const application = applicationFor(repository.snapshot(), actor.userId);
+      return application ? applicationView(application) : null;
+    },
+    submitDriverApplication(actor: VerifiedIdentity, body: unknown) {
+      requireApplicant(actor);
+      const vehicleField = actor.role === 'customer' ? 'registration' : 'vehicleId';
+      fields(body, [vehicleField, 'driverValidUntil', 'vehicleValidUntil', 'expectedVersion']);
+      const vehicleReference = text(body[vehicleField], vehicleField === 'registration' ? 24 : 80);
+      const timestamp = now();
+      const expiry = (value: unknown) => {
+        const input = text(value, 24);
+        const time = Date.parse(input);
+        requireValue(time > timestamp.getTime() && new Date(time).toISOString() === input, 400, 'INVALID_VALID_UNTIL');
+        return input;
+      };
+      const driverValidUntil = expiry(body.driverValidUntil);
+      const vehicleValidUntil = expiry(body.vehicleValidUntil);
+      return repository.transact(store => {
+        const vehicles = store.vehicles ?? {};
+        const registration = vehicleReference.toUpperCase().replace(/\s+/g, '');
+        const vehicle = vehicleField === 'registration'
+          ? Object.values(vehicles).find(item => item.registration === registration)
+          : Object.hasOwn(vehicles, vehicleReference) ? vehicles[vehicleReference] : undefined;
+        requireValue(vehicle?.enabled, 409, 'VEHICLE_UNAVAILABLE');
+        const vehicleId = vehicle.id;
+        const previous = applicationFor(store, actor.userId);
+        if (previous?.status === 'pending' && body.expectedVersion === previous.version - 1
+          && previous.vehicleId === vehicleId && previous.driverValidUntil === driverValidUntil
+          && previous.vehicleValidUntil === vehicleValidUntil) return applicationView(previous);
+        requireValue(body.expectedVersion === (previous?.version ?? 0), 409, 'VERSION_CONFLICT');
+        requireValue(!previous || (previous.status !== 'pending' && previous.status !== 'suspended'), 409, 'APPLICATION_NOT_EDITABLE');
+        requireValue(!previous || previous.status !== 'approved' || applicationView(previous).expired, 409, 'APPROVAL_STILL_VALID');
+        const application: DriverApplication = { driverId: actor.userId, vehicleId, driverValidUntil, vehicleValidUntil,
+          version: (previous?.version ?? 0) + 1, status: 'pending',
+          history: [...(previous?.history ?? []), { status: 'pending', actorId: actor.userId, at: timestamp.toISOString(),
+            vehicleId, driverValidUntil, vehicleValidUntil }] };
+        store.driverApplications = { ...store.driverApplications, [actor.userId]: application };
+        return applicationView(application);
+      });
+    },
+    reviewDriverApplication(actor: VerifiedIdentity, driverId: string, body: unknown) {
+      requireAdmin(actor);
+      fields(body, ['status', 'reason', 'expectedVersion']);
+      const reason = text(body.reason, 500);
+      const status = body.status;
+      requireValue(status === 'approved' || status === 'corrections' || status === 'rejected' || status === 'suspended',
+        400, 'INVALID_APPLICATION_STATUS');
+      return repository.transact(store => {
+        const application = applicationFor(store, driverId);
+        requireValue(application, 404, 'APPLICATION_NOT_FOUND');
+        const lastReview = application.history.at(-1);
+        if (body.expectedVersion === application.version - 1 && lastReview?.status === status
+          && lastReview.actorId === actor.userId && lastReview.reason === reason) return applicationView(application);
+        requireValue(body.expectedVersion === application.version, 409, 'VERSION_CONFLICT');
+        requireValue(application.status === 'pending' || (application.status === 'approved' && (status === 'suspended' || status === 'corrections'))
+          || (application.status === 'suspended' && status === 'corrections'), 409, 'APPLICATION_REVIEW_UNAVAILABLE');
+        const reviewedAt = now();
+        const { vehicleId, driverValidUntil, vehicleValidUntil } = application;
+        if (status === 'approved') {
+          requireValue(store.vehicles?.[vehicleId]?.enabled, 409, 'VEHICLE_UNAVAILABLE');
+          requireValue(Math.min(Date.parse(driverValidUntil), Date.parse(vehicleValidUntil)) > reviewedAt.getTime(),
+            409, 'APPLICATION_EXPIRED');
+        }
+        application.status = status;
+        application.version++;
+        const driver = store.drivers && Object.hasOwn(store.drivers, driverId) ? store.drivers[driverId] : undefined;
+        if (driver?.availability === 'available') {
+          driver.availability = 'unavailable';
+          driver.lastChangeAt = reviewedAt.toISOString();
+        }
+        application.history.push({ status, reason, actorId: actor.userId, at: reviewedAt.toISOString(),
+          vehicleId, driverValidUntil, vehicleValidUntil });
+        return applicationView(application);
+      });
+    },
     async presence(actor: VerifiedIdentity, body: unknown) {
       requireDriver(actor); fields(body, ['availability', 'vehicleId']);
       requireValue(body.availability === 'available' || body.availability === 'unavailable', 400, 'INVALID_AVAILABILITY');
@@ -210,6 +315,9 @@ export function createBookingOperations(
       requireValue(account.id === actor.userId, 403, 'DRIVER_IDENTITY_MISMATCH');
       return repository.transact(store => {
         requireValue(store.vehicles?.[vehicleId]?.enabled, 409, 'VEHICLE_UNAVAILABLE');
+        if (body.availability === 'available') {
+          requireValue(eligible(store, actor.userId, vehicleId), 409, 'DRIVER_APPROVAL_REQUIRED');
+        }
         const current = store.drivers && Object.hasOwn(store.drivers, actor.userId) ? store.drivers[actor.userId] : undefined;
         const assigned = store.bookings.find(item => active(item) && item.assignment?.driverId === actor.userId);
         requireValue(!assigned || assigned.assignment?.vehicleId === vehicleId, 409, 'ACTIVE_VEHICLE_CHANGE_DENIED');
@@ -257,6 +365,7 @@ export function createBookingOperations(
         const age = driver ? now().getTime() - Date.parse(driver.lastSeenAt) : NaN;
         requireValue(driver?.availability === 'available' && Number.isFinite(age) && age >= 0 && age <= DRIVER_PRESENCE_TTL_MS, 409, 'DRIVER_UNAVAILABLE');
         requireValue(store.vehicles?.[driver.vehicleId]?.enabled, 409, 'VEHICLE_UNAVAILABLE');
+        requireBookingEligibility(store, booking, driverId, driver.vehicleId);
         const busy = store.bookings.some(item => active(item) && item.assignment
           && (item.assignment.driverId === driverId || item.assignment.vehicleId === driver.vehicleId));
         requireValue(!busy, 409, 'DRIVER_OR_VEHICLE_BUSY');
@@ -270,8 +379,12 @@ export function createBookingOperations(
       const status = body.status;
       const allowed = isAdmin(actor) ? ['cancelled'] : ['accepted', 'en_route', 'arrived', 'in_progress', 'completed', 'cancelled'];
       requireValue(typeof status === 'string' && allowed.includes(status), 403, 'TRANSITION_NOT_GRANTED');
-      return command(actor, bookingId, key, body, 'transition', (_store, booking, operationId) => {
+      return command(actor, bookingId, key, body, 'transition', (store, booking, operationId) => {
         requireValue(!booking.passengerAbsence || booking.passengerAbsence.resolution, 409, 'ABSENCE_REVIEW_REQUIRED');
+        if (enforceDriverApproval && booking.lifecycle.state === 'assigned' && status === 'accepted') {
+          requireValue(booking.assignment, 409, 'DRIVER_APPROVAL_REQUIRED');
+          requireBookingEligibility(store, booking, actor.userId, booking.assignment.vehicleId);
+        }
         recordTransition(booking, status as CanonicalBookingLifecycleStatus, actor, operationId);
       });
     },

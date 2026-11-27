@@ -1,3 +1,4 @@
+import { EmailCodeForm, type EmailCodeSignIn } from './EmailCodeForm';
 import { EmailLinkForm, type EmailSignIn } from './EmailLinkForm';
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { LVTP_MICROSOFT_SIGN_IN_ENABLED, OperationsRequestError, VerifiedOperationsClient, type PortalOAuthProvider, type VerifiedPortalIdentity } from '@lvtransport/auth';
@@ -53,12 +54,13 @@ function loginErrorMessage(error: unknown): string {
 }
 
 /** Only a verified API session can mount the operational child. */
-export function GoogleLoginBoundary({ title, createProvider, expectedRole, renderOperations, suggestedEmail }: {
+export function GoogleLoginBoundary({ title, createProvider, expectedRole, renderOperations, suggestedEmail, signInMessage }: {
   title: string;
   createProvider: () => FirebaseAuthProvider;
   expectedRole: 'admin' | 'driver' | 'customer';
   renderOperations: (connection: Connected) => ReactNode;
   suggestedEmail?: string;
+  signInMessage?: string;
 }) {
   const clientRef = useRef<VerifiedOperationsClient | null>(null);
   const pending = useRef(false);
@@ -70,9 +72,9 @@ export function GoogleLoginBoundary({ title, createProvider, expectedRole, rende
   const language = expectedRole === 'customer' ? 'nl' : 'en';
   const microsoft = microsoftCopy[language];
   const microsoftEnabled = LVTP_MICROSOFT_SIGN_IN_ENABLED && expectedRole !== 'admin';
+  const configured = (import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be/api/v1').replace(/\/$/, '');
+  const apiBase = configured.endsWith('/api/v1') ? configured : configured + '/api/v1';
   function makeClient(provider: FirebaseAuthProvider) {
-    const configured = (import.meta.env.VITE_API_BASE_URL ?? 'https://api.lvtransport.be/api/v1').replace(/\/$/, '');
-    const apiBase = configured.endsWith('/api/v1') ? configured : configured + '/api/v1';
     const client = new VerifiedOperationsClient(provider, apiBase, expectedRole, fetch, () => {
       if (alive.current && clientRef.current === client) {
         setConnection(null);
@@ -118,7 +120,7 @@ export function GoogleLoginBoundary({ title, createProvider, expectedRole, rende
     };
   }, [createProvider, expectedRole]);
 
-  async function login(emailSignIn?: EmailSignIn, remember = false, oauth: PortalOAuthProvider = 'google') {
+  async function login(emailSignIn?: EmailSignIn, remember = false, oauth: PortalOAuthProvider = 'google', emailCode?: EmailCodeSignIn) {
     if (pending.current || busy) return;
     pending.current = true;
     setBusy(true);
@@ -127,7 +129,7 @@ export function GoogleLoginBoundary({ title, createProvider, expectedRole, rende
     try {
       client = makeClient(createProvider());
       clientRef.current = client;
-      const identity = await client.connect(emailSignIn, remember, oauth);
+      const identity = emailCode ? await client.connectWithEmailCode(emailCode, remember) : await client.connect(emailSignIn, remember, oauth);
       if (!alive.current || clientRef.current !== client) return;
       if (emailSignIn) {
         window.history.replaceState(window.history.state, '', window.location.pathname);
@@ -170,7 +172,7 @@ export function GoogleLoginBoundary({ title, createProvider, expectedRole, rende
   }
   return <main className="min-h-screen bg-zinc-950 p-6 text-white">
     <h1 className="text-3xl mb-4">{title}</h1>
-    <p role="status">{expectedRole === 'customer' ? (connection ? 'Uw account is verbonden.' : 'Meld u aan om uw eigen reserveringen te bekijken.')
+    <p role="status">{expectedRole === 'customer' ? (connection ? 'Uw account is verbonden.' : signInMessage ?? 'Meld u aan om uw eigen reserveringen te bekijken.')
       : connection ? 'Operational access verified by the server.' : 'Sign in to access this panel.'}</p>
     {error && <p role="alert">{error}</p>}
     {connection ? <button className="my-4 rounded bg-amber-400 px-4 py-2 text-black" disabled={busy} onClick={logout}>
@@ -178,6 +180,9 @@ export function GoogleLoginBoundary({ title, createProvider, expectedRole, rende
     </button> : <EmailLinkForm createProvider={createProvider} busy={busy} onSignIn={login} suggestedEmail={suggestedEmail}
       onGoogle={remember => login(undefined, remember)} language={language}
       onMicrosoft={microsoftEnabled ? remember => login(undefined, remember, 'microsoft') : undefined} />}
+    {!connection && !signInMessage && <EmailCodeForm apiBase={apiBase} busy={busy} language={language} suggestedEmail={suggestedEmail}
+      onRequest={email => makeClient(createProvider()).requestEmailCode(email)}
+      onSignIn={(details, remember) => login(undefined, remember, 'google', details)} />}
     {connection && microsoftEnabled && (microsoftLinked ? <p role="status">{microsoft.linked}</p>
       : <button className="rounded px-4 py-2" style={{ marginLeft: 8, border: '1px solid #777780' }}
         disabled={busy} onClick={() => void linkMicrosoft()}>

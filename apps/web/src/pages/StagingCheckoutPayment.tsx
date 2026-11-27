@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, type FormEvent } from 'react';
 import type { VerifiedOperationsClient } from '@lvtransport/auth';
 
 type Payment = { status: 'ready' | 'processing' | 'authorized' | 'captured' | 'released' | 'expired';
@@ -9,6 +9,49 @@ const labels = {
   expired: 'Autorisatie verlopen. Bevestig het bedrag opnieuw.',
 };
 const money = new Intl.NumberFormat('nl-BE', { style: 'currency', currency: 'EUR' });
+
+function InvoiceRequestForm({ client, endpoint }: { client: VerifiedOperationsClient; endpoint: string }) {
+  const [requestedAt, setRequestedAt] = useState<string | null>();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
+  useEffect(() => {
+    let active = true;
+    void client.request<{ requestedAt: string | null }>(endpoint).then(result => {
+      if (active) setRequestedAt(result.requestedAt);
+    }).catch(() => {
+      if (active) setError('De factuuraanvraag kon niet worden geladen.');
+    });
+    return () => { active = false; };
+  }, [client, endpoint]);
+
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (busy || requestedAt !== null) return;
+    const form = new FormData(event.currentTarget);
+    setBusy(true);
+    setError('');
+    try {
+      const body = Object.fromEntries(['legalName', 'registration', 'address', 'country'].map(field => [field, form.get(field)]));
+      const result = await client.request<{ requestedAt: string }>(endpoint, { body });
+      setRequestedAt(result.requestedAt);
+    } catch {
+      setError('De aanvraag is niet bevestigd. Controleer de gegevens en probeer opnieuw.');
+    } finally { setBusy(false); }
+  }
+
+  return <details>
+    <summary>Zakelijke factuur aanvragen</summary>
+    {error && <p role="alert">{error}</p>}
+    {requestedAt && <p role="status">Factuuraanvraag ontvangen. De gegevens worden gecontroleerd.</p>}
+    {requestedAt === null && <form className="grid gap-2" onSubmit={event => void submit(event)}>
+      <label>Bedrijfsnaam <input name="legalName" required maxLength={160} /></label>
+      <label>Ondernemings- of btw-nummer <input name="registration" required maxLength={30} /></label>
+      <label>Factuuradres <input name="address" required maxLength={240} /></label>
+      <label>Landcode <input name="country" required minLength={2} maxLength={2} pattern="[A-Za-z]{2}" placeholder="BE" /></label>
+      <button type="submit" disabled={busy}>Aanvraag indienen</button>
+    </form>}
+  </details>;
+}
 
 export function StagingCheckoutPayment({ id, client, showOnReturn }: { id: string; client: VerifiedOperationsClient; showOnReturn: boolean }) {
   const [open, setOpen] = useState(showOnReturn);
@@ -61,7 +104,10 @@ export function StagingCheckoutPayment({ id, client, showOnReturn }: { id: strin
         {(payment.status === 'ready' || payment.status === 'expired') && <button type="button" disabled={busy} onClick={() => void pay()}>
           {payment.status === 'expired' ? 'Opnieuw autoriseren met Stripe (test)' : 'Betalen met Stripe (test)'}
         </button>}
-        {payment.status === 'captured' && payment.receipt && <p>Testbetalingsbewijs · {payment.receipt}</p>}
+        {payment.status === 'captured' && payment.receipt && <>
+          <p>Testbetalingsbewijs · {payment.receipt}</p>
+          <InvoiceRequestForm client={client} endpoint={path + '/invoice-request'} />
+        </>}
         {payment.refundedMinor !== undefined && payment.netPaidMinor !== undefined && <>
           <p>Terugbetaald · {money.format(payment.refundedMinor / 100)}</p>
           <p>Netto betaald · {money.format(payment.netPaidMinor / 100)}</p>

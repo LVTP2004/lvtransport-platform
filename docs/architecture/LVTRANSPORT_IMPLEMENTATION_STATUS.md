@@ -718,3 +718,34 @@ observación. El endpoint de lectura exige Founder activo con
 `founder:read` y consulta el almacén sin ejecutar operaciones financieras.
 La prueba HTTP verifica el permiso y el neto de cero tras un reembolso
 total con el adaptador. Pendiente de aceptación en el Fossibot.
+
+### Continuidad de los cuatro frentes
+
+- Alta: se publicó la recepción de solicitudes verificadas, la revisión
+  de Control Tower y la vista de Drive. Se corrigieron los accesos
+  directos de ambos portales y se comprobaron las sesiones existentes
+  en la app LV instalada del Fossibot F109. La revisión por cambio de
+  vehículo se incluye en el candidato. Falta el ensayo con matrícula y
+  vigencias verificadas y la activación de la regla para la flota activa.
+- Pagos: la vista publicada de aceptación está bajo /aceptacion-lv/ y
+  usa Firebase y Stripe aislados. En la app LV, Ride abrió Stripe
+  Checkout para la reserva de pruebas 55113. Stripe confirmó 29,25 EUR
+  autorizados y 0 capturados. Tras recuperar el servidor temporal,
+  Ride mostró la autorización. No se observó la notificación firmada
+  en esa ejecución. Quedan la liberación por ausencia y los reembolsos
+  con una segunda identidad aprobadora de staging.
+- Acceso: el formulario de código de seis dígitos incluye caducidad,
+  límite de intentos y comprobación del rol en Firebase. SMTP sigue
+  pendiente de aprovisionar. Los enlaces y las sesiones actuales se
+  mantuvieron operativos.
+- Finanzas: Ride registra solicitudes de factura después de observar
+  la captura y Founder OS muestra capturas, reembolsos y la base por
+  conductor externo. Falta configurar emisor y proveedor y aprobar
+  tratamiento fiscal, comisiones, límites y calendario. No se emitieron
+  facturas ni se ejecutaron liquidaciones.
+
+La aceptación funcional se hace en la app LV instalada de
+lvtransport.be en el Fossibot, con datos de prueba separados cuando
+corresponde. La vista de Stripe requiere el túnel de staging y el
+permiso de red local. El candidato pasó typecheck, build de API y
+build web. No incluye credenciales ni cambia dependencias o despliegue.

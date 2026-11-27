@@ -1,3 +1,4 @@
+import { EmailCodeForm, type EmailCodeSignIn } from '../../../admin/src/modules/auth/components/EmailCodeForm';
 import { FounderOperationsMap } from './FounderOperationsMap';
 import { EmailLinkForm, type EmailSignIn } from '../../../admin/src/modules/auth/components/EmailLinkForm';
 import { useEffect, useRef, useState } from 'react';
@@ -43,7 +44,12 @@ function Panel({ title, eyebrow, children, className = '' }: { title: string; ey
 
 type FinanceTotals = { capturedMinor: number; refundedMinor: number; netMinor: number };
 type FinanceSnapshot = { currency: 'EUR'; totals: FinanceTotals;
-  payments: (FinanceTotals & { reference: string; receipt: string; observedAt: string })[] };
+  externalSettlementBasis?: { driverId: string; driverName: string | null; netMinor: number; unresolvedRefundMinor: number;
+    rides: (FinanceTotals & { reference: string; unresolvedRefundMinor: number })[] }[];
+  payments: (FinanceTotals & { reference: string; receipt: string; observedAt: string;
+    completedAt: string | null; fleetType: 'own' | 'external' | null;
+    invoiceRequest: { legalName: string; registration: string; address: string; country: string; requestedAt: string } | null;
+    refunds: { reference: string; amountMinor: number; observedAt: string }[] })[] };
 const financeEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
 const stagingFinance = financeEnv?.MODE === 'staging' && financeEnv.VITE_LVTP_STAGING_CHECKOUT === 'true';
 const euro = new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' });
@@ -95,7 +101,7 @@ export default function FounderDashboard() {
       void previous?.disconnect(false).catch(() => {});
     };
   }, []);
-  async function authenticate(mode: 'restore' | 'interactive', emailSignIn?: EmailSignIn, remember = false) {
+  async function authenticate(mode: 'restore' | 'interactive', emailSignIn?: EmailSignIn, remember = false, emailCode?: EmailCodeSignIn) {
     setBusy(true);
     setError('');
     const epoch = ++generation.current;
@@ -115,7 +121,7 @@ export default function FounderDashboard() {
       });
       const verified = mode === 'restore'
         ? await connection.verifySession()
-        : await connection.connect(emailSignIn, remember);
+        : emailCode ? await connection.connectWithEmailCode(emailCode, remember) : await connection.connect(emailSignIn, remember);
       if (!current()) {
         await connection.disconnect(false);
         return;
@@ -186,6 +192,9 @@ export default function FounderDashboard() {
         {!identity && <EmailLinkForm createProvider={() => createLVTransportFirebaseProvider('founder')} busy={busy}
           onSignIn={(details, remember) => authenticate('interactive', details, remember)}
           onGoogle={remember => authenticate('interactive', undefined, remember)} />}
+        {!identity && <EmailCodeForm apiBase={apiV1} busy={busy}
+          onRequest={email => new VerifiedOperationsClient(createLVTransportFirebaseProvider('founder'), apiV1, 'founder').requestEmailCode(email)}
+          onSignIn={(details, remember) => authenticate('interactive', undefined, remember, details)} />}
         {!identity && <p className="fd-access">Sign in with your authorized Founder OS account to inspect operational data.</p>}
         <div className="fd-kpis">{[
           ['Total Rides', snapshot ? String(completedInPeriod(snapshot.bookings, days, clock)) : '—', `Completed in the last ${days} days`],
@@ -225,7 +234,32 @@ export default function FounderDashboard() {
                   <strong>{payment.reference}</strong>
                   <span>Net paid {euro.format(payment.netMinor / 100)}</span>
                   <small>Observed {formatTime(Date.parse(payment.observedAt))} · {payment.receipt}</small>
+                  {payment.completedAt && <small>Completed {formatTime(Date.parse(payment.completedAt))}</small>}
+                  {payment.fleetType && <small>{payment.fleetType === 'external' ? 'External fleet' : 'Own fleet'}</small>}
+                  {payment.invoiceRequest && <details>
+                    <summary>Invoice requested · {formatTime(Date.parse(payment.invoiceRequest.requestedAt))}</summary>
+                    <p>{payment.invoiceRequest.legalName} · {payment.invoiceRequest.registration}</p>
+                    <p>{payment.invoiceRequest.address} · {payment.invoiceRequest.country}</p>
+                    <small>Awaiting fiscal review</small>
+                  </details>}
+                  {payment.refunds?.length > 0 && <ul>{payment.refunds.map(refund => <li key={refund.reference}>
+                    Refund {euro.format(refund.amountMinor / 100)} · {refund.reference} · {formatTime(Date.parse(refund.observedAt))}
+                  </li>)}</ul>}
                 </li>)}</ul>
+                {finance.externalSettlementBasis?.length ? <section>
+                  <h3>External fleet settlement basis</h3>
+                  <p>Completed rides with confirmed Stripe test captures, before commission.</p>
+                  <ul className="fd-feed">{finance.externalSettlementBasis.map(driver => <li key={driver.driverId}>
+                    <details>
+                      <summary>{driver.driverName ?? driver.driverId} · {euro.format(driver.netMinor / 100)}</summary>
+                      {driver.unresolvedRefundMinor > 0 && <p>Refund requests awaiting resolution · {euro.format(driver.unresolvedRefundMinor / 100)}</p>}
+                      <ul>{driver.rides.map(ride => <li key={ride.reference}>
+                        {ride.reference} · {euro.format(ride.netMinor / 100)}
+                        {ride.refundedMinor > 0 && <small>Refunded {euro.format(ride.refundedMinor / 100)}</small>}
+                      </li>)}</ul>
+                    </details>
+                  </li>)}</ul>
+                </section> : null}
               </>}
           </Panel>
           : section === 'audit' ? <>{events}<Panel title="Governance Decision Log"><Unavailable text="Lifecycle events above are not governance approvals. No governance decision source is connected." /></Panel></>

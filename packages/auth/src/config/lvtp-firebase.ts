@@ -38,8 +38,8 @@ const firebaseEnv = (import.meta as ImportMeta & { env?: Record<string, string |
 const firebaseWebOptions = resolveFirebaseWebOptions(firebaseEnv);
 
 /** Explicit, lazy bootstrap. Importing this module never signs a user in. */
-export function createLVTransportFirebaseProvider(portal: 'admin' | 'driver' | 'customer' | 'founder') {
-  if (!['admin', 'driver', 'customer', 'founder'].includes(portal)) throw new Error('Unknown portal');
+export function createLVTransportFirebaseProvider(portal: 'admin' | 'driver' | 'customer' | 'founder' | 'applicant') {
+  if (!['admin', 'driver', 'customer', 'founder', 'applicant'].includes(portal)) throw new Error('Unknown portal');
   return createFirebaseBrowserProvider(firebaseWebOptions,
     firebaseEnv.MODE === 'staging' ? `lvtransport-staging-${firebaseWebOptions.projectId}-${portal}-auth` : `lvtransport-${portal}-auth`);
 }

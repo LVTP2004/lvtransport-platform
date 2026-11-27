@@ -12,7 +12,7 @@ export interface AdminAuthSdk {
 }
 
 export function createFirebaseIdentityVerifier(sdk: AdminAuthSdk, projectId: string,
-  now: () => number = Date.now, options: { allowUnassignedCustomer?: boolean } = {}): IdentityVerifier {
+  now: () => number = Date.now, options: { allowUnassignedCustomer?: boolean; requireVerifiedEmail?: boolean } = {}): IdentityVerifier {
   if (!/^[a-z][a-z0-9-]{4,28}[a-z0-9]$/.test(projectId)) throw new Error('Invalid Firebase project');
   return async token => {
     const decoded = await sdk.verifyIdToken(token, true);
@@ -24,6 +24,7 @@ export function createFirebaseIdentityVerifier(sdk: AdminAuthSdk, projectId: str
     }
     const account = await sdk.getUser(decoded.uid);
     const role = account.customClaims?.role;
+    if (options.requireVerifiedEmail && account.emailVerified !== true) throw new Error('Verified email required');
     // Public customer sign-in may identify an unassigned account for its OWN
     // bookings only. No claims are written and operational verifiers remain strict.
     if (options.allowUnassignedCustomer === true && account.uid === decoded.uid && account.disabled === false

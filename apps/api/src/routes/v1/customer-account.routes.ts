@@ -8,9 +8,29 @@ import { validateCreateBookingPayload } from '../../modules/bookings/validation.
 import { BookingOperationError, createBookingOperations } from '../../modules/bookings/operations.js';
 
 export function createCustomerAccountRoutes(verify: IdentityVerifier, service: typeof bookingFlowService = bookingFlowService,
-  operations = createBookingOperations()) {
+  operations = createBookingOperations(), verifyApplicant?: IdentityVerifier) {
   const router = Router();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
+  if (verifyApplicant) {
+    const authenticateApplicant = createAuthenticationMiddleware(verifyApplicant);
+    router.get('/driver-application', authenticateApplicant, requirePermissions([], ['customer']), (req, res) => {
+      const { userId, role } = (req as RequestAuthContext).auth!;
+      try {
+        res.json({ success: true, application: operations.ownDriverApplication({ userId, role, status: 'active' }) });
+      } catch {
+        res.status(503).json({ success: false, code: 'APPLICATION_UNAVAILABLE' });
+      }
+    });
+    router.post('/driver-application', authenticateApplicant, requirePermissions([], ['customer']), (req, res) => {
+      const { userId, role } = (req as RequestAuthContext).auth!;
+      try {
+        res.json({ success: true, application: operations.submitDriverApplication({ userId, role, status: 'active' }, req.body) });
+      } catch (error) {
+        res.status(error instanceof BookingOperationError ? error.status : 503).json({ success: false,
+          code: error instanceof BookingOperationError ? error.code : 'APPLICATION_UNAVAILABLE' });
+      }
+    });
+  }
   router.use(createAuthenticationMiddleware(verify), requirePermissions([], ['customer']));
   router.get('/bookings', async (req, res) => {
     const identity = (req as RequestAuthContext).auth!;

@@ -10,18 +10,29 @@ import type { createStagingCheckoutWebhooks } from './staging-checkout-webhooks.
 type Refund = { id: string; amountMinor: number; reason: string; requestedBy: string; requestedAt: string;
   approval?: { by: string; at: number; intent: string }; provider?: { id: string; status: string; checkedAt: string } };
 type StripeRefund = { id: string; amount: number; currency: string; payment_intent: string; status: string };
+type InvoiceRequest = {
+  legalName: string; registration: string; address: string; country: string; requestedAt: string;
+};
 type CheckoutRecord = { id: string; amount: number; startedAt: number; session?: string; revision?: number; refunds?: Refund[];
   capture?: { receipt: string; observedAt: string };
+  release?: { session: string; observedAt: string };
+  invoiceRequest?: InvoiceRequest;
   confirmedBy?: string; confirmedAt?: string; previous?: Array<{ revision: number; amount: number; session?: string }> };
 type Intent = { id: string; status: string; amount: number; amount_received: number; amount_capturable: number; currency: string };
 type Session = { id: string; url: string | null; status: string; amount_total: number; currency: string; payment_intent: Intent | null };
 const terminal = new Set(['completed', 'cancelled', 'failed']);
 
+export const STAGING_APP_RETURN_URL = 'https://lvtransport.be/aceptacion-lv';
+
+export function isStagingCheckoutOrigin(value: string): boolean {
+  return value === STAGING_APP_RETURN_URL || /^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/.test(value);
+}
+
 export function createStagingCheckout(repository: FileBookingRepository, directory: string, key: string, origin: string,
   verify: IdentityVerifier, verifyCustomer: IdentityVerifier, request: typeof fetch = fetch,
   webhooks?: ReturnType<typeof createStagingCheckoutWebhooks>, refundApprovers: ReadonlySet<string> = new Set()) {
-  if (!/^(sk|rk)_test_[A-Za-z0-9]+$/.test(key) || !/^http:\/\/(?:localhost|127\.0\.0\.1):\d+$/.test(origin)) {
-    throw Error('Checkout requires a Stripe test key and a loopback origin');
+  if (!/^(sk|rk|rkcs)_test_[A-Za-z0-9]+$/.test(key) || !isStagingCheckoutOrigin(origin)) {
+    throw Error('Checkout requires a Stripe test key and an approved staging return URL');
   }
   mkdirSync(directory, { recursive: true, mode: 0o700 });
   const router = Router();
@@ -75,7 +86,7 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
   const expired = (result: Session) => result.payment_intent?.status === 'canceled'
     || (result.status === 'expired' && !result.payment_intent);
   function renewed(record: CheckoutRecord, amount: number) {
-    const { session, ...rest } = record;
+    const { session, release: _release, capture: _capture, invoiceRequest: _invoiceRequest, ...rest } = record;
     return { ...rest, amount, startedAt: 0, revision: revision(record) + 1,
       previous: [...(record.previous ?? []), { revision: revision(record), amount: record.amount, session }] };
   }
@@ -96,8 +107,11 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     if (record.capture?.receipt !== intent.id) {
       save({ ...record, capture: { receipt: intent.id, observedAt: new Date().toISOString() } });
     }
+    return capturedView(record, intent.id);
+  }
+  function capturedView(record: CheckoutRecord, receipt: string) {
     const refundedMinor = confirmedRefunds(record);
-    return { status: 'captured', amountMinor: record.amount, revision: revision(record), receipt: intent.id,
+    return { status: 'captured', amountMinor: record.amount, revision: revision(record), receipt,
       ...(refundedMinor > 0 ? { refundedMinor, netPaidMinor: record.amount - refundedMinor } : {}) };
   }
   function confirmedRefunds(record: CheckoutRecord) {
@@ -108,12 +122,18 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     return readdirSync(directory).filter(name => /^[a-f0-9]{64}\.json$/.test(name))
       .map(file => JSON.parse(readFileSync(join(directory, file), 'utf8')) as CheckoutRecord);
   }
+  function observedRelease(record: CheckoutRecord, sessionId: string) {
+    save({ ...record, release: { session: sessionId, observedAt: new Date().toISOString() } });
+    return { status: 'released', amountMinor: record.amount, revision: revision(record) };
+  }
   async function view(record: CheckoutRecord) {
     const amountMinor = record.amount;
     const version = { amountMinor, revision: revision(record) };
     const ride = booking(record.id);
     if (!ride) throw Error('Checkout booking missing');
     if (!record.session) return { status: terminal.has(ride.status) ? 'released' : 'ready', ...version };
+    if (terminal.has(ride.status) && record.release?.session === record.session) return { status: 'released', ...version };
+    if (ride.status === 'completed' && record.capture) return capturedView(record, record.capture.receipt);
     const result = await session(record);
     const cancel = ride.status === 'cancelled' || ride.status === 'failed';
     const intent = result.payment_intent;
@@ -121,7 +141,9 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
       return observedCapture(record, intent);
     }
     if (expired(result)) {
-      return { status: terminal.has(ride.status) ? 'released' : 'expired', ...version };
+      if (!terminal.has(ride.status)) return { status: 'expired', ...version };
+      if (intent && (intent.amount_received !== 0 || intent.amount_capturable !== 0)) throw Error('Checkout release mismatch');
+      return observedRelease(record, result.id);
     }
     if (intent?.status === 'requires_capture' && intent.amount_capturable === amountMinor) {
       if (!cancel && ride.status !== 'completed') return { status: 'authorized', ...version };
@@ -129,13 +151,14 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
       const settled = await stripe<Intent>('/payment_intents/' + intent.id + '/' + action, identity(record), action,
         cancel ? {} : { amount_to_capture: String(amountMinor) });
       if (settled.id !== intent.id || settled.status !== (cancel ? 'canceled' : 'succeeded')
-        || (!cancel && settled.amount_received !== amountMinor)) throw Error('Checkout settlement mismatch');
-      return cancel ? { status: 'released', ...version } : observedCapture(record, settled);
+        || settled.amount !== amountMinor || settled.currency !== 'eur' || settled.amount_capturable !== 0
+        || settled.amount_received !== (cancel ? 0 : amountMinor)) throw Error('Checkout settlement mismatch');
+      return cancel ? observedRelease(record, result.id) : observedCapture(record, settled);
     }
     if (result.status === 'open' && terminal.has(ride.status)) {
       const expired = await stripe<Session>('/checkout/sessions/' + result.id + '/expire', identity(record), 'expire', {});
-      if (expired.status !== 'expired') throw Error('Checkout expiration mismatch');
-      return { status: 'released', ...version };
+      if (expired.id !== result.id || expired.status !== 'expired') throw Error('Checkout expiration mismatch');
+      return observedRelease(record, result.id);
     }
     return { status: result.status === 'open' ? 'ready' : 'processing', ...version };
   }
@@ -167,20 +190,50 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     const actor = (req as RequestAuthContext).auth;
     if (actor?.role !== 'founder' || !actor.permissions.includes('founder:read')) return void res.sendStatus(403);
     try {
-      const bookings = new Map(repository.snapshot().bookings.map(item => [item.id, item.referenceCode]));
+      const store = repository.snapshot();
+      const bookings = new Map(store.bookings.map(item => [item.id, item]));
+      const external = new Map<string, {
+        driverId: string; driverName: string | null; rides: { reference: string; capturedMinor: number; refundedMinor: number;
+          netMinor: number; unresolvedRefundMinor: number }[];
+      }>();
       const payments = checkoutRecords().flatMap(record => {
-        const reference = bookings.get(record.id);
-        if (!reference || !record.capture) return [];
+        const ride = bookings.get(record.id);
+        if (!ride || !record.capture) return [];
         const refundedMinor = confirmedRefunds(record);
-        return [{ reference, ...record.capture, capturedMinor: record.amount, refundedMinor,
-          netMinor: record.amount - refundedMinor }];
+        const refunds = (record.refunds ?? []).flatMap(refund => {
+          if (refund.provider?.status !== 'succeeded') return [];
+          return [{ reference: refund.provider.id, amountMinor: refund.amountMinor, observedAt: refund.provider.checkedAt }];
+        });
+        const vehicle = ride.assignment ? store.vehicles?.[ride.assignment.vehicleId] : undefined;
+        const completed = ride.lifecycle.transitions.find(transition => transition.to === 'completed');
+        const netMinor = record.amount - refundedMinor;
+        if (completed && ride.status === 'completed' && ride.assignment && vehicle?.fleetType === 'external') {
+          const driverId = ride.assignment.driverId;
+          let basis = external.get(driverId);
+          if (!basis) {
+            basis = { driverId, driverName: store.drivers?.[driverId]?.name ?? null, rides: [] };
+            external.set(driverId, basis);
+          }
+          const unresolvedRefundMinor = (record.refunds ?? [])
+            .filter(refund => !['succeeded', 'failed', 'canceled'].includes(refund.provider?.status ?? ''))
+            .reduce((sum, refund) => sum + refund.amountMinor, 0);
+          basis.rides.push({ reference: ride.referenceCode, capturedMinor: record.amount, refundedMinor, netMinor, unresolvedRefundMinor });
+        }
+        return [{ reference: ride.referenceCode, ...record.capture, capturedMinor: record.amount, refundedMinor,
+          netMinor, refunds, invoiceRequest: record.invoiceRequest ?? null,
+          completedAt: completed?.occurredAt ?? null, fleetType: vehicle?.fleetType ?? null }];
       }).sort((a, b) => b.observedAt.localeCompare(a.observedAt));
       const totals = payments.reduce((sum, item) => ({
         capturedMinor: sum.capturedMinor + item.capturedMinor,
         refundedMinor: sum.refundedMinor + item.refundedMinor,
         netMinor: sum.netMinor + item.netMinor,
       }), { capturedMinor: 0, refundedMinor: 0, netMinor: 0 });
-      res.json({ success: true, currency: 'EUR', totals, payments });
+      const externalSettlementBasis = [...external.values()].map(basis => ({
+        ...basis,
+        netMinor: basis.rides.reduce((sum, ride) => sum + ride.netMinor, 0),
+        unresolvedRefundMinor: basis.rides.reduce((sum, ride) => sum + ride.unresolvedRefundMinor, 0),
+      }));
+      res.json({ success: true, currency: 'EUR', totals, payments, externalSettlementBasis });
     } catch { res.sendStatus(503); }
   });
   const refundsPath = '/operations/staging-checkout/:id/refunds';
@@ -263,6 +316,51 @@ export function createStagingCheckout(repository: FileBookingRepository, directo
     } catch { res.status(503).json({ message: 'Fare confirmation unavailable' }); }
   });
   const customer = createAuthenticationMiddleware(verifyCustomer);
+  const invoicePath = '/customer/staging-checkout/:id/invoice-request';
+  router.get(invoicePath, customer, (req, res) => {
+    const identity = (req as RequestAuthContext).auth;
+    const ride = booking(req.params.id);
+    if (identity?.role !== 'customer' || !ride?.customerIdentityVerified || ride.customerId !== identity.userId) {
+      return void res.sendStatus(404);
+    }
+    try {
+      const record = read(ride.id);
+      res.json({ success: true, requestedAt: record?.invoiceRequest?.requestedAt ?? null });
+    } catch { res.sendStatus(503); }
+  });
+  router.post(invoicePath, customer, async (req, res) => {
+    const identity = (req as RequestAuthContext).auth;
+    const ride = booking(req.params.id);
+    if (identity?.role !== 'customer' || !ride?.customerIdentityVerified || ride.customerId !== identity.userId) {
+      return void res.sendStatus(404);
+    }
+    const value = (field: string) => typeof req.body?.[field] === 'string' ? req.body[field].trim() as string : '';
+    const legalName = value('legalName');
+    const registration = value('registration').toUpperCase().replace(/\s/g, '');
+    const address = value('address');
+    const country = value('country').toUpperCase();
+    if (!legalName || legalName.length > 160 || !/^[A-Z0-9.-]{3,30}$/.test(registration)
+      || !address || address.length > 240 || !/^[A-Z]{2}$/.test(country)) {
+      return void res.sendStatus(400);
+    }
+    try {
+      const invoice = await serialized(ride.id, async () => {
+        const record = read(ride.id);
+        if (!record?.capture || booking(ride.id)?.status !== 'completed') return;
+        const existing = record.invoiceRequest;
+        if (existing) {
+          if (existing.legalName === legalName && existing.registration === registration
+            && existing.address === address && existing.country === country) return existing;
+          return;
+        }
+        const invoiceRequest = { legalName, registration, address, country, requestedAt: new Date().toISOString() };
+        save({ ...record, invoiceRequest });
+        return invoiceRequest;
+      });
+      if (!invoice) return void res.sendStatus(409);
+      res.json({ success: true, requestedAt: invoice.requestedAt });
+    } catch { res.sendStatus(503); }
+  });
   router.get('/customer/staging-checkout/:id', customer, async (req, res) => {
     const auth = (req as RequestAuthContext).auth;
     const ride = booking(req.params.id);

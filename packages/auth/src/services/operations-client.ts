@@ -3,7 +3,7 @@ import type { AuthProviderAdapter } from '../interfaces/auth-provider.interface.
 export type VerifiedPortalIdentity = { userId: string; role: string; status: 'active'; permissions: string[] };
 export type PortalOAuthProvider = 'google' | 'microsoft';
 export type OperationsProvider = Pick<AuthProviderAdapter, 'signInWithGoogle' | 'signInWithMicrosoft' | 'linkMicrosoftAccount'
-  | 'signInWithEmailLink' | 'getSession' | 'signOut' | 'rememberSession'>;
+  | 'signInWithCustomToken' | 'signInWithEmailLink' | 'getSession' | 'signOut' | 'rememberSession'>;
 const portalRoles = {
   admin: ['admin', 'super_admin'],
   driver: ['driver'],
@@ -50,6 +50,38 @@ export class VerifiedOperationsClient {
       ? await this.provider.signInWithEmailLink?.(emailSignIn.email, emailSignIn.link)
       : oauth === 'microsoft' ? await this.provider.signInWithMicrosoft?.() : await this.provider.signInWithGoogle?.();
     if (!result?.isAuthenticated || this.closed) throw new Error('Authentication required');
+    return this.verifySession();
+  }
+
+  private async emailCodeRequest(action: 'request' | 'redeem', body: Record<string, string>) {
+    if (this.closed) throw new OperationsRequestError('SESSION_CLOSED', 401);
+    const fetchRequest = this.fetcher;
+    const response = await fetchRequest(this.apiBase.replace(/\/$/, '') + '/auth/email-code/' + action, {
+      method: 'POST', cache: 'no-store', signal: AbortSignal.timeout(10000),
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...body, portal: this.expectedRole }),
+    });
+    if (!response.ok) {
+      throw new OperationsRequestError(response.status === 429 ? 'TRY_LATER' : 'EMAIL_CODE_NOT_ACCEPTED', response.status);
+    }
+    if (this.closed) throw new OperationsRequestError('SESSION_CLOSED', 401);
+    return await response.json() as { challengeId?: string; token?: string };
+  }
+
+  async requestEmailCode(email: string): Promise<string> {
+    const { challengeId } = await this.emailCodeRequest('request', { email });
+    if (!challengeId || !/^[a-f0-9-]{36}$/.test(challengeId)) throw new Error('Invalid sign-in challenge');
+    return challengeId;
+  }
+
+  async connectWithEmailCode(details: { email: string; challengeId: string; code: string }, remember: boolean) {
+    const { token } = await this.emailCodeRequest('redeem', details);
+    const signIn = this.provider.signInWithCustomToken?.bind(this.provider);
+    if (!token || !signIn) throw new Error('Email code authentication is unavailable');
+    await this.provider.rememberSession?.(remember);
+    if (this.closed) throw new OperationsRequestError('SESSION_CLOSED', 401);
+    const state = await signIn(token);
+    if (!state.isAuthenticated || this.closed) throw new Error('Authentication required');
     return this.verifySession();
   }
 

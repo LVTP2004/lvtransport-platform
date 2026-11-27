@@ -72,7 +72,7 @@ export function createBookingFlowService(
         customerTier: input.customerTier ?? (input.serviceType === 'vip' ? 'vip' : 'retail'),
         fareQuote: createSafeFareQuote(input, now),
         billing: {
-          invoiceLifecycleState: 'ready_for_invoice',
+          invoiceLifecycleState: 'not_ready',
           isBillingConsistent: true,
           synchronizedAt: now
         },

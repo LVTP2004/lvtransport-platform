@@ -4,7 +4,7 @@ import type { RequestAuthContext } from '../../auth/models/request-auth-context.
 import { createBookingOperations, BookingOperationError } from '../../modules/bookings/operations.js';
 
 /** Registered only by trusted server bootstrap. No client-provided roles/verifiers. */
-export function createBookingOperationsRoutes(verify: IdentityVerifier, operations: ReturnType<typeof createBookingOperations>, passengerAbsenceEnabled = false) {
+export function createBookingOperationsRoutes(verify: IdentityVerifier, operations: ReturnType<typeof createBookingOperations>, passengerAbsenceEnabled = false, driverApplicationsEnabled = false) {
   const router = Router();
   router.use((_req, res, next) => { res.setHeader('Cache-Control', 'no-store'); next(); });
   router.use(createAuthenticationMiddleware(verify));
@@ -36,6 +36,13 @@ export function createBookingOperationsRoutes(verify: IdentityVerifier, operatio
       operations.reportPassengerAbsence(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
     router.post('/bookings/:id/passenger-absence/review', handle(req =>
       operations.resolvePassengerAbsence(actor(req), req.params.id, req.body, req.header('Idempotency-Key'))));
+  }
+  if (driverApplicationsEnabled) {
+    router.get('/driver-applications', handle(req => ({ applications: operations.listDriverApplications(actor(req)) })));
+    router.get('/driver-applications/me', handle(req => ({ application: operations.ownDriverApplication(actor(req)) })));
+    router.post('/driver-applications/me', handle(req => ({ application: operations.submitDriverApplication(actor(req), req.body) })));
+    router.post('/driver-applications/:id/review', handle(req =>
+      ({ application: operations.reviewDriverApplication(actor(req), req.params.id, req.body) })));
   }
   return router;
 }
