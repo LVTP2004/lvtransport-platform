@@ -56,3 +56,11 @@ Before final response:
 2. Confirm no forbidden files were changed.
 3. Confirm no production API behavior was replaced by mock/demo/local behavior.
 4. Confirm build/typecheck result.
+
+## LVTransport work continuity
+
+- Use the existing MONI Job Manager and the [A–Z closing plan](https://github.com/LVTP2004/lvtransport-platform/blob/344886cb96345ce716aade2894d8439c42e52e60/docs/architecture/LVTRANSPORT_CLOSING_PLAN_A_Z.md) to select the next executable task.
+- After each task, record its outcome, evidence, dependencies and next action. Continue with the next authorized task before ending the run. A blocked task must include the specific missing access, decision or dependency. Continue any independent tasks.
+- Use Minisforum for authorized ADB and installed-app acceptance. Use available nodes to verify independent work when the capability and required access are confirmed.
+- Use the same job identity when reconciling an interrupted run or an uncertain result. Check the recorded test result, branch and draft PR before retrying any publication.
+- Follow the recorded approval rules for staging, changes to account roles, financial execution and publication. Report an automated handoff or failover as verified only when its execution and outcome have been observed.
