@@ -76,15 +76,18 @@ export function createBookingOperations(
       status: !fresh ? 'unknown' : assigned ? 'busy' : driver.availability,
       activeBookingId: assigned?.id ?? null };
   }
-  function recordTransition(booking: BookingRecord, state: CanonicalBookingLifecycleStatus, actor: VerifiedIdentity, operationId: string) {
+  function recordTransition(booking: BookingRecord, state: CanonicalBookingLifecycleStatus, actor: VerifiedIdentity,
+    operationId: string, previousAssignment?: BookingRecord['assignment']) {
     const previous = booking.lifecycle.state;
-    requireValue(CANONICAL_ALLOWED_TRANSITIONS[previous]?.has(state), 409, 'INVALID_TRANSITION');
+    const replacesOffer = previousAssignment && previous === 'assigned' && state === 'assigned';
+    requireValue(replacesOffer || CANONICAL_ALLOWED_TRANSITIONS[previous]?.has(state), 409, 'INVALID_TRANSITION');
     booking.status = state;
     booking.lifecycle.state = state;
     booking.lifecycle.version++;
     booking.lifecycle.transitions.push({ from: previous, to: state, occurredAt: now().toISOString(),
       actor: isAdmin(actor) ? 'admin' : actor.role === 'customer' ? 'customer' : 'driver', metadata: { actor_id: actor.userId, actor_role: actor.role,
         operation_id: operationId, policy: 'booking-operations/v1',
+        ...(replacesOffer ? { previous_driver_id: previousAssignment.driverId, previous_vehicle_id: previousAssignment.vehicleId } : {}),
         ...(booking.assignment ? { driver_id: booking.assignment.driverId, vehicle_id: booking.assignment.vehicleId } : {}) } });
   }
   function command(actor: VerifiedIdentity, bookingId: string, key: unknown, body: Record<string, unknown>,
@@ -116,7 +119,7 @@ export function createBookingOperations(
       return { operation: receipt, booking, replayed: false };
     });
     // A failed write leaves the booking active and must preserve its GPS session.
-    if (!active(result.booking)) {
+    if (!active(result.booking) || (kind === 'assign' && !result.replayed)) {
       locations.delete(bookingId);
       trackingSessions.delete(bookingId);
     }
@@ -251,7 +254,11 @@ export function createBookingOperations(
       const account = await resolveDriver(driverId);
       requireValue(account.id === driverId, 403, 'DRIVER_IDENTITY_MISMATCH');
       return command(actor, bookingId, key, body, 'assign', (store, booking, operationId) => {
-        requireValue(booking.lifecycle.state === 'pending' && !booking.assignment, 409, 'BOOKING_ALREADY_ASSIGNED');
+        const previousAssignment = booking.assignment;
+        const replacesOffer = booking.lifecycle.state === 'assigned' && previousAssignment
+          && previousAssignment.driverId !== driverId;
+        requireValue((booking.lifecycle.state === 'pending' && !previousAssignment) || replacesOffer,
+          409, 'BOOKING_ALREADY_ASSIGNED');
         const driver = store.drivers?.[driverId];
         const age = driver ? now().getTime() - Date.parse(driver.lastSeenAt) : NaN;
         requireValue(driver?.availability === 'available' && Number.isFinite(age) && age >= 0 && age <= DRIVER_PRESENCE_TTL_MS, 409, 'DRIVER_UNAVAILABLE');
@@ -260,7 +267,7 @@ export function createBookingOperations(
           && (item.assignment.driverId === driverId || item.assignment.vehicleId === driver.vehicleId));
         requireValue(!busy, 409, 'DRIVER_OR_VEHICLE_BUSY');
         booking.assignment = { driverId, vehicleId: driver.vehicleId, assignedAt: now().toISOString(), assignedBy: actor.userId };
-        recordTransition(booking, 'assigned', actor, operationId);
+        recordTransition(booking, 'assigned', actor, operationId, previousAssignment);
       });
     },
     transition(actor: VerifiedIdentity, bookingId: string, body: unknown, key: unknown) {
