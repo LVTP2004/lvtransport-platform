@@ -438,3 +438,42 @@ test('real v1 routes reject compressed JSON and use a shared peer budget behind 
   const tracking = await fetch(base + '/tracking/booking/invalid', { headers: { 'x-forwarded-for': '198.51.100.254' } });
   assert.equal(tracking.status, 429, 'tracking also uses the shared untrusted proxy budget');
 });
+
+test('admin can replace an offered driver before acceptance and revoke the previous assignment', async t => {
+  const f = await setup(t);
+  await f.ready('driver-one', 'SYN-1');
+  await f.ready('driver-two', 'SYN-2');
+  const created = await f.request('/customer/bookings', 'customer-one', input, 'dispatch-customer-booking');
+  assert.equal(created.status, 201);
+  const [booking] = (await f.request('/customer/bookings', 'customer-one')).body.bookings;
+  const route = `/operations/bookings/${booking.id}`;
+  assert.equal((await f.request(route + '/assignment', 'admin',
+    { driverId: 'driver-one', expectedVersion: 1 }, 'dispatch-first-assignment')).status, 200);
+  const sharing = await f.request(route + '/location', 'driver-one', { sharing: true });
+  const position = { lat: 51.2, lng: 4.4, capturedAt: '2026-11-15T12:00:00Z' };
+  assert.equal((await f.request(route + '/location', 'driver-one',
+    { sessionId: sharing.body.sessionId, position })).status, 200);
+
+  const replacement = { driverId: 'driver-two', expectedVersion: 2 };
+  const replaced = await f.request(route + '/assignment', 'admin', replacement, 'dispatch-replacement');
+  assert.equal(replaced.status, 200, JSON.stringify(replaced.body));
+  assert.equal(replaced.body.booking.status, 'assigned');
+  assert.equal(replaced.body.booking.version, 3);
+  assert.equal(replaced.body.booking.location, null);
+  assert.equal(replaced.body.booking.transitions.at(-1).metadata.previous_driver_id, 'driver-one');
+  const replay = await f.request(route + '/assignment', 'admin', replacement, 'dispatch-replacement');
+  assert.equal(replay.body.operation.id, replaced.body.operation.id);
+  assert.equal(replay.body.replayed, true);
+  assert.deepEqual((await f.request('/operations/bookings', 'driver-one')).body.bookings, []);
+  assert.equal((await f.request('/operations/bookings', 'driver-two')).body.bookings[0].id, booking.id);
+
+  const [customerBooking] = (await f.request('/customer/bookings', 'customer-one')).body.bookings;
+  assert.equal(customerBooking.assignment.driverName, 'driver-two');
+  assert.equal(customerBooking.location, null);
+  assert.equal((await f.request(route + '/status', 'driver-one',
+    { status: 'accepted', expectedVersion: 3 }, 'dispatch-previous-driver')).status, 403);
+  assert.equal((await f.request(route + '/status', 'driver-two',
+    { status: 'accepted', expectedVersion: 3 }, 'dispatch-current-driver')).status, 200);
+  assert.equal((await f.request(route + '/assignment', 'admin',
+    { driverId: 'driver-one', expectedVersion: 4 }, 'dispatch-after-acceptance')).status, 409);
+});

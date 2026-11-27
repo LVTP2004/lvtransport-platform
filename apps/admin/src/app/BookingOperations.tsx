@@ -88,7 +88,7 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
     const driver = availableDrivers.find(item => item.id === selection[booking.id]);
     if (!driver) return;
     void run(async () => {
-      setAssignmentFeedback({ id: booking.id, text: 'Assigning driver…' });
+      setAssignmentFeedback({ id: booking.id, text: booking.assignment ? 'Reassigning driver…' : 'Assigning driver…' });
       try {
         const { booking: assigned } = await client.request<{ booking: Booking }>(`/operations/bookings/${booking.id}/assignment`, {
           body: { driverId: driver.id, expectedVersion: booking.version },
@@ -153,13 +153,13 @@ export function BookingOperations({ client }: { client: VerifiedOperationsClient
           {' '}{booking.location.lat.toFixed(5)}, {booking.location.lng.toFixed(5)}
         </p>}
         {booking.assignment && <p>Driver: {drivers.find(d => d.id === booking.assignment?.driverId)?.name ?? booking.assignment.driverId} · Vehicle: {vehicles.find(v => v.id === booking.assignment?.vehicleId)?.registration ?? booking.assignment.vehicleId}</p>}
-        {booking.status === 'pending' && !booking.assignment && (
+        {((booking.status === 'pending' && !booking.assignment) || (booking.status === 'assigned' && booking.assignment)) && (
           availableDrivers.length ? <div className="lv-assignment-controls">
             <select aria-label={`Driver for ${booking.referenceCode}`} className="bg-zinc-800 p-2" value={selection[booking.id] ?? ''} onChange={e => setSelection({ ...selection, [booking.id]: e.target.value })}>
               <option value="">Select available driver</option>
               {availableDrivers.map(driver => <option key={driver.id} value={driver.id}>{driver.name} · {vehicles.find(v => v.id === driver.vehicleId)?.registration}</option>)}
             </select>
-            <button type="button" disabled={busy || !availableDrivers.some(driver => driver.id === selection[booking.id])} onClick={() => assign(booking)}>Assign driver</button>
+            <button type="button" disabled={busy || !availableDrivers.some(driver => driver.id === selection[booking.id])} onClick={() => assign(booking)}>{booking.assignment ? 'Reassign driver' : 'Assign driver'}</button>
           </div> : <p>No drivers are currently available for assignment.</p>
         )}
         {booking.status === 'assigned' && <p>Waiting for the driver to accept.</p>}
