@@ -37,6 +37,11 @@ export class FirebaseAuthProvider implements AuthProviderAdapter {
     if (!adapter.sendEmailLink) throw new Error('Email sign-in is not configured');
     await adapter.sendEmailLink(email, returnUrl);
   }
+  async signInWithCustomToken(token: string): Promise<AuthState> {
+    const adapter = this.configured();
+    if (!adapter.signInWithCustomToken) throw new Error('Email code authentication is not configured');
+    return adapter.signInWithCustomToken(token);
+  }
   async signInWithEmailLink(email: string, link: string): Promise<AuthState> {
     const adapter = this.configured();
     if (!adapter.signInWithEmailLink) throw new Error('Email sign-in is not configured');

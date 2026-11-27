@@ -1,3 +1,4 @@
+import { EmailCodeForm, type EmailCodeSignIn } from '../../../admin/src/modules/auth/components/EmailCodeForm';
 import { FounderOperationsMap } from './FounderOperationsMap';
 import { EmailLinkForm, type EmailSignIn } from '../../../admin/src/modules/auth/components/EmailLinkForm';
 import { useEffect, useRef, useState } from 'react';
@@ -41,9 +42,22 @@ function Panel({ title, eyebrow, children, className = '' }: { title: string; ey
   return <section className={`fd-panel ${className}`}><header className="fd-panel-heading"><h2>{title}</h2>{eyebrow && <span>{eyebrow}</span>}</header>{children}</section>;
 }
 
+type FinanceTotals = { capturedMinor: number; refundedMinor: number; netMinor: number };
+type FinanceSnapshot = { currency: 'EUR'; totals: FinanceTotals;
+  externalSettlementBasis?: { driverId: string; driverName: string | null; netMinor: number; unresolvedRefundMinor: number;
+    rides: (FinanceTotals & { reference: string; unresolvedRefundMinor: number })[] }[];
+  payments: (FinanceTotals & { reference: string; receipt: string; observedAt: string;
+    completedAt: string | null; fleetType: 'own' | 'external' | null;
+    invoiceRequest: { legalName: string; registration: string; address: string; country: string; requestedAt: string } | null;
+    refunds: { reference: string; amountMinor: number; observedAt: string }[] })[] };
+const financeEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+const stagingFinance = financeEnv?.MODE === 'staging' && financeEnv.VITE_LVTP_STAGING_CHECKOUT === 'true';
+const euro = new Intl.NumberFormat('en-BE', { style: 'currency', currency: 'EUR' });
+
 export default function FounderDashboard() {
   const [section, setSection] = useState('overview'), [menuOpen, setMenuOpen] = useState(false), [days, setDays] = useState(30);
   const [identity, setIdentity] = useState<VerifiedPortalIdentity | null>(null), [snapshot, setSnapshot] = useState<Snapshot | null>(null);
+  const [finance, setFinance] = useState<FinanceSnapshot | null>(null);
   const [error, setError] = useState(''), [busy, setBusy] = useState(true), [refreshing, setRefreshing] = useState(false);
   const [clock, setClock] = useState(Date.now), [health, setHealth] = useState<{ checked: number; ok: boolean } | null>(null);
   const client = useRef<VerifiedOperationsClient | null>(null), mounted = useRef(true), pending = useRef(false), generation = useRef(0);
@@ -53,14 +67,17 @@ export default function FounderDashboard() {
     if (pending.current) return;
     pending.current = true; if (mounted.current) setRefreshing(true);
     try {
-      const [b, d, v] = await Promise.all([
+      const [b, d, v, payments] = await Promise.all([
         activeClient.request<{ bookings: Booking[] }>('/operations/bookings'),
         activeClient.request<{ drivers: Driver[] }>('/operations/drivers'),
         activeClient.request<{ vehicles: Vehicle[] }>('/operations/vehicles'),
+        stagingFinance ? activeClient.request<FinanceSnapshot>('/operations/staging-checkout/finance').catch(() => null)
+          : Promise.resolve(null),
       ]);
       if (![b.bookings, d.drivers, v.vehicles].every(Array.isArray)) throw new Error('Unexpected operational response.');
       if (mounted.current && generation.current === epoch && client.current === activeClient) {
-        setSnapshot({ bookings: b.bookings, drivers: d.drivers, vehicles: v.vehicles, at: Date.now() }); setError('');
+        setSnapshot({ bookings: b.bookings, drivers: d.drivers, vehicles: v.vehicles, at: Date.now() });
+        setFinance(payments); setError('');
       }
     } catch {
       if (mounted.current && generation.current === epoch) setError('Operational data could not be refreshed. Previous observations may be out of date.');
@@ -84,7 +101,7 @@ export default function FounderDashboard() {
       void previous?.disconnect(false).catch(() => {});
     };
   }, []);
-  async function authenticate(mode: 'restore' | 'interactive', emailSignIn?: EmailSignIn, remember = false) {
+  async function authenticate(mode: 'restore' | 'interactive', emailSignIn?: EmailSignIn, remember = false, emailCode?: EmailCodeSignIn) {
     setBusy(true);
     setError('');
     const epoch = ++generation.current;
@@ -98,13 +115,13 @@ export default function FounderDashboard() {
         generation.current++;
         client.current = null;
         setIdentity(null);
-        setSnapshot(null);
+        setSnapshot(null); setFinance(null);
         setBusy(false);
         setError('Session no longer authorized. Sign in again.');
       });
       const verified = mode === 'restore'
         ? await connection.verifySession()
-        : await connection.connect(emailSignIn, remember);
+        : emailCode ? await connection.connectWithEmailCode(emailCode, remember) : await connection.connect(emailSignIn, remember);
       if (!current()) {
         await connection.disconnect(false);
         return;
@@ -123,7 +140,7 @@ export default function FounderDashboard() {
   }
   async function logout() {
     generation.current++; const previous = client.current; client.current = null;
-    setIdentity(null); setSnapshot(null); setHealth(null); setError('');
+    setIdentity(null); setSnapshot(null); setFinance(null); setHealth(null); setError('');
     await previous?.disconnect().catch(() => { if (mounted.current) setError('Local view closed; remote sign-out could not be confirmed.'); });
   }
   async function checkHealth() {
@@ -175,6 +192,9 @@ export default function FounderDashboard() {
         {!identity && <EmailLinkForm createProvider={() => createLVTransportFirebaseProvider('founder')} busy={busy}
           onSignIn={(details, remember) => authenticate('interactive', details, remember)}
           onGoogle={remember => authenticate('interactive', undefined, remember)} />}
+        {!identity && <EmailCodeForm apiBase={apiV1} busy={busy}
+          onRequest={email => new VerifiedOperationsClient(createLVTransportFirebaseProvider('founder'), apiV1, 'founder').requestEmailCode(email)}
+          onSignIn={(details, remember) => authenticate('interactive', undefined, remember, details)} />}
         {!identity && <p className="fd-access">Sign in with your authorized Founder OS account to inspect operational data.</p>}
         <div className="fd-kpis">{[
           ['Total Rides', snapshot ? String(completedInPeriod(snapshot.bookings, days, clock)) : '—', `Completed in the last ${days} days`],
@@ -201,6 +221,47 @@ export default function FounderDashboard() {
           <div className="fd-column">{moniPanel}<Panel title="Pending Decisions" eyebrow="Separate governance authority"><Unavailable text="No approval provider connected. No decisions can be approved from this view." /></Panel><Panel title="Strategic Initiatives" eyebrow="Source not connected"><Unavailable text="No verified roadmap or progress records connected." /></Panel></div></div>{systemHealth}</>
           : section === 'operations' || section === 'control' || section === 'attention' ? <Panel title={activeTitle}>{bookingsTable(section === 'attention' ? attention : snapshot?.bookings ?? [])}<a className="fd-panel-link" href="/admin">Manage bookings in the authorized Admin portal →</a></Panel>
           : section === 'drivers' ? <div className="fd-two-columns"><Panel title="Drivers">{!snapshot ? <Unavailable text="Sign in to load authorized driver observations." /> : !snapshot.drivers.length ? <Unavailable text="No driver observations recorded." /> : <ul className="fd-feed">{snapshot.drivers.map(driver => <li key={driver.id}><strong>{driver.name}</strong><span>{clock - Date.parse(driver.lastSeenAt) > 120000 ? 'unknown' : driver.status}</span><small>{formatTime(driver.lastSeenAt)}</small></li>)}</ul>}</Panel><Panel title="Vehicles">{!snapshot ? <Unavailable text="Sign in to load registered vehicles." /> : !snapshot.vehicles.length ? <Unavailable text="No registered vehicles." /> : <ul className="fd-feed">{snapshot.vehicles.map(vehicle => <li key={vehicle.id}><strong>{vehicle.registration}</strong><span>{vehicle.name}</span><small>{vehicle.fleetType}</small></li>)}</ul>}</Panel></div>
+          : section === 'finance' && stagingFinance ? <Panel title="Stripe test payments" eyebrow="Confirmed provider data">
+            {!finance ? <Unavailable text="Confirmed test payment data is unavailable." />
+              : !finance.payments.length ? <Unavailable text="No confirmed Stripe test captures observed." />
+              : <>
+                <dl>
+                  <dt>Captured</dt><dd>{euro.format(finance.totals.capturedMinor / 100)}</dd>
+                  <dt>Refunded</dt><dd>{euro.format(finance.totals.refundedMinor / 100)}</dd>
+                  <dt>Net paid</dt><dd>{euro.format(finance.totals.netMinor / 100)}</dd>
+                </dl>
+                <ul className="fd-feed">{finance.payments.map(payment => <li key={payment.receipt}>
+                  <strong>{payment.reference}</strong>
+                  <span>Net paid {euro.format(payment.netMinor / 100)}</span>
+                  <small>Observed {formatTime(Date.parse(payment.observedAt))} · {payment.receipt}</small>
+                  {payment.completedAt && <small>Completed {formatTime(Date.parse(payment.completedAt))}</small>}
+                  {payment.fleetType && <small>{payment.fleetType === 'external' ? 'External fleet' : 'Own fleet'}</small>}
+                  {payment.invoiceRequest && <details>
+                    <summary>Invoice requested · {formatTime(Date.parse(payment.invoiceRequest.requestedAt))}</summary>
+                    <p>{payment.invoiceRequest.legalName} · {payment.invoiceRequest.registration}</p>
+                    <p>{payment.invoiceRequest.address} · {payment.invoiceRequest.country}</p>
+                    <small>Awaiting fiscal review</small>
+                  </details>}
+                  {payment.refunds?.length > 0 && <ul>{payment.refunds.map(refund => <li key={refund.reference}>
+                    Refund {euro.format(refund.amountMinor / 100)} · {refund.reference} · {formatTime(Date.parse(refund.observedAt))}
+                  </li>)}</ul>}
+                </li>)}</ul>
+                {finance.externalSettlementBasis?.length ? <section>
+                  <h3>External fleet settlement basis</h3>
+                  <p>Completed rides with confirmed Stripe test captures, before commission.</p>
+                  <ul className="fd-feed">{finance.externalSettlementBasis.map(driver => <li key={driver.driverId}>
+                    <details>
+                      <summary>{driver.driverName ?? driver.driverId} · {euro.format(driver.netMinor / 100)}</summary>
+                      {driver.unresolvedRefundMinor > 0 && <p>Refund requests awaiting resolution · {euro.format(driver.unresolvedRefundMinor / 100)}</p>}
+                      <ul>{driver.rides.map(ride => <li key={ride.reference}>
+                        {ride.reference} · {euro.format(ride.netMinor / 100)}
+                        {ride.refundedMinor > 0 && <small>Refunded {euro.format(ride.refundedMinor / 100)}</small>}
+                      </li>)}</ul>
+                    </details>
+                  </li>)}</ul>
+                </section> : null}
+              </>}
+          </Panel>
           : section === 'audit' ? <>{events}<Panel title="Governance Decision Log"><Unavailable text="Lifecycle events above are not governance approvals. No governance decision source is connected." /></Panel></>
           : section === 'health' ? systemHealth : section === 'moni' ? moniPanel
           : <Panel title={activeTitle}><Unavailable text="This source is not connected. No operational values or actions are available for this section." /></Panel>}

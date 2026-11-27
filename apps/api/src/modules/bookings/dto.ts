@@ -66,6 +66,12 @@ export interface CreateBookingDto {
 export interface BookingRecord extends CreateBookingDto {
   id: string;
   referenceCode: string;
+  passengerAbsence?: {
+    reason: string;
+    reportedBy: string;
+    reportedAt: string;
+    resolution?: { decision: 'confirmed' | 'dismissed'; reason: string; by: string; at: string };
+  };
   status: CanonicalBookingLifecycleStatus;
   createdAt: string;
   assignment?: {

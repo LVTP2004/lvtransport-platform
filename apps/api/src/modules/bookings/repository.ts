@@ -20,6 +20,16 @@ export type OperationalDriver = {
   id: string; name: string; vehicleId: string; availability: 'available' | 'unavailable';
   lastSeenAt: string; lastChangeAt: string;
 };
+export type DriverApplication = {
+  driverId: string;
+  vehicleId: string;
+  version: number;
+  status: 'pending' | 'approved' | 'corrections' | 'rejected' | 'suspended';
+  driverValidUntil: string;
+  vehicleValidUntil: string;
+  history: Array<{ status: DriverApplication['status']; actorId: string; at: string; reason?: string;
+    vehicleId: string; driverValidUntil: string; vehicleValidUntil: string }>;
+};
 export type OperationReceipt = {
   id: string; bookingId: string; version: number; state: string; appliedAt: string;
 };
@@ -29,6 +39,7 @@ export type BookingStore = {
   fingerprintIndex?: Record<string, { bookingId: string; createdAt: string }>;
   vehicles?: Record<string, OperationalVehicle>;
   drivers?: Record<string, OperationalDriver>;
+  driverApplications?: Record<string, DriverApplication>;
   operations?: Record<string, { digest: string; receipt: OperationReceipt }>;
 };
 

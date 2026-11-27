@@ -103,6 +103,7 @@ test('Google adapter requests account selection and propagates popup failure wit
     export async function getIdTokenResult() {
       return { token: 'synthetic-token', expirationTime: '2026-11-15T15:00:00Z' };
     }
+    export async function signInWithCustomToken() { throw new Error('unexpected custom token login'); }
     export async function signInWithEmailAndPassword() { throw new Error('unexpected password login'); }
     export async function signOut() {}
     export async function sendPasswordResetEmail() {}

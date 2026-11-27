@@ -683,3 +683,69 @@ no publica cambios locales. El workflow de despliegue al VPS sigue pausado.
 
 La [arquitectura de roles](./MONI_ROLE_CONTROL_PLANE.md) resume los controles
 vigentes y las propuestas de MONI pendientes de revisión.
+
+### Aceptación de Stripe Checkout en staging
+
+El [plan de aceptación](./LVTRANSPORT_PAYMENT_ACCEPTANCE.md) registra la
+verificación de Checkout de prueba. La implementación conserva una sesión
+por revisión de tarifa, libera autorizaciones al cancelar y captura al
+completar la reserva. En las sesiones de prueba con Fossibot se verificaron
+retorno a Ride, recibo, cancelación y nueva aceptación al revisar la tarifa
+o perder la autorización.
+
+El candidato incorpora un receptor de notificaciones firmadas que persiste
+los eventos antes de conciliarlos. Control Tower registra reembolsos
+parciales y totales, con aprobación de otro administrador designado por UID.
+Ride muestra el saldo confirmado. Las regresiones HTTP usan un adaptador.
+Quedan pendientes la validación con Stripe de estos dos flujos, la designación
+del aprobador, el recorrido de ausencia y las decisiones de facturación y
+liquidación. Esta propuesta se limita a staging.
+
+Drive puede reportar una ausencia tras llegar al punto de recogida y
+Control Tower la confirma o la desestima. La reserva conserva motivo, fecha
+y actores. Mientras espera revisión, el viaje permanece en llegada y no
+puede iniciarse. La confirmación reutiliza la cancelación y el flujo de
+liberación de Checkout. Una prueba HTTP rechazó otros conductores y roles,
+verificó el reintento y observó una liberación con cero capturado con un
+adaptador. La aceptación con Stripe en el Fossibot queda pendiente.
+
+### Lectura financiera de Founder OS en staging
+
+Founder OS consulta importes observados y persistidos tras una captura
+confirmada por Stripe de pruebas. La vista muestra total capturado,
+reembolsos confirmados y neto, con referencia, recibo y fecha de
+observación. El endpoint de lectura exige Founder activo con
+`founder:read` y consulta el almacén sin ejecutar operaciones financieras.
+La prueba HTTP verifica el permiso y el neto de cero tras un reembolso
+total con el adaptador. Pendiente de aceptación en el Fossibot.
+
+### Continuidad de los cuatro frentes
+
+- Alta: se publicó la recepción de solicitudes verificadas, la revisión
+  de Control Tower y la vista de Drive. Se corrigieron los accesos
+  directos de ambos portales y se comprobaron las sesiones existentes
+  en la app LV instalada del Fossibot F109. La revisión por cambio de
+  vehículo se incluye en el candidato. Falta el ensayo con matrícula y
+  vigencias verificadas y la activación de la regla para la flota activa.
+- Pagos: la vista publicada de aceptación está bajo /aceptacion-lv/ y
+  usa Firebase y Stripe aislados. En la app LV, Ride abrió Stripe
+  Checkout para la reserva de pruebas 55113. Stripe confirmó 29,25 EUR
+  autorizados y 0 capturados. Tras recuperar el servidor temporal,
+  Ride mostró la autorización. No se observó la notificación firmada
+  en esa ejecución. Quedan la liberación por ausencia y los reembolsos
+  con una segunda identidad aprobadora de staging.
+- Acceso: el formulario de código de seis dígitos incluye caducidad,
+  límite de intentos y comprobación del rol en Firebase. SMTP sigue
+  pendiente de aprovisionar. Los enlaces y las sesiones actuales se
+  mantuvieron operativos.
+- Finanzas: Ride registra solicitudes de factura después de observar
+  la captura y Founder OS muestra capturas, reembolsos y la base por
+  conductor externo. Falta configurar emisor y proveedor y aprobar
+  tratamiento fiscal, comisiones, límites y calendario. No se emitieron
+  facturas ni se ejecutaron liquidaciones.
+
+La aceptación funcional se hace en la app LV instalada de
+lvtransport.be en el Fossibot, con datos de prueba separados cuando
+corresponde. La vista de Stripe requiere el túnel de staging y el
+permiso de red local. El candidato pasó typecheck, build de API y
+build web. No incluye credenciales ni cambia dependencias o despliegue.

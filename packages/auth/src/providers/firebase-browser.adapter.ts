@@ -3,7 +3,7 @@ import {
   initializeAuth, indexedDBLocalPersistence, browserLocalPersistence, inMemoryPersistence, setPersistence, signInWithEmailAndPassword, signOut,
   sendPasswordResetEmail, sendEmailVerification, getIdTokenResult, type Auth, type User,
   GoogleAuthProvider, OAuthProvider, signInWithPopup, linkWithPopup, browserPopupRedirectResolver,
-  sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink,
+  sendSignInLinkToEmail, isSignInWithEmailLink, signInWithEmailLink, signInWithCustomToken,
 } from 'firebase/auth';
 import type { AuthProviderAdapter } from '../interfaces/auth-provider.interface.js';
 import type { AuthState, AuthTokens, SessionContext } from '../models/session.models.js';
@@ -67,6 +67,12 @@ export class FirebaseBrowserAdapter implements AuthProviderAdapter {
 
   async sendEmailLink(email: string, returnUrl: string): Promise<void> {
     await sendSignInLinkToEmail(this.auth, email, { url: returnUrl, handleCodeInApp: true });
+  }
+
+  async signInWithCustomToken(token: string): Promise<AuthState> {
+    const { user } = await signInWithCustomToken(this.auth, token);
+    return { isAuthenticated: true, isLoading: false,
+      user: { id: user.uid, email: user.email }, tokens: await this.tokens(user) };
   }
 
   async signInWithEmailLink(email: string, link: string): Promise<AuthState> {

@@ -1,20 +1,28 @@
 import { createDriverGpsService } from '../modules/tracking/services/driver-gps.service';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import type { VerifiedOperationsClient } from '@lvtransport/auth';
+import { OperationsRequestError, type VerifiedOperationsClient } from '@lvtransport/auth';
 
 type Booking = { id: string; referenceCode: string; pickup: string; destination: string;
-  customerName?: string; customerPhone?: string; notes?: string; scheduleAt: string; status: string; version: number; assignment: { vehicleId: string } | null };
+  customerName?: string; customerPhone?: string; notes?: string; scheduleAt: string; status: string; version: number; assignment: { vehicleId: string } | null;
+  passengerAbsence?: { resolution?: { decision: string } } };
 type Driver = { vehicleId: string; availability: string; status: string };
+type Application = { version: number; status: 'pending' | 'approved' | 'corrections' | 'rejected' | 'suspended';
+  driverValidUntil: string; vehicleValidUntil: string; expired: boolean; history: { reason?: string }[] };
+const applicationStatus = { pending: 'In beoordeling', approved: 'Goedgekeurd', corrections: 'Aanpassing gevraagd',
+  rejected: 'Afgewezen', suspended: 'Geschorst' };
 type Vehicle = { id: string; registration: string; name: string };
 const next: Record<string, { status: string; label: string }> = {
   assigned: { status: 'accepted', label: 'Accepteer rit' }, accepted: { status: 'en_route', label: 'Onderweg naar ophalen' },
   en_route: { status: 'arrived', label: 'Aangekomen' }, arrived: { status: 'in_progress', label: 'Start rit' },
   in_progress: { status: 'completed', label: 'Rit afronden' },
 };
+const testEnv = (import.meta as ImportMeta & { env?: Record<string, string> }).env;
+const absenceEnabled = testEnv?.MODE === 'staging' && testEnv.VITE_LVTP_STAGING_CHECKOUT === 'true';
 const terminal = new Set(['completed', 'cancelled', 'failed']);
 
 export function DriverOperations({ client }: { client: VerifiedOperationsClient }) {
   const [bookings, setBookings] = useState<Booking[]>([]);
+  const [application, setApplication] = useState<Application | null>(null);
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [vehicleId, setVehicleId] = useState('');
   const [available, setAvailable] = useState(false);
@@ -27,14 +35,16 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
   const pending = useRef(false), alive = useRef(true), sequence = useRef(0);
   const refresh = useCallback(async () => {
     const attempt = ++sequence.current;
-    const [b, v, d] = await Promise.all([
+    const [b, v, d, a] = await Promise.all([
       client.request<{ bookings: Booking[] }>('/operations/bookings'),
       client.request<{ vehicles: Vehicle[] }>('/operations/vehicles'),
       client.request<{ driver: Driver | null }>('/operations/drivers/me'),
+      client.request<{ application: Application | null }>('/operations/driver-applications/me'),
     ]);
     if (!alive.current || attempt !== sequence.current) return;
+    setApplication(a.application);
     setBookings(b.bookings); setVehicles(v.vehicles);
-    setAvailable(Boolean(d.driver && d.driver.status !== 'unknown' && d.driver.availability === 'available'));
+    setAvailable(Boolean(d.driver && (d.driver.status === 'available' || d.driver.status === 'busy') && d.driver.availability === 'available'));
     setConfirmedVehicle(d.driver?.vehicleId ?? '');
     setVehicleId(current => d.driver?.availability === 'available' ? d.driver.vehicleId : current || d.driver?.vehicleId || '');
     setLoadedAt(new Date().toLocaleTimeString());
@@ -60,7 +70,16 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
       await work();
       await refresh().catch(() => { if (alive.current) setError('De lijst kon niet worden vernieuwd. Probeer opnieuw te vernieuwen.'); });
     }
-    catch (cause) { if (alive.current) setError(cause instanceof Error ? cause.message : 'Actie mislukt.'); }
+    catch (cause) {
+      if (alive.current) {
+        if (cause instanceof OperationsRequestError && cause.code === 'DRIVER_APPROVAL_REQUIRED') {
+          setError('Uw rijbevoegdheid of voertuigvergunning is niet geldig voor deze actie. Neem contact op met Control Tower.');
+          await refresh().catch(() => {});
+        } else {
+          setError(cause instanceof Error ? cause.message : 'Actie mislukt.');
+        }
+      }
+    }
     finally { pending.current = false; if (alive.current) setBusy(false); }
   }
   async function transition(booking: Booking, status: string, keyPrefix = 'driver') {
@@ -93,6 +112,31 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
     <header><h2 className="text-xl">Mijn ritten</h2><p>Laatst geladen: {loadedAt || 'Nog niet geladen'}</p>
       <button disabled={busy} onClick={() => void run(refresh)}>Vernieuwen</button></header>
     {error && <p role="alert">{error}</p>}
+    {loadedAt && <section className="lv-operations-panel space-y-3">
+      <h2>Rijbevoegdheid</h2>
+      <p role="status">{application ? (application.status === 'approved' && application.expired ? 'Verlopen' : applicationStatus[application.status]) : 'Geen aanvraag'}</p>
+      {application?.history.at(-1)?.reason && <p>{application.history.at(-1)?.reason}</p>}
+      {application && <p>Chauffeur geldig tot {new Date(application.driverValidUntil).toLocaleString()} · Voertuig geldig tot {new Date(application.vehicleValidUntil).toLocaleString()}</p>}
+      {(!application || application.status === 'corrections' || application.status === 'rejected'
+        || (application.status === 'approved' && application.expired)) && <form onSubmit={event => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        void run(() => client.request('/operations/driver-applications/me', { body: {
+          vehicleId: form.get('applicationVehicle'),
+          driverValidUntil: new Date(String(form.get('driverExpiry'))).toISOString(),
+          vehicleValidUntil: new Date(String(form.get('vehicleExpiry'))).toISOString(),
+          expectedVersion: application?.version ?? 0,
+        } }));
+      }}>
+        <label>Voertuig <select name="applicationVehicle" required defaultValue="">
+          <option value="">Kies een voertuig</option>
+          {vehicles.map(vehicle => <option key={vehicle.id} value={vehicle.id}>{vehicle.registration} · {vehicle.name}</option>)}
+        </select></label>
+        <label>Rijbevoegdheid geldig tot <input name="driverExpiry" type="datetime-local" required /></label>
+        <label>Voertuigvergunning geldig tot <input name="vehicleExpiry" type="datetime-local" required /></label>
+        <button type="submit" disabled={busy}>Aanvraag indienen</button>
+      </form>}
+    </section>}
     {loadedAt && !bookings.length && <p>Er zijn geen ritten aan uw account toegewezen.</p>}
     {activeBooking && <section className="rounded border border-amber-400/30 p-4">
       <p>Locatie delen met de administratie en de geverifieerde klant van deze rit.</p>
@@ -120,7 +164,22 @@ export function DriverOperations({ client }: { client: VerifiedOperationsClient 
       {booking.notes && <p>{booking.notes}</p>}
       <p>Voertuig: {vehicles.find(vehicle => vehicle.id === booking.assignment?.vehicleId)?.registration ?? booking.assignment?.vehicleId}</p>
       {booking.status === 'assigned' && <p>Er is een rit aan u toegewezen. Accepteer de rit om verder te gaan.</p>}
-      {next[booking.status] && <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => transition(booking, next[booking.status].status))}>{next[booking.status].label}</button>}
+      {absenceEnabled && booking.status === 'arrived' && !booking.passengerAbsence && <form onSubmit={event => {
+        event.preventDefault();
+        const reason = String(new FormData(event.currentTarget).get('reason') ?? '').trim();
+        if (!reason) return;
+        void run(() => client.request(`/operations/bookings/${booking.id}/passenger-absence`, {
+          body: { reason, expectedVersion: booking.version }, key: `absence:${booking.id}:${booking.version}`,
+        }));
+      }}>
+        <label>Reden afwezigheid <input name="reason" required maxLength={500} /></label>
+        <button disabled={busy} type="submit">Meld afwezige passagier</button>
+      </form>}
+      {absenceEnabled && booking.passengerAbsence && <p role="status">
+        {booking.passengerAbsence.resolution?.decision === 'confirmed' ? 'Afwezigheid bevestigd'
+          : booking.passengerAbsence.resolution ? 'Afwezigheidsmelding afgewezen' : 'Afwezigheid gemeld. Wacht op Control Tower.'}
+      </p>}
+      {next[booking.status] && (!absenceEnabled || !booking.passengerAbsence || booking.passengerAbsence.resolution) && <button type="button" className="btn-primary" disabled={busy} onClick={() => void run(() => transition(booking, next[booking.status].status))}>{next[booking.status].label}</button>}
       {booking.status === 'assigned' && <button disabled={busy} onClick={() => {
         if (window.confirm('Deze toewijzing weigeren? De reservering wordt geannuleerd volgens de huidige ritstatusregels.')) {
           void run(() => transition(booking, 'cancelled', 'reject'));

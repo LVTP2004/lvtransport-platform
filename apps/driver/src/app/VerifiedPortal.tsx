@@ -104,6 +104,9 @@ const createDriverGoogleProvider = () => createLVTransportFirebaseProvider('driv
 
 // The boundary verifies the server identity; every command is authorized again by the API.
 export function App() {
-  return <GoogleLoginBoundary title="Driver Login" createProvider={createDriverGoogleProvider} expectedRole="driver"
-    renderOperations={({ client }) => <DriverOperations client={client} />} />;
+  return <>
+    <a href={import.meta.env.BASE_URL + 'driver/aanmelden'}>Aanmelden als chauffeur</a>
+    <GoogleLoginBoundary title="Driver Login" createProvider={createDriverGoogleProvider} expectedRole="driver"
+    renderOperations={({ client }) => <DriverOperations client={client} />} />
+  </>;
 }
