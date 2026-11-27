@@ -1,6 +1,6 @@
 # Preparación de publicación de LVTransport
 
-Verificación del 27 de noviembre de 2026. El candidato técnico de web y API quedó empaquetado y los respaldos anteriores de ambos componentes superaron una prueba de arranque aislada. La aceptación externa y la restauración de datos siguen abiertas.
+Verificación del 27 de noviembre de 2026. El candidato técnico de web y API quedó empaquetado y los respaldos anteriores de ambos componentes superaron una prueba de arranque aislada. La aceptación externa sigue abierta. La recuperación del almacén de staging se verificó en una copia aislada.
 
 | Comprobación | Resultado | Evidencia |
 | --- | --- | --- |
@@ -14,4 +14,4 @@ Verificación del 27 de noviembre de 2026. El candidato técnico de web y API qu
 
 Para facturación siguen pendientes la razón social, domicilio y número de empresa o IVA del emisor, el tratamiento fiscal, el proveedor y canal, la serie y momento de emisión, y la persona que emite o aprueba rectificaciones. Para flota externa faltan la base y porcentaje de comisión, mínimos y topes, ajustes por reembolsos posteriores al cierre, calendario y fecha de corte y responsables de aprobación y ejecución. La prueba 30785 ya concilió 29,25 EUR en Stripe de prueba, Ride y Founder.
 
-La prueba de arranque del respaldo cubre artefactos de aplicación. Queda por comprobar la recuperación integral de datos, configuración y permisos. Antes de publicar siguen pendientes SMTP y acceso por código en los cuatro portales, aprobación de reembolso por una segunda cuenta de staging, decisiones fiscales y de liquidación, y validación del candidato definitivo desde la app LV instalada. La verificación posterior a un despliegue queda pendiente. [Informe de continuidad](LVTRANSPORT_MONI_HANDOFF_2026_11_27.md)
+La prueba de arranque del respaldo cubre artefactos de aplicación. Se archivaron y extrajeron los datos de staging en un directorio privado. El repositorio real leyó los registros restaurados y se recuperaron las capturas de 30785 y 23888, la liberación de 33926, dos conductores, dos vehículos y cuatro registros de webhook. Un webhook restaurado coincidió con la sesión de 30785. La copia temporal se retiró tras conservar un recibo sin datos personales. Queda por verificar la recuperación de configuración y permisos externos y el respaldo de datos de producción. Antes de publicar siguen pendientes SMTP y acceso por código en los cuatro portales, aprobación de reembolso por una segunda cuenta de staging, decisiones fiscales y de liquidación, y validación del candidato definitivo desde la app LV instalada. La verificación posterior a un despliegue queda pendiente. [Informe de continuidad](LVTRANSPORT_MONI_HANDOFF_2026_11_27.md)
